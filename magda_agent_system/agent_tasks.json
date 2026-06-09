@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "project": "IntelliTrader",
+  "task_source_priority": [
+    "magda_agent_system/agent_tasks.json",
+    "AGENTS.md",
+    "magda_agent_system/backlog.md"
+  ],
+  "risk_levels": [
+    "low",
+    "medium",
+    "high",
+    "critical"
+  ],
+  "merge_policy": {
+    "low": "auto_merge_after_tests",
+    "medium": "auto_merge_after_tests_and_critic",
+    "high": "human_review_required",
+    "critical": "manual_only"
+  },
+  "replenishment_policy": {
+    "minimum_todo_tasks": 3,
+    "batch_size": 3,
+    "always_add_tasks": false,
+    "tasks_per_run": 1,
+    "allowed_risks_for_generated_tasks": [
+      "low",
+      "medium"
+    ],
+    "instruction": "Add new todo tasks ONLY when the pool falls below minimum_todo_tasks. Focus on IntelliTrader (C# crypto trading bot) evolution: improving trading strategies, adding exchange integrations, fixing bugs, and improving the Web dashboard. Read docs/trends.md for inspiration when replenishment is needed.",
+    "max_todo_tasks": 90
+  },
+  "autonomous_loop_policy": {
+    "operating_model": "magda_agent_system/docs/jules_autonomous_loop.md",
+    "selection_rule": "Choose the first todo task that is not blocked by high/critical risk.",
+    "anti_stall_rule": "Never ask the user for the next task while safe low/medium-risk tasks can be generated from IntelliTrader source, failing CI, or TODO comments.",
+    "stabilization_first": true,
+    "max_pr_scope": "one task id per PR",
+    "failure_rule": "If CI fails, prioritize a fix task for the failure before starting new features."
+  },
+  "tasks": [
+    {
+      "id": "intellitrader-initial-scan",
+      "status": "todo",
+      "area": "architecture",
+      "risk": "low",
+      "title": "Analyze IntelliTrader architecture and define evolution goals",
+      "description": "Perform a deep scan of the C# codebase in IntelliTrader directories. Identify core components, exchange integrations, and trading rules. Create a new document `magda_agent_system/docs/intellitrader_evolution.md` outlining the findings and future improvements.",
+      "allowed_paths": [
+        "magda_agent_system/docs/**",
+        "magda_agent_system/agent_tasks.json",
+        "IntelliTrader*/**"
+      ],
+      "acceptance": [
+        "magda_agent_system/docs/intellitrader_evolution.md exists",
+        "The document describes main C# modules and current state of the bot"
+      ]
+    },
+    {
+      "id": "trading-strategy-audit",
+      "status": "todo",
+      "area": "trading",
+      "risk": "medium",
+      "title": "Audit existing trading strategies for potential improvements",
+      "description": "Review C# files in `IntelliTrader.Trading/Models` and `IntelliTrader.Rules/`. Look for inefficiencies or missing safety checks in Buy/Sell trailing logic. Propose specific tasks to improve these strategies.",
+      "allowed_paths": [
+        "magda_agent_system/agent_tasks.json",
+        "IntelliTrader.Trading/Models/**",
+        "IntelliTrader.Rules/**"
+      ],
+      "acceptance": [
+        "New tasks related to strategy improvements are added to agent_tasks.json"
+      ]
+    },
+    {
+      "id": "web-dashboard-enhancement-plan",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Plan Web Dashboard enhancements",
+      "description": "Analyze `IntelliTrader.Web/` project. Review current views and controllers. Identify opportunities to add more real-time stats or improved log visualization. Document the plan in `magda_agent_system/docs/web_enhancements.md`.",
+      "allowed_paths": [
+        "magda_agent_system/docs/**",
+        "magda_agent_system/agent_tasks.json",
+        "IntelliTrader.Web/**"
+      ],
+      "acceptance": [
+        "magda_agent_system/docs/web_enhancements.md exists with a list of proposed features"
+      ]
+    }
+  ]
+}

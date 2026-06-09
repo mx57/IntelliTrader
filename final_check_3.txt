@@ -1,0 +1,5 @@
+ls: cannot access 'License.txt': No such file or directory
+ls: cannot access 'Disclaimer.txt': No such file or directory
+-rw-rw-r-- 1 jules jules 1236 Jun  9 08:47 .github/workflows/jules_automerge.yml
+-rw-rw-r-- 1 jules jules 3886 Jun  9 08:46 .github/workflows/jules_next_task.yml
+-rw-rw-r-- 1 jules jules  251 Jun  9 09:21 magda_agent_system/requirements.txt
