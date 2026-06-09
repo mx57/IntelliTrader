@@ -73,7 +73,7 @@
     },
     {
       "id": "portable-release-autobuild",
-      "status": "todo",
+      "status": "done",
       "area": "devops",
       "risk": "high",
       "title": "Настройка автосборки portable релизов через GitHub Actions",

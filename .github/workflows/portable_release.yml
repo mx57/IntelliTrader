@@ -1,0 +1,60 @@
+name: Build Portable Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '2.1.x'
+
+    - name: Publish IntelliTrader
+      run: dotnet publish -f netcoreapp2.1 -c Release /p:PublishProfile="IntelliTrader/Properties/PublishProfiles/FolderProfile.pubxml" -o "./Publish/bin"
+
+    - name: Publish IntelliTrader.Web
+      run: dotnet publish -f netcoreapp2.1 -c Release /p:PublishProfile="IntelliTrader.Web/Properties/PublishProfiles/FolderProfile.pubxml" -o "./Publish/bin"
+
+    - name: Create Release Archive (Linux)
+      run: |
+        cd Publish
+        zip -r ../IntelliTrader-linux-portable.zip .
+
+    - name: Build for Windows
+      run: |
+        dotnet publish -f netcoreapp2.1 -c Release -r win-x64 --self-contained true /p:PublishProfile="IntelliTrader/Properties/PublishProfiles/FolderProfile.pubxml" -o "./Publish-Win/bin"
+        dotnet publish -f netcoreapp2.1 -c Release -r win-x64 --self-contained true /p:PublishProfile="IntelliTrader.Web/Properties/PublishProfiles/FolderProfile.pubxml" -o "./Publish-Win/bin"
+
+    - name: Create Release Archive (Windows)
+      run: |
+        cd Publish-Win
+        zip -r ../IntelliTrader-windows-portable.zip .
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: portable-releases
+        path: |
+          IntelliTrader-linux-portable.zip
+          IntelliTrader-windows-portable.zip
+
+    - name: Create GitHub Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          IntelliTrader-linux-portable.zip
+          IntelliTrader-windows-portable.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
