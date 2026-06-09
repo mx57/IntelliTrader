@@ -1,7 +1,0 @@
-ls: cannot access 'License.txt': No such file or directory
-ls: cannot access 'Disclaimer.txt': No such file or directory
--rw-rw-r-- 1 jules jules 3886 Jun  9 08:46 .github/workflows/jules_next_task.yml
--rw-rw-r-- 1 jules jules 2128 Jun  9 08:46 AGENTS.md
--rw-rw-r-- 1 jules jules 4461 Jun  9 11:58 magda_agent_system/agent_tasks.json
--rw-rw-r-- 1 jules jules 1858 Jun  9 11:57 magda_agent_system/docs/intellitrader_evolution.md
--rw-rw-r-- 1 jules jules  251 Jun  9 09:21 magda_agent_system/requirements.txt

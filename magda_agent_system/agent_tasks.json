@@ -27,16 +27,16 @@
       "low",
       "medium"
     ],
-    "instruction": "Add new todo tasks ONLY when the pool falls below minimum_todo_tasks. Focus on IntelliTrader (C# crypto trading bot) evolution: improving trading strategies, adding exchange integrations, fixing bugs, and improving the Web dashboard. Read docs/trends.md for inspiration when replenishment is needed.",
+    "instruction": "Добавляйте новые задачи, только когда их количество меньше minimum_todo_tasks. Фокусируйтесь на развитии IntelliTrader (C# торговый бот): улучшение стратегий, интеграция бирж, исправление багов и улучшение Web-интерфейса.",
     "max_todo_tasks": 90
   },
   "autonomous_loop_policy": {
     "operating_model": "magda_agent_system/docs/jules_autonomous_loop.md",
-    "selection_rule": "Choose the first todo task that is not blocked by high/critical risk.",
-    "anti_stall_rule": "Never ask the user for the next task while safe low/medium-risk tasks can be generated from IntelliTrader source, failing CI, or TODO comments.",
+    "selection_rule": "Выбирайте первую задачу со статусом todo, которая не заблокирована высоким риском.",
+    "anti_stall_rule": "Никогда не спрашивайте пользователя, если можно создать безопасные задачи из исходного кода IntelliTrader или документации.",
     "stabilization_first": true,
-    "max_pr_scope": "one task id per PR",
-    "failure_rule": "If CI fails, prioritize a fix task for the failure before starting new features."
+    "max_pr_scope": "один ID задачи на один PR",
+    "failure_rule": "Если CI падает, приоритет — исправление ошибки."
   },
   "tasks": [
     {
@@ -44,32 +44,62 @@
       "status": "done",
       "area": "architecture",
       "risk": "low",
-      "title": "Analyze IntelliTrader architecture and define evolution goals",
-      "description": "Perform a deep scan of the C# codebase in IntelliTrader directories. Identify core components, exchange integrations, and trading rules. Create a new document `magda_agent_system/docs/intellitrader_evolution.md` outlining the findings and future improvements.",
+      "title": "Анализ архитектуры IntelliTrader и определение целей развития",
+      "description": "Провести глубокое сканирование C# кода, выявить основные компоненты и составить отчет в docs/intellitrader_evolution.md.",
       "allowed_paths": [
         "magda_agent_system/docs/**",
         "magda_agent_system/agent_tasks.json",
         "IntelliTrader*/**"
       ],
       "acceptance": [
-        "magda_agent_system/docs/intellitrader_evolution.md exists",
-        "The document describes main C# modules and current state of the bot"
+        "Файл magda_agent_system/docs/intellitrader_evolution.md существует"
       ]
     },
     {
       "id": "trading-strategy-audit",
-      "status": "todo",
+      "status": "done",
       "area": "trading",
       "risk": "medium",
-      "title": "Audit existing trading strategies for potential improvements",
-      "description": "Review C# files in `IntelliTrader.Trading/Models` and `IntelliTrader.Rules/`. Look for inefficiencies or missing safety checks in Buy/Sell trailing logic. Propose specific tasks to improve these strategies.",
+      "title": "Аудит существующих торговых стратегий",
+      "description": "Изучить C# файлы в IntelliTrader.Trading/Models и IntelliTrader.Rules/. Проверить логику трейлинга и безопасности.",
       "allowed_paths": [
         "magda_agent_system/agent_tasks.json",
         "IntelliTrader.Trading/Models/**",
         "IntelliTrader.Rules/**"
       ],
       "acceptance": [
-        "New tasks related to strategy improvements are added to agent_tasks.json"
+        "Отчет об аудите создан в magda_agent_system/docs/audit_strategiy.md"
+      ]
+    },
+    {
+      "id": "portable-release-autobuild",
+      "status": "todo",
+      "area": "devops",
+      "risk": "high",
+      "title": "Настройка автосборки portable релизов через GitHub Actions",
+      "description": "Создать workflow для автоматической сборки IntelliTrader в портативном формате (.zip/7z) при создании тега или релизе. Убедиться, что все зависимости включены.",
+      "allowed_paths": [
+        ".github/workflows/**",
+        "Publish.*"
+      ],
+      "acceptance": [
+        "Новый файл .github/workflows/portable_release.yml существует",
+        "Скрипт сборки корректно упаковывает бинарные файлы"
+      ]
+    },
+    {
+      "id": "add-spread-check-to-trailing",
+      "status": "todo",
+      "area": "trading",
+      "risk": "medium",
+      "title": "Добавить проверку спреда в логику трейлинга",
+      "description": "Внедрить проверку максимального спреда (MaxSpread) в TradingTimedTask.cs перед финальным исполнением ордера после завершения трейлинг-цикла.",
+      "allowed_paths": [
+        "IntelliTrader.Trading/TimedTasks/TradingTimedTask.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Код TradingTimedTask.cs содержит проверку спреда перед вызовом PlaceBuyOrder/PlaceSellOrder"
       ]
     },
     {
@@ -77,15 +107,15 @@
       "status": "todo",
       "area": "web",
       "risk": "low",
-      "title": "Plan Web Dashboard enhancements",
-      "description": "Analyze `IntelliTrader.Web/` project. Review current views and controllers. Identify opportunities to add more real-time stats or improved log visualization. Document the plan in `magda_agent_system/docs/web_enhancements.md`.",
+      "title": "Планирование улучшений веб-дашборда",
+      "description": "Анализ IntelliTrader.Web/. Выявление возможностей для добавления графиков и улучшенной визуализации логов.",
       "allowed_paths": [
         "magda_agent_system/docs/**",
         "magda_agent_system/agent_tasks.json",
         "IntelliTrader.Web/**"
       ],
       "acceptance": [
-        "magda_agent_system/docs/web_enhancements.md exists with a list of proposed features"
+        "Документ magda_agent_system/docs/web_enhancements.md создан"
       ]
     },
     {
@@ -93,14 +123,14 @@
       "status": "todo",
       "area": "integration",
       "risk": "high",
-      "title": "Draft plan for Bybit exchange integration",
-      "description": "Examine `IntelliTrader.Exchange.Binance` and `IntelliTrader.Exchange.Base`. Outline the steps needed to implement a Bybit provider using `ExchangeSharp`. Document the plan in `magda_agent_system/docs/bybit_integration_plan.md`.",
+      "title": "Разработка плана интеграции биржи Bybit",
+      "description": "Описать шаги для добавления провайдера Bybit через ExchangeSharp.",
       "allowed_paths": [
         "magda_agent_system/docs/**",
         "magda_agent_system/agent_tasks.json"
       ],
       "acceptance": [
-        "Plan document exists with technical details for Bybit integration"
+        "Документ magda_agent_system/docs/bybit_integration_plan.md существует"
       ]
     }
   ]
