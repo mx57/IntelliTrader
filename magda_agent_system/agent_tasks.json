@@ -41,7 +41,7 @@
   "tasks": [
     {
       "id": "intellitrader-initial-scan",
-      "status": "todo",
+      "status": "done",
       "area": "architecture",
       "risk": "low",
       "title": "Analyze IntelliTrader architecture and define evolution goals",
@@ -86,6 +86,21 @@
       ],
       "acceptance": [
         "magda_agent_system/docs/web_enhancements.md exists with a list of proposed features"
+      ]
+    },
+    {
+      "id": "add-bybit-integration-task",
+      "status": "todo",
+      "area": "integration",
+      "risk": "high",
+      "title": "Draft plan for Bybit exchange integration",
+      "description": "Examine `IntelliTrader.Exchange.Binance` and `IntelliTrader.Exchange.Base`. Outline the steps needed to implement a Bybit provider using `ExchangeSharp`. Document the plan in `magda_agent_system/docs/bybit_integration_plan.md`.",
+      "allowed_paths": [
+        "magda_agent_system/docs/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Plan document exists with technical details for Bybit integration"
       ]
     }
   ]
