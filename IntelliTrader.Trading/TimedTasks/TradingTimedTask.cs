@@ -149,6 +149,16 @@ namespace IntelliTrader.Trading
                         if (tradingPair.CurrentMargin <= sellTrailingInfo.TrailingStopMargin || tradingPair.CurrentMargin <
                             (sellTrailingInfo.BestTrailingMargin - sellTrailingInfo.Trailing))
                         {
+                            decimal currentSpread = tradingService.Exchange.GetPriceSpread(tradingPair.Pair);
+                            if (pairConfig.MaxSpread != null && currentSpread > pairConfig.MaxSpread)
+                            {
+                                if (LoggingEnabled)
+                                {
+                                    loggingService.Info($"Delay sell for {tradingPair.FormattedName}. Reason: spread too high ({currentSpread:0.00} > {pairConfig.MaxSpread:0.00})");
+                                }
+                                return;
+                            }
+
                             StopTrailingSell(tradingPair.Pair);
 
                             if (tradingPair.CurrentMargin > 0 || sellTrailingInfo.SellMargin < 0)
@@ -252,6 +262,16 @@ namespace IntelliTrader.Trading
 
                     if (currentMargin >= buyTrailingInfo.TrailingStopMargin || currentMargin > (buyTrailingInfo.BestTrailingMargin - buyTrailingInfo.Trailing))
                     {
+                            decimal currentSpread = tradingService.Exchange.GetPriceSpread(pair);
+                            if (pairConfig.MaxSpread != null && currentSpread > pairConfig.MaxSpread)
+                            {
+                                if (LoggingEnabled)
+                                {
+                                    loggingService.Info($"Delay buy for {tradingPair?.FormattedName ?? pair}. Reason: spread too high ({currentSpread:0.00} > {pairConfig.MaxSpread:0.00})");
+                                }
+                                return;
+                            }
+
                         StopTrailingBuy(pair);
 
                         if (buyTrailingInfo.TrailingStopAction == BuyTrailingStopAction.Buy || currentMargin < buyTrailingInfo.TrailingStopMargin)

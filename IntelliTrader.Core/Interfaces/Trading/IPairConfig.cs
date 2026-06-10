@@ -23,5 +23,7 @@ namespace IntelliTrader.Core
 
         decimal? CurrentDCAMargin { get; }
         decimal? NextDCAMargin { get; }
+
+        decimal? MaxSpread { get; }
     }
 }

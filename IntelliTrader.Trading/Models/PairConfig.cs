@@ -45,5 +45,7 @@ namespace IntelliTrader.Trading
 
         public decimal? CurrentDCAMargin { get; set; }
         public decimal? NextDCAMargin { get; set; }
+
+        public decimal? MaxSpread { get; set; }
     }
 }

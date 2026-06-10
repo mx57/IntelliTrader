@@ -89,13 +89,15 @@
     },
     {
       "id": "add-spread-check-to-trailing",
-      "status": "todo",
+      "status": "done",
       "area": "trading",
       "risk": "medium",
       "title": "Добавить проверку спреда в логику трейлинга",
       "description": "Внедрить проверку максимального спреда (MaxSpread) в TradingTimedTask.cs перед финальным исполнением ордера после завершения трейлинг-цикла.",
       "allowed_paths": [
         "IntelliTrader.Trading/TimedTasks/TradingTimedTask.cs",
+        "IntelliTrader.Core/Interfaces/Trading/IPairConfig.cs",
+        "IntelliTrader.Trading/Models/PairConfig.cs",
         "magda_agent_system/agent_tasks.json"
       ],
       "acceptance": [
