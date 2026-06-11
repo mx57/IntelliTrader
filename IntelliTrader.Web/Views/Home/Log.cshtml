@@ -8,7 +8,12 @@
     <hr />
     <div class="log">
         @foreach (var entry in Model.LogEntries) {
-        <div>@Html.Raw(entry)</div>
+            var cssClass = "log-entry-info";
+            if (entry.Contains("ERROR") || entry.Contains("Exception")) { cssClass = "log-entry-error"; }
+            else if (entry.Contains("WARNING")) { cssClass = "log-entry-warning"; }
+            else if (entry.Contains("DEBUG")) { cssClass = "log-entry-debug"; }
+
+            <div class="@cssClass">@Html.Raw(entry)</div>
         }
     </div>
     <hr />

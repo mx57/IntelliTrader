@@ -80,3 +80,7 @@ div.dataTables_wrapper div.dataTables_filter input {
 table.dataTable.dtr-column > tbody > tr > td.control:before, table.dataTable.dtr-column > tbody > tr > th.control:before {
     line-height: 16px;
 }
+.log-entry-error { color: #ff4d4d; font-weight: bold; }
+.log-entry-warning { color: #ffcc00; }
+.log-entry-info { color: #ffffff; }
+.log-entry-debug { color: #888888; font-style: italic; }

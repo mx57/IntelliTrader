@@ -1,0 +1,2 @@
+grep: ./grep_log_class.txt: input file is also the output
+./IntelliTrader.Core/Services/LoggingService.cs:    internal class LoggingService : ConfigrableServiceBase<LoggingConfig>, ILoggingService

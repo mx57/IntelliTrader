@@ -122,7 +122,7 @@
     },
     {
       "id": "task-log-highlighting",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Подсветка уровней логов в веб-интерфейсе",
@@ -133,6 +133,22 @@
       ],
       "acceptance": [
         "Ошибки в логах подсвечиваются красным цветом"
+      ]
+    },
+    {
+      "id": "task-stats-charts",
+      "status": "todo",
+      "area": "web",
+      "risk": "medium",
+      "title": "Интеграция графиков Chart.js в статистику",
+      "description": "Добавить библиотеку Chart.js и реализовать отображение прибыли по дням и распределение по парам на странице Stats.cshtml.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/Home/Stats.cshtml",
+        "IntelliTrader.Web/Static/Scripts/Views/stats.js",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "На странице статистики отображаются интерактивные графики"
       ]
     },
     {
