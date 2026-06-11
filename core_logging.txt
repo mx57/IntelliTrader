@@ -1,1 +1,0 @@
-ls: cannot access 'IntelliTrader.Core/Services/Logging/': No such file or directory

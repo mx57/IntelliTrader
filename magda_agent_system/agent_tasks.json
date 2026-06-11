@@ -137,7 +137,7 @@
     },
     {
       "id": "task-stats-charts",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "medium",
       "title": "Интеграция графиков Chart.js в статистику",
@@ -145,10 +145,27 @@
       "allowed_paths": [
         "IntelliTrader.Web/Views/Home/Stats.cshtml",
         "IntelliTrader.Web/Static/Scripts/Views/stats.js",
+        "IntelliTrader.Web/Static/Scripts/Vendor/chart.min.js",
         "magda_agent_system/agent_tasks.json"
       ],
       "acceptance": [
         "На странице статистики отображаются интерактивные графики"
+      ]
+    },
+    {
+      "id": "task-dashboard-spread-indicator",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Индикатор спреда на Дашборде",
+      "description": "Добавить колонку со спредом и визуальный индикатор (например, цветовой индикатор опасности) в таблицу активных пар на Дашборде.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/Home/Dashboard.cshtml",
+        "IntelliTrader.Web/Static/Scripts/Views/dashboard.js",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "В таблице Дашборда виден текущий спред с цветовой индикацией"
       ]
     },
     {
