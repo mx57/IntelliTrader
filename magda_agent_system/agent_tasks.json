@@ -106,7 +106,7 @@
     },
     {
       "id": "web-dashboard-enhancement-plan",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Планирование улучшений веб-дашборда",
@@ -118,6 +118,21 @@
       ],
       "acceptance": [
         "Документ magda_agent_system/docs/web_enhancements.md создан"
+      ]
+    },
+    {
+      "id": "task-log-highlighting",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Подсветка уровней логов в веб-интерфейсе",
+      "description": "Добавить CSS-классы для различных уровней логов (Error, Warning, Info) и обновить Log.cshtml для их отображения.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/Home/Log.cshtml",
+        "IntelliTrader.Web/Static/Styles/**"
+      ],
+      "acceptance": [
+        "Ошибки в логах подсвечиваются красным цветом"
       ]
     },
     {
