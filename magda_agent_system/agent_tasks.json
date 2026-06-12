@@ -154,7 +154,7 @@
     },
     {
       "id": "task-dashboard-spread-indicator",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Индикатор спреда на Дашборде",

@@ -106,7 +106,15 @@ $(function () {
             },
             {
                 name: "CurrentSpread",
-                data: "CurrentSpread"
+                data: "CurrentSpread",
+                render: function (data, type, row, meta) {
+                    var maxSpread = row.Config.MaxSpread;
+                    var spreadVal = parseFloat(data);
+                    if (maxSpread && spreadVal > maxSpread) {
+                        return '<span class="text-danger" title="MaxSpread exceeded: ' + maxSpread + '"><strong>' + data + '</strong> <i class="fas fa-exclamation-triangle"></i></span>';
+                    }
+                    return data;
+                }
             },
             {
                 name: "SignalRule",
