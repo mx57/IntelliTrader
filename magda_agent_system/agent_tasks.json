@@ -170,7 +170,7 @@
     },
     {
       "id": "add-bybit-integration-task",
-      "status": "todo",
+      "status": "done",
       "area": "integration",
       "risk": "high",
       "title": "Разработка плана интеграции биржи Bybit",
@@ -181,6 +181,52 @@
       ],
       "acceptance": [
         "Документ magda_agent_system/docs/bybit_integration_plan.md существует"
+      ]
+    },
+    {
+      "id": "unit-tests-trading-logic",
+      "status": "todo",
+      "area": "testing",
+      "risk": "low",
+      "title": "Создание Unit-тестов для торговой логики",
+      "description": "Добавить тесты для проверки MaxSpread и логики трейлинга в IntelliTrader.Tests.",
+      "allowed_paths": [
+        "IntelliTrader.Tests/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Тесты проходят успешно и покрывают проверку спреда"
+      ]
+    },
+    {
+      "id": "web-config-editor",
+      "status": "todo",
+      "area": "web",
+      "risk": "medium",
+      "title": "Редактор конфигурации в Web-интерфейсе",
+      "description": "Создать страницу для редактирования основных параметров (MaxSpread, TrailingPercent) без перезагрузки бота.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/Home/Settings.cshtml",
+        "IntelliTrader.Web/Controllers/HomeController.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Настройки сохраняются и применяются 'на лету'"
+      ]
+    },
+    {
+      "id": "telegram-notifications-spread",
+      "status": "todo",
+      "area": "notifications",
+      "risk": "low",
+      "title": "Уведомления о высоком спреде в Telegram",
+      "description": "Отправлять уведомление в Telegram, если бот пропустил сделку из-за превышения MaxSpread.",
+      "allowed_paths": [
+        "IntelliTrader.Trading/TimedTasks/TradingTimedTask.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Пользователь получает сообщение при блокировке сделки по спреду"
       ]
     }
   ]
