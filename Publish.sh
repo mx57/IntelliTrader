@@ -1,4 +1,4 @@
 #!/bin/bash
-
-dotnet publish -f netcoreapp2.1 -c Release /p:PublishProfile="IntelliTrader/Properties/PublishProfiles/FolderProfile.pubxml" -o "../Publish/bin"
-dotnet publish -f netcoreapp2.1 -c Release /p:PublishProfile="IntelliTrader.Web/Properties/PublishProfiles/FolderProfile.pubxml" -o "../Publish/bin"
+mkdir -p Publish/bin
+dotnet publish IntelliTrader/IntelliTrader.csproj -f netcoreapp2.1 -c Release -o "Publish/bin"
+dotnet publish IntelliTrader.Web/IntelliTrader.Web.csproj -f netcoreapp2.1 -c Release -o "Publish/bin"
