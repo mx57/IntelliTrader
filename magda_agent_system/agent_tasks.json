@@ -185,7 +185,7 @@
     },
     {
       "id": "unit-tests-trading-logic",
-      "status": "todo",
+      "status": "done",
       "area": "testing",
       "risk": "low",
       "title": "Создание Unit-тестов для торговой логики",
@@ -200,7 +200,7 @@
     },
     {
       "id": "web-config-editor",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "medium",
       "title": "Редактор конфигурации в Web-интерфейсе",
@@ -216,7 +216,7 @@
     },
     {
       "id": "telegram-notifications-spread",
-      "status": "todo",
+      "status": "done",
       "area": "notifications",
       "risk": "low",
       "title": "Уведомления о высоком спреде в Telegram",
@@ -227,6 +227,25 @@
       ],
       "acceptance": [
         "Пользователь получает сообщение при блокировке сделки по спреду"
+      ]
+    },
+    {
+      "id": "migrate-to-net8",
+      "status": "done",
+      "area": "devops",
+      "risk": "high",
+      "title": "Миграция на .NET 8.0",
+      "description": "Обновить все проекты решения IntelliTrader.sln с устаревшей netcoreapp2.1 на современную LTS версию .NET 8.0. Обновить зависимости и исправить несовместимости в API.",
+      "allowed_paths": [
+        "**/*.csproj",
+        "IntelliTrader.Web/Startup.cs",
+        "IntelliTrader.Web/Program.cs",
+        "magda_agent_system/agent_tasks.json",
+        "Publish.sh"
+      ],
+      "acceptance": [
+        "Все проекты имеют <TargetFramework>net8.0</TargetFramework>",
+        "Проект успешно собирается командой 'dotnet build'"
       ]
     }
   ]

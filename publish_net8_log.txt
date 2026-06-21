@@ -1,0 +1,40 @@
+  Determining projects to restore...
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1903: Package 'Microsoft.NETCore.App' 2.0.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-7mfr-774f-w5r9 [/app/IntelliTrader/IntelliTrader.csproj]
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1903: Package 'Microsoft.NETCore.App' 2.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-2xjx-v99w-gqf3 [/app/IntelliTrader/IntelliTrader.csproj]
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1902: Package 'Microsoft.NETCore.App' 2.1.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-3gp9-h8hw-pxpw [/app/IntelliTrader/IntelliTrader.csproj]
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1903: Package 'Microsoft.NETCore.App' 2.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-3w5p-jhp5-c29q [/app/IntelliTrader/IntelliTrader.csproj]
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1902: Package 'Microsoft.NETCore.App' 2.1.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-5633-f33j-c6f7 [/app/IntelliTrader/IntelliTrader.csproj]
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1903: Package 'Microsoft.NETCore.App' 2.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-6px8-22w5-w334 [/app/IntelliTrader/IntelliTrader.csproj]
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1903: Package 'Microsoft.NETCore.App' 2.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-g5vf-38cp-4px9 [/app/IntelliTrader/IntelliTrader.csproj]
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1902: Package 'Microsoft.NETCore.App' 2.1.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-vgwq-hfqc-58wv [/app/IntelliTrader/IntelliTrader.csproj]
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1902: Package 'Microsoft.NETCore.App' 2.1.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-x5qj-9vmx-7g6g [/app/IntelliTrader/IntelliTrader.csproj]
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1903: Package 'Newtonsoft.Json' 11.0.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-5crp-9r3c-p9vr [/app/IntelliTrader/IntelliTrader.csproj]
+  All projects are up-to-date for restore.
+  IntelliTrader.Core -> /app/IntelliTrader.Core/bin/Release/net8.0/IntelliTrader.Core.dll
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1903: Package 'Microsoft.NETCore.App' 2.0.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-7mfr-774f-w5r9 [TargetFramework=netcoreapp2.1]
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1903: Package 'Microsoft.NETCore.App' 2.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-2xjx-v99w-gqf3 [TargetFramework=netcoreapp2.1]
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1902: Package 'Microsoft.NETCore.App' 2.1.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-3gp9-h8hw-pxpw [TargetFramework=netcoreapp2.1]
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1903: Package 'Microsoft.NETCore.App' 2.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-3w5p-jhp5-c29q [TargetFramework=netcoreapp2.1]
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1902: Package 'Microsoft.NETCore.App' 2.1.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-5633-f33j-c6f7 [TargetFramework=netcoreapp2.1]
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1903: Package 'Microsoft.NETCore.App' 2.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-6px8-22w5-w334 [TargetFramework=netcoreapp2.1]
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1903: Package 'Microsoft.NETCore.App' 2.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-g5vf-38cp-4px9 [TargetFramework=netcoreapp2.1]
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1902: Package 'Microsoft.NETCore.App' 2.1.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-vgwq-hfqc-58wv [TargetFramework=netcoreapp2.1]
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1902: Package 'Microsoft.NETCore.App' 2.1.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-x5qj-9vmx-7g6g [TargetFramework=netcoreapp2.1]
+/app/Submodules/ExchangeSharp/ExchangeSharp/ExchangeSharp.csproj : warning NU1903: Package 'Newtonsoft.Json' 11.0.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-5crp-9r3c-p9vr [TargetFramework=netcoreapp2.1]
+  ExchangeSharp -> /app/Submodules/ExchangeSharp/ExchangeSharp/bin/Release/netcoreapp2.1/ExchangeSharp.dll
+  IntelliTrader.Rules -> /app/IntelliTrader.Rules/bin/Release/net8.0/IntelliTrader.Rules.dll
+/app/IntelliTrader.Web/Startup.cs(39,39): warning ASP0000: Calling 'BuildServiceProvider' from application code results in an additional copy of singleton services being created. Consider alternatives such as dependency injecting services as parameters to 'Configure'. (https://aka.ms/AA5k895) [/app/IntelliTrader.Web/IntelliTrader.Web.csproj]
+  IntelliTrader.Web -> /app/IntelliTrader.Web/bin/Release/net8.0/IntelliTrader.Web.dll
+  IntelliTrader.Exchange.Base -> /app/IntelliTrader.Exchange.Base/bin/Release/net8.0/IntelliTrader.Exchange.Base.dll
+  IntelliTrader.Signals.Base -> /app/IntelliTrader.Signals.Base/bin/Release/net8.0/IntelliTrader.Signals.Base.dll
+  IntelliTrader.Signals.TradingView -> /app/IntelliTrader.Signals.TradingView/bin/Release/net8.0/IntelliTrader.Signals.TradingView.dll
+  IntelliTrader.Trading -> /app/IntelliTrader.Trading/bin/Release/net8.0/IntelliTrader.Trading.dll
+  IntelliTrader.Exchange.Binance -> /app/IntelliTrader.Exchange.Binance/bin/Release/net8.0/IntelliTrader.Exchange.Binance.dll
+  IntelliTrader.Backtesting -> /app/IntelliTrader.Backtesting/bin/Release/net8.0/IntelliTrader.Backtesting.dll
+  IntelliTrader -> /app/IntelliTrader/bin/Release/net8.0/IntelliTrader.dll
+  IntelliTrader -> /app/Publish/bin/
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  IntelliTrader.Core -> /app/IntelliTrader.Core/bin/Release/net8.0/IntelliTrader.Core.dll
+  IntelliTrader.Web -> /app/IntelliTrader.Web/bin/Release/net8.0/IntelliTrader.Web.dll
+  IntelliTrader.Web -> /app/Publish/bin/
