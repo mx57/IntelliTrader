@@ -41,7 +41,7 @@
   "tasks": [
     {
       "id": "intellitrader-initial-scan",
-      "status": "todo",
+      "status": "done",
       "area": "architecture",
       "risk": "low",
       "title": "Analyze IntelliTrader architecture and define evolution goals",

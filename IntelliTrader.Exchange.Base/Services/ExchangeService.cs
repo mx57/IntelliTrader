@@ -76,12 +76,13 @@ namespace IntelliTrader.Exchange.Base.Services
                 lastTickersUpdate = DateTimeOffset.Now;
                 healthCheckService.UpdateHealthCheck(Constants.HealthChecks.TickersUpdated, $"Updates: {Tickers.Count}");
             }
-
-            // Initialize Tickers as an empty dictionary to prevent immediate failure
-            Tickers = new ConcurrentDictionary<string, Ticker>();
-
-            markets = new ConcurrentBag<string>();
-            loggingService.Info("Tickers initialized as empty. Further implementation needed to fetch real-time data.");
+            else
+            {
+                // Initialize Tickers as an empty dictionary to prevent immediate failure
+                Tickers = new ConcurrentDictionary<string, Ticker>();
+                markets = new ConcurrentBag<string>();
+                loggingService.Info("Tickers initialized as empty. Further implementation needed to fetch real-time data.");
+            }
 
             ConnectTickersWebsocket();
 
@@ -231,7 +232,23 @@ namespace IntelliTrader.Exchange.Base.Services
 
         public virtual string GetPairMarket(string pair)
         {
-            // TODO: return Api.ExchangeSymbolToGlobalSymbol(pair).Split('-')[0];
+            if (pair.EndsWith(Constants.Markets.BTC))
+            {
+                return Constants.Markets.BTC;
+            }
+            else if (pair.EndsWith(Constants.Markets.ETH))
+            {
+                return Constants.Markets.ETH;
+            }
+            else if (pair.EndsWith(Constants.Markets.BNB))
+            {
+                return Constants.Markets.BNB;
+            }
+            else if (pair.EndsWith(Constants.Markets.USDT))
+            {
+                return Constants.Markets.USDT;
+            }
+
             return string.Empty;
         }
 
