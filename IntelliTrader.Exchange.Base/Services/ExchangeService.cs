@@ -1,4 +1,5 @@
 using IntelliTrader.Core;
+using ExchangeSharp;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -21,7 +22,7 @@ namespace IntelliTrader.Exchange.Base.Services
         protected readonly IHealthCheckService healthCheckService;
         protected readonly ITasksService tasksService;
 
-        // Removed: public ExchangeAPI Api { get; set; }
+        public ExchangeAPI Api { get; private set; }
         public ConcurrentDictionary<string, Ticker> Tickers { get; private set; }
 
         private IDisposable socket;
@@ -40,14 +41,14 @@ namespace IntelliTrader.Exchange.Base.Services
         public virtual void Start(bool virtualTrading)
         {
             loggingService.Info("Start Exchange service...");
-            // TODO: Api = InitializeApi();
+            Api = InitializeApi();
 
-            if (!virtualTrading && !string.IsNullOrWhiteSpace(Config.KeysPath))
+            if (Api != null && !virtualTrading && !string.IsNullOrWhiteSpace(Config.KeysPath))
             {
                 if (File.Exists(Config.KeysPath))
                 {
                     loggingService.Info("Load keys from encrypted file...");
-                    // TODO: Api.LoadAPIKeys(Config.KeysPath);
+                    Api.LoadAPIKeys(Config.KeysPath);
                 }
                 else
                 {
@@ -56,20 +57,30 @@ namespace IntelliTrader.Exchange.Base.Services
             }
 
             loggingService.Info("Get initial ticker values...");
-            IEnumerable<KeyValuePair<string, Ticker>> exchangeTickers = null;
-            for (int retry = 0; retry < INITIAL_TICKERS_RETRY_LIMIT; retry++)
+            IEnumerable<KeyValuePair<string, ExchangeTicker>> exchangeTickers = null;
+            if (Api != null)
             {
-                // TODO: Task.Run(() => exchangeTickers = Api.GetTickers()).Wait(TimeSpan.FromMilliseconds(INITIAL_TICKERS_TIMEOUT_MILLISECONDS));
-                if (exchangeTickers != null) break;
+                for (int retry = 0; retry < INITIAL_TICKERS_RETRY_LIMIT; retry++)
+                {
+                    try
+                    {
+                        Task.Run(() => exchangeTickers = Api.GetTickers()).Wait(TimeSpan.FromMilliseconds(INITIAL_TICKERS_TIMEOUT_MILLISECONDS));
+                    }
+                    catch (Exception ex)
+                    {
+                        loggingService.Warning($"Failed to get tickers on retry {retry + 1}: {ex.Message}");
+                    }
+                    if (exchangeTickers != null) break;
+                }
             }
             if (exchangeTickers != null)
             {
                 Tickers = new ConcurrentDictionary<string, Ticker>(exchangeTickers.Select(t => new KeyValuePair<string, Ticker>(t.Key, new Ticker
                 {
                     Pair = t.Key,
-                    AskPrice = t.Value.AskPrice,
-                    BidPrice = t.Value.BidPrice,
-                    LastPrice = t.Value.LastPrice
+                    AskPrice = t.Value.Ask,
+                    BidPrice = t.Value.Bid,
+                    LastPrice = t.Value.Last
                 })));
                 markets = new ConcurrentBag<string>(Tickers.Keys.Select(pair => GetPairMarket(pair)).Distinct().ToList());
 
@@ -100,7 +111,7 @@ namespace IntelliTrader.Exchange.Base.Services
             loggingService.Info("Exchange service stopped");
         }
 
-        // Removed: protected abstract ExchangeAPI InitializeApi();
+        protected abstract ExchangeAPI InitializeApi();
 
         public abstract IOrderDetails PlaceOrder(IOrder order);
 
@@ -116,10 +127,11 @@ namespace IntelliTrader.Exchange.Base.Services
 
         public void ConnectTickersWebsocket()
         {
+            if (Api == null) return;
             try
             {
                 loggingService.Info("Connect to Exchange tickers...");
-                // TODO: socket = Api.GetTickersWebSocket(OnTickersUpdated);
+                socket = Api.GetTickersWebSocket(OnTickersUpdated);
                 loggingService.Info("Connected to Exchange tickers");
 
                 tickersMonitorTimedTask = tasksService.AddTask(
@@ -185,8 +197,8 @@ namespace IntelliTrader.Exchange.Base.Services
 
         public virtual Dictionary<string, decimal> GetAvailableAmounts()
         {
-            // TODO: return Api.GetAmountsAvailableToTradeAsync().Result;
-            return new Dictionary<string, decimal>();
+            if (Api == null) return new Dictionary<string, decimal>();
+            return Api.GetAmountsAvailableToTradeAsync().Result;
         }
 
         public abstract IEnumerable<IOrderDetails> GetTrades(string pair);
@@ -282,7 +294,7 @@ namespace IntelliTrader.Exchange.Base.Services
             return DateTimeOffset.Now - lastTickersUpdate;
         }
 
-        private void OnTickersUpdated(IReadOnlyCollection<KeyValuePair<string, Ticker>> updatedTickers)
+        private void OnTickersUpdated(IReadOnlyCollection<KeyValuePair<string, ExchangeTicker>> updatedTickers)
         {
             if (!tickersStarted)
             {
@@ -298,18 +310,18 @@ namespace IntelliTrader.Exchange.Base.Services
             {
                 if (Tickers.TryGetValue(update.Key, out Ticker ticker))
                 {
-                    ticker.AskPrice = update.Value.AskPrice;
-                    ticker.BidPrice = update.Value.BidPrice;
-                    ticker.LastPrice = update.Value.LastPrice;
+                    ticker.AskPrice = update.Value.Ask;
+                    ticker.BidPrice = update.Value.Bid;
+                    ticker.LastPrice = update.Value.Last;
                 }
                 else
                 {
                     Tickers.TryAdd(update.Key, new Ticker
                     {
                         Pair = update.Key,
-                        AskPrice = update.Value.AskPrice,
-                        BidPrice = update.Value.BidPrice,
-                        LastPrice = update.Value.LastPrice
+                        AskPrice = update.Value.Ask,
+                        BidPrice = update.Value.Bid,
+                        LastPrice = update.Value.Last
                     });
 
                     var market = GetPairMarket(update.Key);

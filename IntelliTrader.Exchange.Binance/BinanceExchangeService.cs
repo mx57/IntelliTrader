@@ -1,5 +1,6 @@
 using IntelliTrader.Core;
 using IntelliTrader.Exchange.Base;
+using ExchangeSharp;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -15,37 +16,68 @@ namespace IntelliTrader.Exchange.Binance
 
         }
 
-        // Removed: protected override ExchangeAPI InitializeApi()
-
+        protected override ExchangeAPI InitializeApi()
+        {
+            return new ExchangeBinanceAPI();
+        }
 
         public override IOrderDetails PlaceOrder(IOrder order)
         {
-            // TODO: Implement actual order placement using a new API or method
-            throw new NotImplementedException("Order placement is not yet implemented.");
+            var request = new ExchangeOrderRequest
+            {
+                Symbol = order.Pair,
+                Amount = order.Amount,
+                Price = order.Price,
+                IsBuy = order.Side == IntelliTrader.Core.OrderSide.Buy,
+                OrderType = order.Type == IntelliTrader.Core.OrderType.Limit ? ExchangeSharp.OrderType.Limit : ExchangeSharp.OrderType.Market
+            };
+
+            var result = Api.PlaceOrder(request);
+            return MapOrderResult(result);
         }
 
         public override IEnumerable<IOrderDetails> GetTrades(string pair)
         {
-            var myTrades = new List<OrderDetails>();
-            // TODO: var results = ((ExchangeBinanceAPI)Api).GetMyTrades(pair);
-            // TODO: foreach (var result in results) {
-            // TODO:     myTrades.Add(new OrderDetails {
-            // TODO:         Side = result.IsBuy ? OrderSide.Buy : OrderSide.Sell,
-            // TODO:         Result = (OrderResult)(int)result.Result,
-            // TODO:         Date = result.OrderDate,
-            // TODO:         OrderId = result.OrderId,
-            // TODO:         Pair = result.Symbol,
-            // TODO:         Message = result.Message,
-            // TODO:         Amount = result.Amount,
-            // TODO:         AmountFilled = result.AmountFilled,
-            // TODO:         Price = result.Price,
-            // TODO:         AveragePrice = result.AveragePrice,
-            // TODO:         Fees = result.Fees,
-            // TODO:         FeesCurrency = result.FeesCurrency
-            // TODO:     });
-            // TODO: }
+            var results = Api.GetCompletedOrderDetails(pair);
+            return results.Select(MapOrderResult);
+        }
 
-            return myTrades;
+        private OrderDetails MapOrderResult(ExchangeOrderResult result)
+        {
+            return new OrderDetails
+            {
+                OrderId = result.OrderId,
+                Result = MapOrderResult(result.Result),
+                Message = result.Message,
+                Amount = result.Amount,
+                AmountFilled = result.AmountFilled,
+                Price = result.Price,
+                AveragePrice = result.AveragePrice,
+                Date = result.OrderDate,
+                Pair = result.Symbol,
+                Side = result.IsBuy ? IntelliTrader.Core.OrderSide.Buy : IntelliTrader.Core.OrderSide.Sell,
+                Fees = result.Fees,
+                FeesCurrency = result.FeesCurrency
+            };
+        }
+
+        private IntelliTrader.Core.OrderResult MapOrderResult(ExchangeAPIOrderResult result)
+        {
+            switch (result)
+            {
+                case ExchangeAPIOrderResult.Filled:
+                    return IntelliTrader.Core.OrderResult.Filled;
+                case ExchangeAPIOrderResult.FilledPartially:
+                    return IntelliTrader.Core.OrderResult.FilledPartially;
+                case ExchangeAPIOrderResult.Pending:
+                    return IntelliTrader.Core.OrderResult.Pending;
+                case ExchangeAPIOrderResult.Canceled:
+                    return IntelliTrader.Core.OrderResult.Canceled;
+                case ExchangeAPIOrderResult.Error:
+                    return IntelliTrader.Core.OrderResult.Error;
+                default:
+                    return IntelliTrader.Core.OrderResult.Unknown;
+            }
         }
 
         public override Arbitrage GetArbitrage(string pair, string tradingMarket, List<ArbitrageMarket> arbitrageMarkets = null, ArbitrageType? arbitrageType = null)
