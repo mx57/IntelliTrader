@@ -1,5 +1,6 @@
 using IntelliTrader.Core;
 using IntelliTrader.Exchange.Base.Services;
+using ExchangeSharp;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -36,8 +37,10 @@ namespace IntelliTrader.Backtesting
             loggingService.Info("Backtesting Exchange service stopped");
         }
 
-        // Removed: protected override ExchangeAPI InitializeApi()
-
+        protected override ExchangeAPI InitializeApi()
+        {
+            return null;
+        }
 
         public override IEnumerable<string> GetMarkets()
         {
