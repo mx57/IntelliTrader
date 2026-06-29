@@ -325,7 +325,7 @@ namespace IntelliTrader.Exchange.Base.Services
                     });
 
                     var market = GetPairMarket(update.Key);
-                    if (!markets.Contains(market))
+                    if (market != string.Empty && !markets.Contains(market))
                     {
                         markets.Add(market);
                     }
