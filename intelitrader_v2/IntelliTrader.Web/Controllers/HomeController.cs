@@ -166,24 +166,18 @@ namespace IntelliTrader.Web.Controllers
                 Trades = GetTrades()
             };
 
-            foreach (var kvp in model.Trades.OrderBy(k => k.Key))
+            decimal totalProfit = 0;
+            var orderedTrades = model.Trades.OrderBy(k => k.Key).ToList();
+            var tradeProfits = orderedTrades.ToDictionary(t => t.Key, t => t.Value.Where(tr => !tr.IsSwap).Sum(tr => tr.Profit));
+
+            foreach (var kvp in orderedTrades)
             {
                 var date = kvp.Key;
-                var trades = kvp.Value;
-
-                model.Balances[date] = accountInitialBalance;
-
-                if (date > accountInitialBalanceDate.Date)
+                if (date >= accountInitialBalanceDate.Date)
                 {
-                    for (int d = 1; d < (int)(date - accountInitialBalanceDate.Date).TotalDays; d++)
-                    {
-                        var prevDate = date.AddDays(-d);
-                        if (model.Trades.ContainsKey(prevDate))
-                        {
-                            model.Balances[date] += model.Trades[prevDate].Where(t => !t.IsSwap).Sum(t => t.Profit);
-                        }
-                    }
+                    totalProfit += tradeProfits[date];
                 }
+                model.Balances[date] = accountInitialBalance + totalProfit;
             }
 
             return View(model);
