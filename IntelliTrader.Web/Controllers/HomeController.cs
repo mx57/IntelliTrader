@@ -150,8 +150,15 @@ namespace IntelliTrader.Web.Controllers
             var coreService = Application.Resolve<ICoreService>();
             var webService = Application.Resolve<IWebService>();
             var tradingService = Application.Resolve<ITradingService>();
+
             var accountInitialBalance = tradingService.Config.VirtualTrading ? tradingService.Config.VirtualAccountInitialBalance : tradingService.Config.AccountInitialBalance;
-            var accountInitialBalanceDate = tradingService.Config.VirtualTrading ? DateTimeOffset.Now.AddDays(-30) : tradingService.Config.AccountInitialBalanceDate;
+
+            // Use AccountInitialBalanceDate from config if it's set to a non-default value, otherwise default to 30 days ago
+            DateTimeOffset accountInitialBalanceDate = tradingService.Config.AccountInitialBalanceDate;
+            if (accountInitialBalanceDate == default(DateTimeOffset) || accountInitialBalanceDate.Year < 2010)
+            {
+                accountInitialBalanceDate = DateTimeOffset.Now.AddDays(-30).Date;
+            }
 
             var model = new StatsViewModel
             {
@@ -166,18 +173,20 @@ namespace IntelliTrader.Web.Controllers
                 Trades = GetTrades()
             };
 
-            decimal totalProfit = 0;
-            var orderedTrades = model.Trades.OrderBy(k => k.Key).ToList();
-            var tradeProfits = orderedTrades.ToDictionary(t => t.Key, t => t.Value.Where(tr => !tr.IsSwap).Sum(tr => tr.Profit));
+            decimal accumulatedProfit = 0;
+            var orderedDates = model.Trades.Keys.OrderBy(d => d).ToList();
 
-            foreach (var kvp in orderedTrades)
+            foreach (var date in orderedDates)
             {
-                var date = kvp.Key;
+                var dailyProfit = model.Trades[date].Where(tr => !tr.IsSwap).Sum(tr => tr.Profit);
+
+                // Only start accumulating profit from the initial balance date
                 if (date >= accountInitialBalanceDate.Date)
                 {
-                    totalProfit += tradeProfits[date];
+                    accumulatedProfit += dailyProfit;
                 }
-                model.Balances[date] = accountInitialBalance + totalProfit;
+
+                model.Balances[date] = accountInitialBalance + accumulatedProfit;
             }
 
             return View(model);

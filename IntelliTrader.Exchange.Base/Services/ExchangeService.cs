@@ -36,6 +36,10 @@ namespace IntelliTrader.Exchange.Base.Services
             this.loggingService = loggingService;
             this.healthCheckService = healthCheckService;
             this.tasksService = tasksService;
+
+            // Initialize collections unconditionally to prevent NullReferenceException in other services
+            Tickers = new ConcurrentDictionary<string, Ticker>();
+            markets = new ConcurrentBag<string>();
         }
 
         public virtual void Start(bool virtualTrading)
@@ -73,15 +77,19 @@ namespace IntelliTrader.Exchange.Base.Services
                     if (exchangeTickers != null) break;
                 }
             }
+
             if (exchangeTickers != null)
             {
-                Tickers = new ConcurrentDictionary<string, Ticker>(exchangeTickers.Select(t => new KeyValuePair<string, Ticker>(t.Key, new Ticker
+                foreach (var t in exchangeTickers)
                 {
-                    Pair = t.Key,
-                    AskPrice = t.Value.Ask,
-                    BidPrice = t.Value.Bid,
-                    LastPrice = t.Value.Last
-                })));
+                    Tickers.TryAdd(t.Key, new Ticker
+                    {
+                        Pair = t.Key,
+                        AskPrice = t.Value.Ask,
+                        BidPrice = t.Value.Bid,
+                        LastPrice = t.Value.Last
+                    });
+                }
                 markets = new ConcurrentBag<string>(Tickers.Keys.Select(pair => GetPairMarket(pair)).Distinct().ToList());
 
                 lastTickersUpdate = DateTimeOffset.Now;
@@ -89,9 +97,6 @@ namespace IntelliTrader.Exchange.Base.Services
             }
             else
             {
-                // Initialize Tickers as an empty dictionary to prevent immediate failure
-                Tickers = new ConcurrentDictionary<string, Ticker>();
-                markets = new ConcurrentBag<string>();
                 loggingService.Info("Tickers initialized as empty. Further implementation needed to fetch real-time data.");
             }
 
@@ -151,6 +156,8 @@ namespace IntelliTrader.Exchange.Base.Services
 
         public void DisconnectTickersWebsocket()
         {
+            if (Api == null) return;
+
             try
             {
                 tasksService.RemoveTask(nameof(TickersMonitorTimedTask), stopTask: true);
