@@ -3,6 +3,11 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>IntelliTrader.Trading.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\IntelliTrader.Core\IntelliTrader.Core.csproj" />
     <ProjectReference Include="..\IntelliTrader.Exchange.Base\IntelliTrader.Exchange.Base.csproj" />
     <ProjectReference Include="..\IntelliTrader.Signals.Base\IntelliTrader.Signals.Base.csproj" />
