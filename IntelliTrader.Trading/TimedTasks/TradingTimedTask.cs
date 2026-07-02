@@ -250,7 +250,7 @@ namespace IntelliTrader.Trading
                         }
                     }
 
-                    if (currentMargin >= buyTrailingInfo.TrailingStopMargin || currentMargin > (buyTrailingInfo.BestTrailingMargin - buyTrailingInfo.Trailing))
+                    if (currentMargin >= buyTrailingInfo.TrailingStopMargin || currentMargin > (buyTrailingInfo.BestTrailingMargin + buyTrailingInfo.Trailing))
                     {
                         StopTrailingBuy(pair);
 
