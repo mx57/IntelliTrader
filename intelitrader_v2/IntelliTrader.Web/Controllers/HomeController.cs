@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System;
 using System.Linq;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -21,6 +22,8 @@ namespace IntelliTrader.Web.Controllers
     [Authorize]
     public class HomeController : Controller
     {
+        private static readonly ConcurrentDictionary<string, (DateTime LastWriteTime, List<TradeResult> Trades)> _tradesCache = new ConcurrentDictionary<string, (DateTime LastWriteTime, List<TradeResult> Trades)>();
+
         #region Authentication
 
         [AllowAnonymous]
@@ -613,29 +616,42 @@ namespace IntelliTrader.Web.Controllers
             {
                 foreach (var tradesLogFilePath in Directory.EnumerateFiles(logsPath, "*-trades.txt", SearchOption.TopDirectoryOnly))
                 {
-                    IEnumerable<string> logLines = Utils.ReadAllLinesWriteSafe(tradesLogFilePath);
-                    foreach (var logLine in logLines)
-                    {
-                        var match = tradeResultPattern.Match(logLine);
-                        if (match.Success)
-                        {
-                            var data = match.Groups["data"].ToString();
-                            var json = Utils.FixInvalidJson(data.Replace(nameof(OrderMetadata), ""))
-                                .Replace("AveragePricePaid", nameof(ITradeResult.AveragePrice)); // Old property migration
+                    DateTime lastWriteTime = System.IO.File.GetLastWriteTime(tradesLogFilePath);
 
-                            TradeResult tradeResult = JsonConvert.DeserializeObject<TradeResult>(json);
-                            if (tradeResult.IsSuccessful && tradeResult.Metadata?.IsTransitional != true)
+                    if (!_tradesCache.TryGetValue(tradesLogFilePath, out var cached) || cached.LastWriteTime != lastWriteTime)
+                    {
+                        var fileTrades = new List<TradeResult>();
+                        IEnumerable<string> logLines = Utils.ReadAllLinesWriteSafe(tradesLogFilePath);
+                        foreach (var logLine in logLines)
+                        {
+                            var match = tradeResultPattern.Match(logLine);
+                            if (match.Success)
                             {
-                                DateTimeOffset tradeDate = tradeResult.SellDate.ToOffset(TimeSpan.FromHours(coreService.Config.TimezoneOffset)).Date;
-                                if (date == null || date == tradeDate)
+                                var data = match.Groups["data"].ToString();
+                                var json = Utils.FixInvalidJson(data.Replace(nameof(OrderMetadata), ""))
+                                    .Replace("AveragePricePaid", nameof(ITradeResult.AveragePrice)); // Old property migration
+
+                                TradeResult tradeResult = JsonConvert.DeserializeObject<TradeResult>(json);
+                                if (tradeResult.IsSuccessful && tradeResult.Metadata?.IsTransitional != true)
                                 {
-                                    if (!trades.ContainsKey(tradeDate))
-                                    {
-                                        trades.Add(tradeDate, new List<TradeResult>());
-                                    }
-                                    trades[tradeDate].Add(tradeResult);
+                                    fileTrades.Add(tradeResult);
                                 }
                             }
+                        }
+                        cached = (lastWriteTime, fileTrades);
+                        _tradesCache[tradesLogFilePath] = cached;
+                    }
+
+                    foreach (var tradeResult in cached.Trades)
+                    {
+                        DateTimeOffset tradeDate = tradeResult.SellDate.ToOffset(TimeSpan.FromHours(coreService.Config.TimezoneOffset)).Date;
+                        if (date == null || date == tradeDate)
+                        {
+                            if (!trades.ContainsKey(tradeDate))
+                            {
+                                trades.Add(tradeDate, new List<TradeResult>());
+                            }
+                            trades[tradeDate].Add(tradeResult);
                         }
                     }
                 }
