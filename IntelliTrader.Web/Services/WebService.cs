@@ -33,7 +33,7 @@ namespace IntelliTrader.Web
 #if RELEASE
                 if (!System.Diagnostics.Debugger.IsAttached)
                 {
-                    contentRoot = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "bin");
+                    contentRoot = AppDomain.CurrentDomain.BaseDirectory;
                 }
 #endif
 
