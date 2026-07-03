@@ -37,8 +37,11 @@ namespace IntelliTrader.Rules
 
         public bool CheckConditions(IEnumerable<IRuleCondition> conditions, Dictionary<string, ISignal> signals, double? globalRating, string pair, ITradingPair tradingPair)
         {
-            if (conditions != null)
+            if (conditions != null && conditions.Any())
             {
+                decimal currentPrice = tradingService.GetPrice(pair);
+                decimal currentSpread = tradingService.Exchange.GetPriceSpread(pair);
+
                 foreach (var condition in conditions)
                 {
                     ISignal signal = null;
@@ -47,10 +50,10 @@ namespace IntelliTrader.Rules
                         signal = s;
                     }
 
-                    if (condition.MinPrice != null && (tradingService.GetPrice(pair) < condition.MinPrice) ||
-                        condition.MaxPrice != null && (tradingService.GetPrice(pair) > condition.MaxPrice) ||
-                        condition.MinSpread != null && (tradingService.Exchange.GetPriceSpread(pair) < condition.MinSpread) ||
-                        condition.MaxSpread != null && (tradingService.Exchange.GetPriceSpread(pair) > condition.MaxSpread) ||
+                    if (condition.MinPrice != null && (currentPrice < condition.MinPrice) ||
+                        condition.MaxPrice != null && (currentPrice > condition.MaxPrice) ||
+                        condition.MinSpread != null && (currentSpread < condition.MinSpread) ||
+                        condition.MaxSpread != null && (currentSpread > condition.MaxSpread) ||
                         condition.MinArbitrage != null && tradingService.Exchange.GetArbitrage(pair, tradingService.Config.Market, 
                         condition.ArbitrageMarket != null ? new List<ArbitrageMarket> { condition.ArbitrageMarket.Value } : null, condition.ArbitrageType).Percentage < condition.MinArbitrage ||
                         condition.MaxArbitrage != null && tradingService.Exchange.GetArbitrage(pair, tradingService.Config.Market, 

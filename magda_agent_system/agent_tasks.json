@@ -58,7 +58,7 @@
     },
     {
       "id": "trading-strategy-audit",
-      "status": "todo",
+      "status": "done",
       "area": "trading",
       "risk": "medium",
       "title": "Audit existing trading strategies for potential improvements",
@@ -86,6 +86,138 @@
       ],
       "acceptance": [
         "magda_agent_system/docs/web_enhancements.md exists with a list of proposed features"
+      ]
+    },
+    {
+      "id": "intellitrader-stats-optimization",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Optimize historical balance calculation in Web Dashboard",
+      "description": "Refactor `HomeController.Stats` in `IntelliTrader.Web/` to use an O(N) running total algorithm instead of the current O(N^2) approach for historical balance calculation.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Controllers/HomeController.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "The calculation logic in HomeController.Stats is updated to linear complexity",
+        "Performance improvement verified for large trade logs"
+      ]
+    },
+    {
+      "id": "binance-exchange-implementation",
+      "status": "todo",
+      "area": "exchange",
+      "risk": "medium",
+      "title": "Complete Binance order placement implementation",
+      "description": "Implement `PlaceOrder`, `CancelOrder`, and `GetOrderDetails` in `BinanceExchangeService.cs`. Address TODOs related to mapping internal models to ExchangeSharp models.",
+      "allowed_paths": [
+        "IntelliTrader.Exchange.Binance/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "BinanceExchangeService successfully places real or test orders via ExchangeSharp",
+        "Model mapping between IOrder and ExchangeOrderRequest is complete"
+      ]
+    },
+    {
+      "id": "spread-aware-trailing-logic",
+      "status": "todo",
+      "area": "trading",
+      "risk": "medium",
+      "title": "Implement spread-aware trailing safety checks",
+      "description": "Integrate `TrailingSafetyOptions` into `TradingTimedTask`. Modify trailing logic to pause or stop trailing when market spread exceeds a configurable threshold, preventing losses due to slippage.",
+      "allowed_paths": [
+        "IntelliTrader.Trading/TimedTasks/TradingTimedTask.cs",
+        "IntelliTrader.Trading/Models/TrailingSafetyOptions.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Trailing logic respects MaxTrailingSpread setting",
+        "Tests verify that trailing pauses during high spread events"
+      ]
+    },
+    {
+      "id": "rules-service-refactoring",
+      "status": "todo",
+      "area": "rules",
+      "risk": "low",
+      "title": "Refactor RulesService for better extensibility",
+      "description": "Decompose the monolithic `CheckConditions` method in `RulesService.cs` into smaller, rule-specific evaluator classes (e.g., PriceEvaluator, SignalEvaluator).",
+      "allowed_paths": [
+        "IntelliTrader.Rules/Services/RulesService.cs",
+        "IntelliTrader.Rules/Models/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "RulesService uses a registry of condition evaluators",
+        "Unit tests confirm that existing rule conditions still work correctly"
+      ]
+    },
+    {
+      "id": "trading-task-decomposition",
+      "status": "todo",
+      "area": "trading",
+      "risk": "low",
+      "title": "Decompose TradingTimedTask into specialized processors",
+      "description": "Extract buy, sell, and DCA logic from the large `TradingTimedTask.cs` into separate processors to improve maintainability and testability.",
+      "allowed_paths": [
+        "IntelliTrader.Trading/TimedTasks/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "TradingTimedTask delegates logic to specialized components",
+        "The main loop remains stable and passes existing integration tests"
+      ]
+    },
+    {
+      "id": "magda-mcp-skill-exporter",
+      "status": "todo",
+      "area": "integration",
+      "risk": "medium",
+      "title": "Export Magda skills as MCP-compliant tools",
+      "description": "Inspired by June 2026 AI trends: Implement a module to export existing Magda skills (e.g., search, execute_code) as Model Context Protocol (MCP) tools, enabling interoperability with other agentic systems.",
+      "allowed_paths": [
+        "magda_agent_system/magda_agent/skills/exporter.py",
+        "magda_agent_system/magda_agent/integration/mcp_exporter.py",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Skills can be successfully exported in MCP JSON-RPC format",
+        "Validation script confirms compliance with MCP tool specification"
+      ]
+    },
+    {
+      "id": "trading-rl-feedback-loop",
+      "status": "todo",
+      "area": "learning",
+      "risk": "medium",
+      "title": "Implement Online RL for trading parameter optimization",
+      "description": "Develop an OpenClaw-RL inspired feedback loop that adjusts trading parameters like `BuyTrailing` and `SellMargin` based on the success of completed trades stored in episodic memory.",
+      "allowed_paths": [
+        "magda_agent_system/magda_agent/learning/online_rl_trading.py",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Agent can propose parameter adjustments after trade analysis",
+        "Adjustment history is tracked and evaluated for long-term improvement"
+      ]
+    },
+    {
+      "id": "multi-agent-backtesting-orchestrator",
+      "status": "todo",
+      "area": "agents",
+      "risk": "medium",
+      "title": "Multi-agent strategy backtesting with isolation",
+      "description": "Utilize Claude SDK Agent Teams and git worktree isolation to run parallel backtesting of multiple trading strategies. Each sub-agent operates in its own worktree to avoid configuration conflicts.",
+      "allowed_paths": [
+        "magda_agent_system/magda_agent/agents/team_isolation.py",
+        "magda_agent_system/magda_agent/scheduler/backtest_orchestrator.py",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Parallel backtesting runs in isolated worktrees",
+        "Results are aggregated and compared by the lead evaluator agent"
       ]
     }
   ]
