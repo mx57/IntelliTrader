@@ -95,6 +95,7 @@
 ---
 
 ## ✅ Выполнено
+- [x] trading-strategy-audit: Audit existing trading strategies for potential improvements (2026-06-12)
 - [x] a2a-async-auth-tracing: A2A Enterprise-Ready Async Auth and Tracing
 - [x] a2a-json-rpc-server: A2A JSON-RPC Server Interface
 - [x] acs-runtime-safety-controls-v2: ACS runtime safety controls
@@ -144,6 +145,8 @@
 ---
 
 ## 🔍 Обнаружено (добавляется агентом автоматически)
+* [ ] IMPROVEMENT: In `RulesService.cs`, redundant calls to `tradingService.GetPrice` and `GetPriceSpread` inside the condition loop can be optimized by caching values (Partially addressed).
+* [ ] IMPROVEMENT: Trailing logic in `TradingTimedTask.cs` lacks spread consideration, which can lead to slippage during high volatility.
 * [x] MODULE: **Conflict Detection Memory** — `magda_agent/memory/semantic.py` и `magda_agent/subconsciousness/reflection.py`. Subconsciousness detects when new information contradicts existing semantic memory and flags conflicts for resolution.
 * [x] IMPROVEMENT: Добавить механизм выполнения шагов плана и сбора результатов внутри `Consciousness.process_input`. Сейчас планер интегрирован только для генерации и учета в контексте LLM, но сами функции Skills не вызываются автоматически. (2026-06-03)
 * [x] BUG/IMPROVEMENT: В `Evaluator.evaluate_response` можно добавить логику retry на случай, если LLM возвращает невалидный JSON, вместо того, чтобы сразу падать с ошибкой парсинга. (2026-06-04)
