@@ -187,22 +187,22 @@ namespace IntelliTrader.Backtesting
 
         public override IOrderDetails PlaceOrder(IOrder order)
         {
-            throw new NotImplementedException();
+            throw new InvalidOperationException("Orders should be handled via the virtual account during backtesting.");
         }
 
         public override IEnumerable<ITicker> GetTickers()
         {
-            throw new NotImplementedException();
+            return backtestingService.GetCurrentTickers()?.Values.Cast<ITicker>() ?? Enumerable.Empty<ITicker>();
         }
 
         public override Dictionary<string, decimal> GetAvailableAmounts()
         {
-            throw new NotImplementedException();
+            return new Dictionary<string, decimal>();
         }
 
         public override IEnumerable<IOrderDetails> GetTrades(string pair)
         {
-            throw new NotImplementedException();
+            return new List<IOrderDetails>();
         }
 
         #endregion Not Needed For Backtesting
