@@ -137,6 +137,19 @@ namespace IntelliTrader.Trading
                 {
                     if (pairConfig.SellEnabled)
                     {
+                        var safety = pairConfig.TrailingSafety;
+                        if (safety != null && safety.MaxTrailingSpread > 0 && tradingPair.CurrentSpread > safety.MaxTrailingSpread)
+                        {
+                            if (safety.PauseOnHighSpread && Math.Abs(tradingPair.CurrentMargin - sellTrailingInfo.LastTrailingMargin) < safety.MinPriceChangeWithHighSpread)
+                            {
+                                if (LoggingEnabled)
+                                {
+                                    loggingService.Info($"Trailing sell paused for {tradingPair.FormattedName} due to high spread: {tradingPair.CurrentSpread:0.00}%");
+                                }
+                                continue;
+                            }
+                        }
+
                         if (Math.Round(tradingPair.CurrentMargin, 1) != Math.Round(sellTrailingInfo.LastTrailingMargin, 1))
                         {
                             if (LoggingEnabled)
@@ -242,6 +255,20 @@ namespace IntelliTrader.Trading
 
                 if (pairConfig.BuyEnabled)
                 {
+                    var safety = pairConfig.TrailingSafety;
+                    decimal currentSpread = tradingService.Exchange.GetPriceSpread(pair);
+                    if (safety != null && safety.MaxTrailingSpread > 0 && currentSpread > safety.MaxTrailingSpread)
+                    {
+                        if (safety.PauseOnHighSpread && Math.Abs(currentMargin - buyTrailingInfo.LastTrailingMargin) < safety.MinPriceChangeWithHighSpread)
+                        {
+                            if (LoggingEnabled)
+                            {
+                                loggingService.Info($"Trailing buy paused for {tradingPair?.FormattedName ?? pair} due to high spread: {currentSpread:0.00}%");
+                            }
+                            continue;
+                        }
+                    }
+
                     if (Math.Round(currentMargin, 1) != Math.Round(buyTrailingInfo.LastTrailingMargin, 1))
                     {
                         if (LoggingEnabled)
