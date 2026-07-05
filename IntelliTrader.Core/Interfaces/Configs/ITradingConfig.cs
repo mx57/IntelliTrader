@@ -6,6 +6,8 @@ namespace IntelliTrader.Core
 {
     public interface ITradingConfig : IBuyConfig, IBuyDCAConfig, ISellConfig, ISellDCAConfig
     {
+        new TrailingSafetyOptions TrailingSafety { get; }
+
         bool Enabled { get; }
         string Market { get; }
         string Exchange { get; }

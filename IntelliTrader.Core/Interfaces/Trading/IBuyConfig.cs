@@ -15,5 +15,6 @@ namespace IntelliTrader.Core
         decimal BuyTrailing { get; }
         decimal BuyTrailingStopMargin { get; }
         BuyTrailingStopAction BuyTrailingStopAction { get; }
+        TrailingSafetyOptions TrailingSafety { get; }
     }
 }

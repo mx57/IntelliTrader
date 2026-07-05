@@ -1,6 +1,6 @@
 using System;
 
-namespace IntelliTrader.Trading
+namespace IntelliTrader.Core
 {
     /// <summary>
     /// Options for spread-aware trailing safety checks.

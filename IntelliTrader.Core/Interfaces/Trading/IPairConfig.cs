@@ -6,6 +6,8 @@ namespace IntelliTrader.Core
 {
     public interface IPairConfig : IBuyConfig, ISellConfig
     {
+        new TrailingSafetyOptions TrailingSafety { get; }
+
         IEnumerable<string> Rules { get; }
 
         int MaxPairs { get; }

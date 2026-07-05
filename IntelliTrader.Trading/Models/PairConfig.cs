@@ -32,6 +32,8 @@ namespace IntelliTrader.Trading
         public double SellStopLossMinAge { get; set; }
         public decimal SellStopLossMargin { get; set; }
 
+        public TrailingSafetyOptions TrailingSafety { get; set; }
+
         public bool SwapEnabled { get; set; }
         public List<string> SwapSignalRules { get; set; }
         public int SwapTimeout { get; set; }

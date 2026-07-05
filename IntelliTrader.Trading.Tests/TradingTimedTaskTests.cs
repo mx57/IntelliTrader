@@ -24,6 +24,7 @@ namespace IntelliTrader.Trading.Tests
             _tradingService.Setup(s => s.Exchange).Returns(_exchangeService.Object);
             _tradingService.Setup(s => s.Account).Returns(_account.Object);
             _tradingService.Setup(s => s.Config).Returns(new TradingConfig { Market = "USDT" });
+            _exchangeService.Setup(e => e.GetPriceSpread(It.IsAny<string>())).Returns(0.1m);
         }
 
         [Fact]
@@ -78,6 +79,61 @@ namespace IntelliTrader.Trading.Tests
             task.ProcessTradingPairs();
 
             // Assert
+            _orderingService.Verify(o => o.PlaceBuyOrder(It.IsAny<BuyOptions>()), Times.Once());
+        }
+
+        [Fact]
+        public void TrailingBuy_PausesOnHighSpread()
+        {
+            // Arrange
+            var pair = "BTCUSDT";
+            var buyOptions = new BuyOptions(pair) { MaxCost = 100 };
+            var safety = new TrailingSafetyOptions
+            {
+                MaxTrailingSpread = 0.5m, // 0.5% max spread
+                PauseOnHighSpread = true,
+                MinPriceChangeWithHighSpread = 2.0m // 2% min price change to override pause
+            };
+
+            var pairConfig = new Mock<IPairConfig>();
+            pairConfig.Setup(c => c.BuyTrailing).Returns(1m);
+            pairConfig.Setup(c => c.BuyTrailingStopMargin).Returns(10m);
+            pairConfig.Setup(c => c.BuyEnabled).Returns(true);
+            pairConfig.Setup(c => c.Rules).Returns(new List<string>());
+            pairConfig.Setup(c => c.TrailingSafety).Returns(safety);
+
+            _tradingService.Setup(s => s.GetPairConfig(pair)).Returns(pairConfig.Object);
+
+            var price = 10000m;
+            _tradingService.Setup(s => s.GetPrice(pair, It.IsAny<TradePriceType?>(), It.IsAny<bool>())).Returns(price);
+            _exchangeService.Setup(e => e.GetPriceSpread(pair)).Returns(0.1m); // Low spread initially
+
+            var task = new TradingTimedTask(
+                _loggingService.Object,
+                _notificationService.Object,
+                _healthCheckService.Object,
+                _signalsService.Object,
+                _orderingService.Object,
+                _tradingService.Object);
+
+            // Step 1: Initiate
+            task.InitiateBuy(buyOptions);
+
+            // Step 2: Price goes up to 10150 (currentMargin = +1.5%), but spread is HIGH (1.0%)
+            // It SHOULD trigger (currentMargin 1.5% > Best 0% + Trailing 1%), but it's PAUSED.
+            // Price change (1.5%) is less than MinPriceChangeWithHighSpread (2.0%).
+            price = 10150m;
+            _tradingService.Setup(s => s.GetPrice(pair, It.IsAny<TradePriceType?>(), It.IsAny<bool>())).Returns(price);
+            _exchangeService.Setup(e => e.GetPriceSpread(pair)).Returns(1.0m); // High spread
+
+            task.ProcessTradingPairs();
+
+            _orderingService.Verify(o => o.PlaceBuyOrder(It.IsAny<BuyOptions>()), Times.Never());
+
+            // Step 3: Spread returns to normal, now it should trigger
+            _exchangeService.Setup(e => e.GetPriceSpread(pair)).Returns(0.1m);
+            task.ProcessTradingPairs();
+
             _orderingService.Verify(o => o.PlaceBuyOrder(It.IsAny<BuyOptions>()), Times.Once());
         }
     }
