@@ -42,6 +42,17 @@ namespace IntelliTrader.Exchange.Binance
             return results.Select(MapOrderResult);
         }
 
+        public override IOrderDetails GetOrderDetails(string orderId, string symbol = null)
+        {
+            var result = Api.GetOrderDetails(orderId, symbol);
+            return MapOrderResult(result);
+        }
+
+        public override void CancelOrder(string orderId, string symbol = null)
+        {
+            Api.CancelOrder(orderId, symbol);
+        }
+
         private OrderDetails MapOrderResult(ExchangeOrderResult result)
         {
             return new OrderDetails
@@ -70,11 +81,13 @@ namespace IntelliTrader.Exchange.Binance
                 case ExchangeAPIOrderResult.FilledPartially:
                     return IntelliTrader.Core.OrderResult.FilledPartially;
                 case ExchangeAPIOrderResult.Pending:
+                case ExchangeAPIOrderResult.PendingCancel:
                     return IntelliTrader.Core.OrderResult.Pending;
                 case ExchangeAPIOrderResult.Canceled:
                     return IntelliTrader.Core.OrderResult.Canceled;
                 case ExchangeAPIOrderResult.Error:
                     return IntelliTrader.Core.OrderResult.Error;
+                case ExchangeAPIOrderResult.Unknown:
                 default:
                     return IntelliTrader.Core.OrderResult.Unknown;
             }
