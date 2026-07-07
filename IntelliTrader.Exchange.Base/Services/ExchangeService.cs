@@ -120,9 +120,9 @@ namespace IntelliTrader.Exchange.Base.Services
 
         public abstract IOrderDetails PlaceOrder(IOrder order);
 
-        public abstract IOrderDetails GetOrderDetails(string orderId, string symbol = null);
+        public abstract IOrderDetails GetOrderDetails(string orderId, string pair = null);
 
-        public abstract void CancelOrder(string orderId, string symbol = null);
+        public abstract void CancelOrder(string orderId, string pair = null);
 
         public virtual decimal ClampOrderAmount(string pair, decimal amount)
         {

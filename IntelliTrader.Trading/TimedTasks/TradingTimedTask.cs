@@ -19,6 +19,8 @@ namespace IntelliTrader.Trading
 
         private readonly ConcurrentDictionary<string, BuyTrailingInfo> trailingBuys = new ConcurrentDictionary<string, BuyTrailingInfo>();
         private readonly ConcurrentDictionary<string, SellTrailingInfo> trailingSells = new ConcurrentDictionary<string, SellTrailingInfo>();
+        private readonly List<Processors.ITradingProcessor> processors;
+        private readonly Processors.BuyProcessor buyProcessor;
 
         public TradingTimedTask(ILoggingService loggingService, INotificationService notificationService,
             IHealthCheckService healthCheckService, ISignalsService signalsService, IOrderingService orderingService, ITradingService tradingService)
@@ -29,6 +31,13 @@ namespace IntelliTrader.Trading
             this.signalsService = signalsService;
             this.orderingService = orderingService;
             this.tradingService = tradingService;
+
+            this.processors = new List<Processors.ITradingProcessor>
+            {
+                new Processors.SellProcessor(loggingService, tradingService, orderingService, this),
+                new Processors.DcaProcessor(loggingService, tradingService, this)
+            };
+            this.buyProcessor = new Processors.BuyProcessor(loggingService, tradingService, orderingService, this);
         }
 
         protected override void Run()
@@ -133,112 +142,9 @@ namespace IntelliTrader.Trading
                 tradingPair.Metadata.CurrentRating = tradingPair.Metadata.Signals != null ? signalsService.GetRating(tradingPair.Pair, tradingPair.Metadata.Signals) : null;
                 tradingPair.Metadata.CurrentGlobalRating = signalsService.GetGlobalRating();
 
-                if (trailingSells.TryGetValue(tradingPair.Pair, out SellTrailingInfo sellTrailingInfo))
+                foreach (var processor in processors)
                 {
-                    if (pairConfig.SellEnabled)
-                    {
-                        var safety = pairConfig.TrailingSafety;
-                        if (safety != null && safety.MaxTrailingSpread > 0 && tradingPair.CurrentSpread > safety.MaxTrailingSpread)
-                        {
-                            if (safety.PauseOnHighSpread && Math.Abs(tradingPair.CurrentMargin - sellTrailingInfo.LastTrailingMargin) < safety.MinPriceChangeWithHighSpread)
-                            {
-                                if (LoggingEnabled)
-                                {
-                                    loggingService.Info($"Trailing sell paused for {tradingPair.FormattedName} due to high spread: {tradingPair.CurrentSpread:0.00}%");
-                                }
-                                continue;
-                            }
-                        }
-
-                        if (Math.Round(tradingPair.CurrentMargin, 1) != Math.Round(sellTrailingInfo.LastTrailingMargin, 1))
-                        {
-                            if (LoggingEnabled)
-                            {
-                                loggingService.Info($"Continue trailing sell {tradingPair.FormattedName}. " +
-                                    $"Price: {tradingPair.CurrentPrice:0.00000000}, Margin: {tradingPair.CurrentMargin:0.00}");
-                            }
-                        }
-
-                        if (tradingPair.CurrentMargin <= sellTrailingInfo.TrailingStopMargin || tradingPair.CurrentMargin <
-                            (sellTrailingInfo.BestTrailingMargin - sellTrailingInfo.Trailing))
-                        {
-                            StopTrailingSell(tradingPair.Pair);
-
-                            if (tradingPair.CurrentMargin > 0 || sellTrailingInfo.SellMargin < 0)
-                            {
-                                if (sellTrailingInfo.TrailingStopAction == SellTrailingStopAction.Sell || tradingPair.CurrentMargin > sellTrailingInfo.TrailingStopMargin)
-                                {
-                                    orderingService.PlaceSellOrder(sellTrailingInfo.SellOptions);
-                                }
-                                else
-                                {
-                                    if (LoggingEnabled)
-                                    {
-                                        loggingService.Info($"Stop trailing sell {tradingPair.FormattedName}. Reason: stop margin reached");
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (LoggingEnabled)
-                                {
-                                    loggingService.Info($"Stop trailing sell {tradingPair.FormattedName}. Reason: negative margin");
-                                }
-                            }
-                        }
-                        else
-                        {
-                            sellTrailingInfo.LastTrailingMargin = tradingPair.CurrentMargin;
-                            if (tradingPair.CurrentMargin > sellTrailingInfo.BestTrailingMargin)
-                            {
-                                sellTrailingInfo.BestTrailingMargin = tradingPair.CurrentMargin;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        StopTrailingSell(tradingPair.Pair);
-                    }
-                }
-                else
-                {
-                    if (pairConfig.SellEnabled && tradingPair.CurrentMargin >= pairConfig.SellMargin)
-                    {
-                        InitiateSell(new SellOptions(tradingPair.Pair));
-                    }
-                    else if (pairConfig.SellEnabled && pairConfig.SellStopLossEnabled &&
-                        tradingPair.CurrentMargin <= pairConfig.SellStopLossMargin &&
-                        tradingPair.CurrentAge >= pairConfig.SellStopLossMinAge &&
-                        (pairConfig.NextDCAMargin == null || !pairConfig.SellStopLossAfterDCA))
-                    {
-                        if (LoggingEnabled)
-                        {
-                            loggingService.Info($"Stop loss triggered for {tradingPair.FormattedName}. Margin: {tradingPair.CurrentMargin:0.00}");
-                        }
-                        orderingService.PlaceSellOrder(new SellOptions(tradingPair.Pair));
-                    }
-                    else if (pairConfig.NextDCAMargin != null && pairConfig.BuyEnabled && pairConfig.NextDCAMargin != null &&
-                        !trailingBuys.ContainsKey(tradingPair.Pair) && !trailingSells.ContainsKey(tradingPair.Pair))
-                    {
-                        if (tradingPair.CurrentMargin <= pairConfig.NextDCAMargin)
-                        {
-                            var buyOptions = new BuyOptions(tradingPair.Pair)
-                            {
-                                MaxCost = tradingPair.Cost * pairConfig.BuyMultiplier,
-                                IgnoreExisting = true
-                            };
-
-                            if (tradingService.CanBuy(buyOptions, message: out string message))
-                            {
-                                if (LoggingEnabled)
-                                {
-                                    loggingService.Info($"DCA triggered for {tradingPair.FormattedName}. Margin: {tradingPair.CurrentMargin:0.00}, " +
-                                        $"Level: {pairConfig.NextDCAMargin:0.00}, Multiplier: {pairConfig.BuyMultiplier}");
-                                }
-                                InitiateBuy(buyOptions);
-                            }
-                        }
-                    }
+                    processor.Process(tradingPair, pairConfig, trailingBuys, trailingSells);
                 }
 
                 traidingPairsCount++;
@@ -246,66 +152,7 @@ namespace IntelliTrader.Trading
 
             foreach (var kvp in trailingBuys)
             {
-                string pair = kvp.Key;
-                BuyTrailingInfo buyTrailingInfo = kvp.Value;
-                ITradingPair tradingPair = tradingService.Account.GetTradingPair(pair);
-                IPairConfig pairConfig = tradingService.GetPairConfig(pair);
-                decimal currentPrice = tradingService.GetPrice(pair);
-                decimal currentMargin = Utils.CalculatePercentage(buyTrailingInfo.InitialPrice, currentPrice);
-
-                if (pairConfig.BuyEnabled)
-                {
-                    var safety = pairConfig.TrailingSafety;
-                    decimal currentSpread = tradingService.Exchange.GetPriceSpread(pair);
-                    if (safety != null && safety.MaxTrailingSpread > 0 && currentSpread > safety.MaxTrailingSpread)
-                    {
-                        if (safety.PauseOnHighSpread && Math.Abs(currentMargin - buyTrailingInfo.LastTrailingMargin) < safety.MinPriceChangeWithHighSpread)
-                        {
-                            if (LoggingEnabled)
-                            {
-                                loggingService.Info($"Trailing buy paused for {tradingPair?.FormattedName ?? pair} due to high spread: {currentSpread:0.00}%");
-                            }
-                            continue;
-                        }
-                    }
-
-                    if (Math.Round(currentMargin, 1) != Math.Round(buyTrailingInfo.LastTrailingMargin, 1))
-                    {
-                        if (LoggingEnabled)
-                        {
-                            loggingService.Info($"Continue trailing buy {tradingPair?.FormattedName ?? pair}. Price: {currentPrice:0.00000000}, Margin: {currentMargin:0.00}");
-                        }
-                    }
-
-                    if (currentMargin >= buyTrailingInfo.TrailingStopMargin || currentMargin > (buyTrailingInfo.BestTrailingMargin + buyTrailingInfo.Trailing))
-                    {
-                        StopTrailingBuy(pair);
-
-                        if (buyTrailingInfo.TrailingStopAction == BuyTrailingStopAction.Buy || currentMargin < buyTrailingInfo.TrailingStopMargin)
-                        {
-                            orderingService.PlaceBuyOrder(buyTrailingInfo.BuyOptions);
-                        }
-                        else
-                        {
-                            if (LoggingEnabled)
-                            {
-                                loggingService.Info($"Stop trailing buy {tradingPair?.FormattedName ?? pair}. Reason: stop margin reached");
-                            }
-                        }
-                    }
-                    else
-                    {
-                        buyTrailingInfo.LastTrailingMargin = currentMargin;
-                        if (currentMargin < buyTrailingInfo.BestTrailingMargin)
-                        {
-                            buyTrailingInfo.BestTrailingMargin = currentMargin;
-                        }
-                    }
-                }
-                else
-                {
-                    StopTrailingBuy(pair);
-                }
+                buyProcessor.Process(kvp.Key, kvp.Value, trailingBuys);
             }
 
             healthCheckService.UpdateHealthCheck(Constants.HealthChecks.TradingPairsProcessed,

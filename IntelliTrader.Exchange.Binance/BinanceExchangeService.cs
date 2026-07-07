@@ -32,6 +32,14 @@ namespace IntelliTrader.Exchange.Binance
                 OrderType = order.Type == IntelliTrader.Core.OrderType.Limit ? ExchangeSharp.OrderType.Limit : ExchangeSharp.OrderType.Market
             };
 
+            if (order.StopPrice.HasValue && order.StopPrice.Value > 0)
+            {
+                request.ExtraParameters["stopPrice"] = order.StopPrice.Value;
+                // If StopPrice is present, Binance usually expects STOP_LOSS_LIMIT or TAKE_PROFIT_LIMIT
+                // We'll default to STOP_LOSS_LIMIT if not specified, but this depends on how IntelliTrader identifies these
+                request.ExtraParameters["type"] = order.Side == IntelliTrader.Core.OrderSide.Buy ? "TAKE_PROFIT_LIMIT" : "STOP_LOSS_LIMIT";
+            }
+
             var result = Api.PlaceOrder(request);
             return MapOrderResult(result);
         }
@@ -42,15 +50,15 @@ namespace IntelliTrader.Exchange.Binance
             return results.Select(MapOrderResult);
         }
 
-        public override IOrderDetails GetOrderDetails(string orderId, string symbol = null)
+        public override IOrderDetails GetOrderDetails(string orderId, string pair = null)
         {
-            var result = Api.GetOrderDetails(orderId, symbol);
+            var result = Api.GetOrderDetails(orderId, pair);
             return MapOrderResult(result);
         }
 
-        public override void CancelOrder(string orderId, string symbol = null)
+        public override void CancelOrder(string orderId, string pair = null)
         {
-            Api.CancelOrder(orderId, symbol);
+            Api.CancelOrder(orderId, pair);
         }
 
         private OrderDetails MapOrderResult(ExchangeOrderResult result)

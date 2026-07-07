@@ -219,6 +219,8 @@ function format(data) {
     details.find("#orderDates").text(data.OrderDates.join(", "));
     details.find("#orderIds").text(data.OrderIds.join(", "));
     details.find("#lastBuyMargin").text(data.LastBuyMargin);
+    details.find("#boughtPrice").text(data.BoughtPrice);
+    details.find("#boughtRating").text(data.BoughtRating);
     return details.html();
 }
 
