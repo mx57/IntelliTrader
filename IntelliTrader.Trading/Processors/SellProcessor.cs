@@ -21,6 +21,20 @@ namespace IntelliTrader.Trading.Processors
 
         public void Process(ITradingPair tradingPair, IPairConfig pairConfig, ConcurrentDictionary<string, BuyTrailingInfo> trailingBuys, ConcurrentDictionary<string, SellTrailingInfo> trailingSells)
         {
+            // Strategy: Max Age Exit
+            // If the position is older than the configured MaxAge, trigger an immediate emergency sell.
+            if (pairConfig.SellEnabled && pairConfig.MaxAge.HasValue && tradingPair.CurrentAge >= pairConfig.MaxAge.Value)
+            {
+                if (task.LoggingEnabled)
+                {
+                    loggingService.Info($"Max age exit triggered for {tradingPair.FormattedName}. Age: {tradingPair.CurrentAge:0.00}, Max: {pairConfig.MaxAge.Value:0.00}");
+                }
+                task.StopTrailingSell(tradingPair.Pair);
+                // Use PlaceSellOrder directly to bypass trailing and ensure immediate exit for stale positions.
+                orderingService.PlaceSellOrder(new SellOptions(tradingPair.Pair));
+                return;
+            }
+
             if (trailingSells.TryGetValue(tradingPair.Pair, out SellTrailingInfo sellTrailingInfo))
             {
                 if (pairConfig.SellEnabled)
@@ -90,8 +104,18 @@ namespace IntelliTrader.Trading.Processors
             }
             else
             {
-                if (pairConfig.SellEnabled && tradingPair.CurrentMargin >= pairConfig.SellMargin)
+                // Strategy: Dynamic Target Decay
+                // Gradually decrease the target sell margin as the position ages to facilitate exiting stale positions.
+                // Formula: effectiveSellMargin = baseSellMargin - (ageInDays * decayPerDay)
+                decimal effectiveSellMargin = pairConfig.SellMargin - (decimal)(tradingPair.CurrentAge * (double)pairConfig.SellMarginDecay);
+
+                if (pairConfig.SellEnabled && tradingPair.CurrentMargin >= effectiveSellMargin)
                 {
+                    if (task.LoggingEnabled && effectiveSellMargin != pairConfig.SellMargin)
+                    {
+                        loggingService.Info($"Target decay triggered sell for {tradingPair.FormattedName}. " +
+                            $"Margin: {tradingPair.CurrentMargin:0.00}, Target: {pairConfig.SellMargin:0.00}, Effective: {effectiveSellMargin:0.00}");
+                    }
                     task.InitiateSell(new SellOptions(tradingPair.Pair));
                 }
                 else if (pairConfig.SellEnabled && pairConfig.SellStopLossEnabled &&

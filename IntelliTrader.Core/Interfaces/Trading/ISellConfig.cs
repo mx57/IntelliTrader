@@ -16,6 +16,8 @@ namespace IntelliTrader.Core
         bool SellStopLossAfterDCA { get; }
         double SellStopLossMinAge { get; }
         decimal SellStopLossMargin { get; }
+        double? MaxAge { get; }
+        decimal SellMarginDecay { get; }
         TrailingSafetyOptions TrailingSafety { get; }
     }
 }

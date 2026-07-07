@@ -43,6 +43,8 @@ namespace IntelliTrader.Trading
         public bool SellStopLossAfterDCA { get; set; }
         public double SellStopLossMinAge { get; set; }
         public decimal SellStopLossMargin { get; set; }
+        public double? MaxAge { get; set; }
+        public decimal SellMarginDecay { get; set; }
 
         public TrailingSafetyOptions TrailingSafety { get; set; }
 
@@ -105,6 +107,8 @@ namespace IntelliTrader.Trading
                 SellStopLossAfterDCA = SellStopLossAfterDCA,
                 SellStopLossMinAge = SellStopLossMinAge,
                 SellStopLossMargin = SellStopLossMargin,
+                MaxAge = MaxAge,
+                SellMarginDecay = SellMarginDecay,
 
                 TrailingSafety = TrailingSafety,
 
