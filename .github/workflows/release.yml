@@ -25,11 +25,15 @@ jobs:
       run: |
         dotnet publish IntelliTrader/IntelliTrader.csproj -c Release -r win-x64 --self-contained true -o ./publish/win
         dotnet publish IntelliTrader.Web/IntelliTrader.Web.csproj -c Release -r win-x64 --self-contained true -o ./publish/win
+        cp -r IntelliTrader/config ./publish/win/
+        cp -r IntelliTrader.Web/Static ./publish/win/
 
     - name: Build and Publish Linux
       run: |
         dotnet publish IntelliTrader/IntelliTrader.csproj -c Release -r linux-x64 --self-contained true -o ./publish/linux
         dotnet publish IntelliTrader.Web/IntelliTrader.Web.csproj -c Release -r linux-x64 --self-contained true -o ./publish/linux
+        cp -r IntelliTrader/config ./publish/linux/
+        cp -r IntelliTrader.Web/Static ./publish/linux/
 
     - name: Zip Artifacts
       run: |

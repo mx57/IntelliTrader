@@ -33,6 +33,8 @@ namespace IntelliTrader.Trading
         public decimal SellStopLossMargin { get; set; }
         public decimal? SellMarginDecay { get; set; }
         public double? SellMarginDecayInterval { get; set; }
+        public double? MaxAge { get; set; }
+        public decimal? TrailingVolatilityWeight { get; set; }
 
         public TrailingSafetyOptions TrailingSafety { get; set; }
 

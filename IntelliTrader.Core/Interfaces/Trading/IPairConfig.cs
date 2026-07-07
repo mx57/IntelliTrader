@@ -7,6 +7,7 @@ namespace IntelliTrader.Core
     public interface IPairConfig : IBuyConfig, ISellConfig
     {
         new TrailingSafetyOptions TrailingSafety { get; }
+        new decimal? TrailingVolatilityWeight { get; }
 
         IEnumerable<string> Rules { get; }
 

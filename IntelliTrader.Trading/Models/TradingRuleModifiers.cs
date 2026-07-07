@@ -17,6 +17,7 @@ namespace IntelliTrader.Trading
         public decimal? BuyTrailing { get; set; }
         public decimal? BuyTrailingStopMargin { get; set; }
         public BuyTrailingStopAction? BuyTrailingStopAction { get; set; }
+        public decimal? TrailingVolatilityWeight { get; set; }
 
         public bool? BuyDCAEnabled { get; set; }
         public decimal? BuyDCAMultiplier { get; set; }
@@ -37,6 +38,7 @@ namespace IntelliTrader.Trading
         public decimal? SellStopLossMargin { get; set; }
         public decimal? SellMarginDecay { get; set; }
         public double? SellMarginDecayInterval { get; set; }
+        public double? MaxAge { get; set; }
 
         public decimal? SellDCAMargin { get; set; }
         public decimal? SellDCATrailing { get; set; }
@@ -56,5 +58,6 @@ namespace IntelliTrader.Trading
         public decimal? ArbitrageBuyMultiplier { get; set; }
         public decimal? ArbitrageSellMultiplier { get; set; }
         public List<String> ArbitrageSignalRules { get; set; }
+        public decimal? GlobalRatingCostWeight { get; set; }
     }
 }

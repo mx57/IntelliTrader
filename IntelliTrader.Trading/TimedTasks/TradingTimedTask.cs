@@ -34,10 +34,10 @@ namespace IntelliTrader.Trading
 
             this.processors = new List<Processors.ITradingProcessor>
             {
-                new Processors.SellProcessor(loggingService, tradingService, orderingService, this),
+                new Processors.SellProcessor(loggingService, tradingService, orderingService, signalsService, this),
                 new Processors.DcaProcessor(loggingService, tradingService, this)
             };
-            this.buyProcessor = new Processors.BuyProcessor(loggingService, tradingService, orderingService, this);
+            this.buyProcessor = new Processors.BuyProcessor(loggingService, tradingService, orderingService, signalsService, this);
         }
 
         protected override void Run()

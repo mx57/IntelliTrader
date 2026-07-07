@@ -82,6 +82,7 @@ namespace IntelliTrader.Trading
                                 modifiedTradingConfig.BuyTrailing = modifiers.BuyTrailing ?? modifiedTradingConfig.BuyTrailing;
                                 modifiedTradingConfig.BuyTrailingStopMargin = modifiers.BuyTrailingStopMargin ?? modifiedTradingConfig.BuyTrailingStopMargin;
                                 modifiedTradingConfig.BuyTrailingStopAction = modifiers.BuyTrailingStopAction ?? modifiedTradingConfig.BuyTrailingStopAction;
+                                modifiedTradingConfig.TrailingVolatilityWeight = modifiers.TrailingVolatilityWeight ?? modifiedTradingConfig.TrailingVolatilityWeight;
 
                                 modifiedTradingConfig.BuyDCAEnabled = modifiers.BuyDCAEnabled ?? modifiedTradingConfig.BuyDCAEnabled;
                                 modifiedTradingConfig.BuyDCAMultiplier = modifiers.BuyDCAMultiplier ?? modifiedTradingConfig.BuyDCAMultiplier;
@@ -102,6 +103,7 @@ namespace IntelliTrader.Trading
                                 modifiedTradingConfig.SellStopLossMargin = modifiers.SellStopLossMargin ?? modifiedTradingConfig.SellStopLossMargin;
                                 modifiedTradingConfig.SellMarginDecay = modifiers.SellMarginDecay ?? modifiedTradingConfig.SellMarginDecay;
                                 modifiedTradingConfig.SellMarginDecayInterval = modifiers.SellMarginDecayInterval ?? modifiedTradingConfig.SellMarginDecayInterval;
+                                modifiedTradingConfig.MaxAge = modifiers.MaxAge ?? modifiedTradingConfig.MaxAge;
 
                                 modifiedTradingConfig.SellDCAMargin = modifiers.SellDCAMargin ?? modifiedTradingConfig.SellDCAMargin;
                                 modifiedTradingConfig.SellDCATrailing = modifiers.SellDCATrailing ?? modifiedTradingConfig.SellDCATrailing;
@@ -110,6 +112,7 @@ namespace IntelliTrader.Trading
 
                                 modifiedTradingConfig.RepeatLastDCALevel = modifiers.RepeatLastDCALevel ?? modifiedTradingConfig.RepeatLastDCALevel;
                                 modifiedTradingConfig.DCALevels = modifiers.DCALevels ?? modifiedTradingConfig.DCALevels;
+                                 modifiedTradingConfig.GlobalRatingCostWeight = modifiers.GlobalRatingCostWeight ?? modifiedTradingConfig.GlobalRatingCostWeight;
 
                                 // Base Pair Config
                                 modifiedPairConfig.SwapEnabled = modifiers.SwapEnabled ?? modifiedPairConfig.SwapEnabled;
@@ -166,6 +169,7 @@ namespace IntelliTrader.Trading
                 BuyTrailing = tradingPair == null ? modifiedTradingConfig.BuyTrailing : nextDCALevel?.BuyTrailing ?? modifiedTradingConfig.BuyDCATrailing,
                 BuyTrailingStopMargin = tradingPair == null ? modifiedTradingConfig.BuyTrailingStopMargin : nextDCALevel?.BuyTrailingStopMargin ?? modifiedTradingConfig.BuyDCATrailingStopMargin,
                 BuyTrailingStopAction = tradingPair == null ? modifiedTradingConfig.BuyTrailingStopAction : nextDCALevel?.BuyTrailingStopAction ?? modifiedTradingConfig.BuyDCATrailingStopAction,
+                TrailingVolatilityWeight = modifiedTradingConfig.TrailingVolatilityWeight,
 
                 SellEnabled = modifiedTradingConfig.SellEnabled,
                 SellType = modifiedTradingConfig.SellType,
@@ -179,6 +183,7 @@ namespace IntelliTrader.Trading
                 SellStopLossMargin = modifiedTradingConfig.SellStopLossMargin,
                 SellMarginDecay = modifiedTradingConfig.SellMarginDecay,
                 SellMarginDecayInterval = modifiedTradingConfig.SellMarginDecayInterval / Application.Speed,
+                MaxAge = modifiedTradingConfig.MaxAge / Application.Speed,
 
                 SwapEnabled = modifiedPairConfig.SwapEnabled,
                 SwapSignalRules = modifiedPairConfig.SwapSignalRules,

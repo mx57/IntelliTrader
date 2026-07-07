@@ -1,6 +1,7 @@
 using IntelliTrader.Core;
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 
 namespace IntelliTrader.Trading.Processors
 {
@@ -9,13 +10,15 @@ namespace IntelliTrader.Trading.Processors
         private readonly ILoggingService loggingService;
         private readonly ITradingService tradingService;
         private readonly IOrderingService orderingService;
+        private readonly ISignalsService signalsService;
         private readonly TradingTimedTask task;
 
-        public BuyProcessor(ILoggingService loggingService, ITradingService tradingService, IOrderingService orderingService, TradingTimedTask task)
+        public BuyProcessor(ILoggingService loggingService, ITradingService tradingService, IOrderingService orderingService, ISignalsService signalsService, TradingTimedTask task)
         {
             this.loggingService = loggingService;
             this.tradingService = tradingService;
             this.orderingService = orderingService;
+            this.signalsService = signalsService;
             this.task = task;
         }
 
@@ -50,7 +53,17 @@ namespace IntelliTrader.Trading.Processors
                     }
                 }
 
-                if (currentMargin >= buyTrailingInfo.TrailingStopMargin || currentMargin > (buyTrailingInfo.BestTrailingMargin + buyTrailingInfo.Trailing))
+                decimal effectiveTrailing = buyTrailingInfo.Trailing;
+                if (pairConfig.TrailingVolatilityWeight.HasValue && pairConfig.TrailingVolatilityWeight.Value > 0)
+                {
+                    double? volatility = signalsService.GetSignalsByPair(pair)?.FirstOrDefault()?.Volatility;
+                    if (volatility.HasValue)
+                    {
+                        effectiveTrailing *= (1 + (decimal)volatility.Value * pairConfig.TrailingVolatilityWeight.Value);
+                    }
+                }
+
+                if (currentMargin >= buyTrailingInfo.TrailingStopMargin || currentMargin > (buyTrailingInfo.BestTrailingMargin + effectiveTrailing))
                 {
                     task.StopTrailingBuy(pair);
 

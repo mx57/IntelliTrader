@@ -18,6 +18,8 @@ namespace IntelliTrader.Core
         decimal SellStopLossMargin { get; }
         decimal? SellMarginDecay { get; }
         double? SellMarginDecayInterval { get; }
+        double? MaxAge { get; }
+        decimal? TrailingVolatilityWeight { get; }
         TrailingSafetyOptions TrailingSafety { get; }
     }
 }

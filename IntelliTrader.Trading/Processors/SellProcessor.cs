@@ -1,6 +1,7 @@
 using IntelliTrader.Core;
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 
 namespace IntelliTrader.Trading.Processors
 {
@@ -9,13 +10,15 @@ namespace IntelliTrader.Trading.Processors
         private readonly ILoggingService loggingService;
         private readonly ITradingService tradingService;
         private readonly IOrderingService orderingService;
+        private readonly ISignalsService signalsService;
         private readonly TradingTimedTask task;
 
-        public SellProcessor(ILoggingService loggingService, ITradingService tradingService, IOrderingService orderingService, TradingTimedTask task)
+        public SellProcessor(ILoggingService loggingService, ITradingService tradingService, IOrderingService orderingService, ISignalsService signalsService, TradingTimedTask task)
         {
             this.loggingService = loggingService;
             this.tradingService = tradingService;
             this.orderingService = orderingService;
+            this.signalsService = signalsService;
             this.task = task;
         }
 
@@ -47,8 +50,18 @@ namespace IntelliTrader.Trading.Processors
                         }
                     }
 
+                    decimal effectiveTrailing = sellTrailingInfo.Trailing;
+                    if (pairConfig.TrailingVolatilityWeight.HasValue && pairConfig.TrailingVolatilityWeight.Value > 0)
+                    {
+                        double? volatility = signalsService.GetSignalsByPair(tradingPair.Pair)?.FirstOrDefault()?.Volatility;
+                        if (volatility.HasValue)
+                        {
+                            effectiveTrailing *= (1 + (decimal)volatility.Value * pairConfig.TrailingVolatilityWeight.Value);
+                        }
+                    }
+
                     if (tradingPair.CurrentMargin <= sellTrailingInfo.TrailingStopMargin || tradingPair.CurrentMargin <
-                        (sellTrailingInfo.BestTrailingMargin - sellTrailingInfo.Trailing))
+                        (sellTrailingInfo.BestTrailingMargin - effectiveTrailing))
                     {
                         task.StopTrailingSell(tradingPair.Pair);
 
@@ -108,7 +121,16 @@ namespace IntelliTrader.Trading.Processors
                 {
                     if (task.LoggingEnabled)
                     {
-                        loggingService.Info($"Stop loss triggered for {tradingPair.FormattedName}. Margin: {tradingPair.CurrentMargin:0.00}");
+                        loggingService.Info($"Stop loss triggered for {tradingPair.FormattedName} (Age: {tradingPair.CurrentAge:0.00}). Margin: {tradingPair.CurrentMargin:0.00}");
+                    }
+                    orderingService.PlaceSellOrder(new SellOptions(tradingPair.Pair));
+                }
+                else if (pairConfig.SellEnabled && pairConfig.MaxAge.HasValue && pairConfig.MaxAge.Value > 0 &&
+                    tradingPair.CurrentAge >= pairConfig.MaxAge.Value)
+                {
+                    if (task.LoggingEnabled)
+                    {
+                        loggingService.Info($"Max age exit triggered for {tradingPair.FormattedName}. Age: {tradingPair.CurrentAge:0.00}, Max Age: {pairConfig.MaxAge:0.00}, Margin: {tradingPair.CurrentMargin:0.00}");
                     }
                     orderingService.PlaceSellOrder(new SellOptions(tradingPair.Pair));
                 }

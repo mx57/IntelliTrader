@@ -7,6 +7,7 @@ namespace IntelliTrader.Core
     public interface ITradingConfig : IBuyConfig, IBuyDCAConfig, ISellConfig, ISellDCAConfig
     {
         new TrailingSafetyOptions TrailingSafety { get; }
+        new decimal? TrailingVolatilityWeight { get; }
 
         bool Enabled { get; }
         string Market { get; }
@@ -29,6 +30,7 @@ namespace IntelliTrader.Core
         decimal VirtualTradingFees { get; }
         decimal VirtualAccountInitialBalance { get; }
         string VirtualAccountFilePath { get; }
+        decimal? GlobalRatingCostWeight { get; }
 
         ITradingConfig Clone();
 

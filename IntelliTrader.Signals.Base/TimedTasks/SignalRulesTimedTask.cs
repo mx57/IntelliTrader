@@ -199,9 +199,23 @@ namespace IntelliTrader.Signals.Base
                 loggingService.Info($"Initiate buy request for {pair}. Rule: {rule.Name}");
             }
 
+            decimal maxCost = pairConfig.BuyMaxCost * pairConfig.BuyMultiplier * (ruleModifiers?.CostMultiplier ?? 1);
+
+            var tradingConfig = tradingService.Config;
+            if (tradingConfig.GlobalRatingCostWeight.HasValue && tradingConfig.GlobalRatingCostWeight.Value > 0)
+            {
+                double? globalRating = signalsService.GetGlobalRating();
+                if (globalRating.HasValue)
+                {
+                    // Global Rating typically ranges from -1 to 1. We'll map it to a multiplier.
+                    // multiplier = (1 + GlobalRating * Weight)
+                    maxCost *= (decimal)(1 + globalRating.Value * (double)tradingConfig.GlobalRatingCostWeight.Value);
+                }
+            }
+
             var buyOptions = new BuyOptions(pair)
             {
-                MaxCost = pairConfig.BuyMaxCost * pairConfig.BuyMultiplier * (ruleModifiers?.CostMultiplier ?? 1),
+                MaxCost = maxCost,
                 Metadata = new OrderMetadata
                 {
                     SignalRule = rule.Name,

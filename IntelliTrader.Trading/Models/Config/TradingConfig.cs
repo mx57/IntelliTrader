@@ -24,6 +24,7 @@ namespace IntelliTrader.Trading
         public decimal BuyTrailing { get; set; }
         public decimal BuyTrailingStopMargin { get; set; }
         public BuyTrailingStopAction BuyTrailingStopAction { get; set; }
+        public decimal? TrailingVolatilityWeight { get; set; }
 
         public bool BuyDCAEnabled { get; set; }
         public decimal BuyDCAMultiplier { get; set; }
@@ -45,6 +46,10 @@ namespace IntelliTrader.Trading
         public decimal SellStopLossMargin { get; set; }
         public decimal? SellMarginDecay { get; set; }
         public double? SellMarginDecayInterval { get; set; }
+        public double? MaxAge { get; set; }
+        // For ITradingConfig, we only have one TrailingVolatilityWeight as it's often shared,
+        // but ISellConfig expects its own.
+        // Actually IBuyConfig and ISellConfig both have it. We'll use the same for both in base config.
 
         public TrailingSafetyOptions TrailingSafety { get; set; }
 
@@ -66,6 +71,7 @@ namespace IntelliTrader.Trading
         public decimal VirtualTradingFees { get; set; }
         public decimal VirtualAccountInitialBalance { get; set; }
         public string VirtualAccountFilePath { get; set; }
+        public decimal? GlobalRatingCostWeight { get; set; }
 
         public ITradingConfig Clone()
         {
@@ -88,6 +94,7 @@ namespace IntelliTrader.Trading
                 BuyTrailing = BuyTrailing,
                 BuyTrailingStopMargin = BuyTrailingStopMargin,
                 BuyTrailingStopAction = BuyTrailingStopAction,
+                TrailingVolatilityWeight = TrailingVolatilityWeight,
 
                 BuyDCAEnabled = BuyDCAEnabled,
                 BuyDCAMultiplier = BuyDCAMultiplier,
@@ -109,6 +116,7 @@ namespace IntelliTrader.Trading
                 SellStopLossMargin = SellStopLossMargin,
                 SellMarginDecay = SellMarginDecay,
                 SellMarginDecayInterval = SellMarginDecayInterval,
+                MaxAge = MaxAge,
 
                 TrailingSafety = TrailingSafety,
 
@@ -129,7 +137,8 @@ namespace IntelliTrader.Trading
                 VirtualTrading = VirtualTrading,
                 VirtualTradingFees = VirtualTradingFees,
                 VirtualAccountInitialBalance = VirtualAccountInitialBalance,
-                VirtualAccountFilePath = VirtualAccountFilePath
+                VirtualAccountFilePath = VirtualAccountFilePath,
+                GlobalRatingCostWeight = GlobalRatingCostWeight
             };
         }
     }
