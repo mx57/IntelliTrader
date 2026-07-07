@@ -12,5 +12,6 @@ namespace IntelliTrader.Core
         string Pair { get; }
         decimal Amount { get; }
         decimal Price { get; }
+        decimal? StopPrice { get; }
     }
 }

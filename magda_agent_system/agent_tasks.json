@@ -139,7 +139,7 @@
     },
     {
       "id": "rules-service-refactoring",
-      "status": "todo",
+      "status": "done",
       "area": "rules",
       "risk": "low",
       "title": "Refactor RulesService for better extensibility",
@@ -156,7 +156,7 @@
     },
     {
       "id": "trading-task-decomposition",
-      "status": "todo",
+      "status": "done",
       "area": "trading",
       "risk": "low",
       "title": "Decompose TradingTimedTask into specialized processors",

@@ -190,12 +190,12 @@ namespace IntelliTrader.Backtesting
             throw new InvalidOperationException("Orders should be handled via the virtual account during backtesting.");
         }
 
-        public override IOrderDetails GetOrderDetails(string orderId, string symbol = null)
+        public override IOrderDetails GetOrderDetails(string orderId, string pair = null)
         {
             throw new InvalidOperationException("Orders should be handled via the virtual account during backtesting.");
         }
 
-        public override void CancelOrder(string orderId, string symbol = null)
+        public override void CancelOrder(string orderId, string pair = null)
         {
             throw new InvalidOperationException("Orders should be handled via the virtual account during backtesting.");
         }

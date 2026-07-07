@@ -15,11 +15,25 @@ namespace IntelliTrader.Rules
         private readonly ILoggingService loggingService;
         private readonly ITradingService tradingService;
         private readonly List<Action> rulesChangeCallbacks = new List<Action>();
+        private readonly List<IConditionEvaluator> evaluators;
 
         public RulesService(ILoggingService loggingService, ITradingService tradingService)
         {
             this.loggingService = loggingService;
             this.tradingService = tradingService;
+            this.evaluators = new List<IConditionEvaluator>
+            {
+                new PriceSpreadEvaluator(),
+                new ArbitrageEvaluator(tradingService),
+                new SignalEvaluator(),
+                new RatingEvaluator(),
+                new PairEvaluator(),
+                new AgeEvaluator(),
+                new MarginEvaluator(),
+                new AmountCostEvaluator(),
+                new DCALevelEvaluator(),
+                new SignalRuleEvaluator()
+            };
         }
 
         public IModuleRules GetRules(string module)
@@ -44,56 +58,12 @@ namespace IntelliTrader.Rules
 
                 foreach (var condition in conditions)
                 {
-                    ISignal signal = null;
-                    if (condition.Signal != null && signals.TryGetValue(condition.Signal, out ISignal s))
+                    foreach (var evaluator in evaluators)
                     {
-                        signal = s;
-                    }
-
-                    if (condition.MinPrice != null && (currentPrice < condition.MinPrice) ||
-                        condition.MaxPrice != null && (currentPrice > condition.MaxPrice) ||
-                        condition.MinSpread != null && (currentSpread < condition.MinSpread) ||
-                        condition.MaxSpread != null && (currentSpread > condition.MaxSpread) ||
-                        condition.MinArbitrage != null && tradingService.Exchange.GetArbitrage(pair, tradingService.Config.Market, 
-                        condition.ArbitrageMarket != null ? new List<ArbitrageMarket> { condition.ArbitrageMarket.Value } : null, condition.ArbitrageType).Percentage < condition.MinArbitrage ||
-                        condition.MaxArbitrage != null && tradingService.Exchange.GetArbitrage(pair, tradingService.Config.Market, 
-                        condition.ArbitrageMarket != null ? new List<ArbitrageMarket> { condition.ArbitrageMarket.Value } : null, condition.ArbitrageType).Percentage > condition.MaxArbitrage ||
-
-                        condition.MinVolume != null && (signal == null || signal.Volume == null || signal.Volume < condition.MinVolume) ||
-                        condition.MaxVolume != null && (signal == null || signal.Volume == null || signal.Volume > condition.MaxVolume) ||
-                        condition.MinVolumeChange != null && (signal == null || signal.VolumeChange == null || signal.VolumeChange < condition.MinVolumeChange) ||
-                        condition.MaxVolumeChange != null && (signal == null || signal.VolumeChange == null || signal.VolumeChange > condition.MaxVolumeChange) ||
-                        condition.MinPriceChange != null && (signal == null || signal.PriceChange == null || signal.PriceChange < condition.MinPriceChange) ||
-                        condition.MaxPriceChange != null && (signal == null || signal.PriceChange == null || signal.PriceChange > condition.MaxPriceChange) ||
-                        condition.MinRating != null && (signal == null || signal.Rating == null || signal.Rating < condition.MinRating) ||
-                        condition.MaxRating != null && (signal == null || signal.Rating == null || signal.Rating > condition.MaxRating) ||
-                        condition.MinRatingChange != null && (signal == null || signal.RatingChange == null || signal.RatingChange < condition.MinRatingChange) ||
-                        condition.MaxRatingChange != null && (signal == null || signal.RatingChange == null || signal.RatingChange > condition.MaxRatingChange) ||
-                        condition.MinVolatility != null && (signal == null || signal.Volatility == null || signal.Volatility < condition.MinVolatility) ||
-                        condition.MaxVolatility != null && (signal == null || signal.Volatility == null || signal.Volatility > condition.MaxVolatility) ||
-                        condition.MinGlobalRating != null && (globalRating == null || globalRating < condition.MinGlobalRating) ||
-                        condition.MaxGlobalRating != null && (globalRating == null || globalRating > condition.MaxGlobalRating) ||
-                        condition.Pairs != null && (pair == null || !condition.Pairs.Contains(pair)) ||
-                        condition.NotPairs != null && (pair == null || condition.NotPairs.Contains(pair)) ||
-
-                        condition.MinAge != null && (tradingPair == null || tradingPair.CurrentAge < condition.MinAge / Application.Speed) ||
-                        condition.MaxAge != null && (tradingPair == null || tradingPair.CurrentAge > condition.MaxAge / Application.Speed) ||
-                        condition.MinLastBuyAge != null && (tradingPair == null || tradingPair.LastBuyAge < condition.MinLastBuyAge / Application.Speed) ||
-                        condition.MaxLastBuyAge != null && (tradingPair == null || tradingPair.LastBuyAge > condition.MaxLastBuyAge / Application.Speed) ||
-                        condition.MinMargin != null && (tradingPair == null || tradingPair.CurrentMargin < condition.MinMargin) ||
-                        condition.MaxMargin != null && (tradingPair == null || tradingPair.CurrentMargin > condition.MaxMargin) ||
-                        condition.MinMarginChange != null && (tradingPair == null || tradingPair.Metadata.LastBuyMargin == null || (tradingPair.CurrentMargin - tradingPair.Metadata.LastBuyMargin) < condition.MinMarginChange) ||
-                        condition.MaxMarginChange != null && (tradingPair == null || tradingPair.Metadata.LastBuyMargin == null || (tradingPair.CurrentMargin - tradingPair.Metadata.LastBuyMargin) > condition.MaxMarginChange) ||
-                        condition.MinAmount != null && (tradingPair == null || tradingPair.Amount < condition.MinAmount) ||
-                        condition.MaxAmount != null && (tradingPair == null || tradingPair.Amount > condition.MaxAmount) ||
-                        condition.MinCost != null && (tradingPair == null || tradingPair.CurrentCost < condition.MinCost) ||
-                        condition.MaxCost != null && (tradingPair == null || tradingPair.CurrentCost > condition.MaxCost) ||
-                        condition.MinDCALevel != null && (tradingPair == null || tradingPair.DCALevel < condition.MinDCALevel) ||
-                        condition.MaxDCALevel != null && (tradingPair == null || tradingPair.DCALevel > condition.MaxDCALevel) ||
-                        condition.SignalRules != null && (tradingPair == null || tradingPair.Metadata.SignalRule == null || !condition.SignalRules.Contains(tradingPair.Metadata.SignalRule)) ||
-                        condition.NotSignalRules != null && (tradingPair == null || tradingPair.Metadata.SignalRule == null || condition.NotSignalRules.Contains(tradingPair.Metadata.SignalRule)))
-                    {
-                        return false;
+                        if (!evaluator.Evaluate(condition, signals, globalRating, pair, tradingPair, currentPrice, currentSpread))
+                        {
+                            return false;
+                        }
                     }
                 }
             }
