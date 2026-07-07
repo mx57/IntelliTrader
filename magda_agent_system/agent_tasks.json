@@ -219,6 +219,38 @@
         "Parallel backtesting runs in isolated worktrees",
         "Results are aggregated and compared by the lead evaluator agent"
       ]
+    },
+    {
+      "id": "bitget-exchange-implementation",
+      "status": "todo",
+      "area": "exchange",
+      "risk": "medium",
+      "title": "Complete Bitget exchange implementation",
+      "description": "Flesh out BitgetExchangeService with full API support, proper model mapping, and real-time ticker updates via WebSockets.",
+      "allowed_paths": [
+        "IntelliTrader.Exchange.Bitget/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "BitgetExchangeService passes connectivity tests",
+        "Order placement and tracking works for Bitget"
+      ]
+    },
+    {
+      "id": "mexc-exchange-implementation",
+      "status": "todo",
+      "area": "exchange",
+      "risk": "medium",
+      "title": "Implement MEXC exchange support",
+      "description": "Create a new project for MEXC exchange integration, implementing ticker updates and order management.",
+      "allowed_paths": [
+        "IntelliTrader.Exchange.MEXC/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "MEXC integration project exists and builds",
+        "Basic trading operations are supported for MEXC"
+      ]
     }
   ]
 }

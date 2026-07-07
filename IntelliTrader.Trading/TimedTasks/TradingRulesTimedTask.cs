@@ -100,6 +100,8 @@ namespace IntelliTrader.Trading
                                 modifiedTradingConfig.SellStopLossAfterDCA = modifiers.SellStopLossAfterDCA ?? modifiedTradingConfig.SellStopLossAfterDCA;
                                 modifiedTradingConfig.SellStopLossMinAge = modifiers.SellStopLossMinAge ?? modifiedTradingConfig.SellStopLossMinAge;
                                 modifiedTradingConfig.SellStopLossMargin = modifiers.SellStopLossMargin ?? modifiedTradingConfig.SellStopLossMargin;
+                                modifiedTradingConfig.SellMarginDecay = modifiers.SellMarginDecay ?? modifiedTradingConfig.SellMarginDecay;
+                                modifiedTradingConfig.SellMarginDecayInterval = modifiers.SellMarginDecayInterval ?? modifiedTradingConfig.SellMarginDecayInterval;
 
                                 modifiedTradingConfig.SellDCAMargin = modifiers.SellDCAMargin ?? modifiedTradingConfig.SellDCAMargin;
                                 modifiedTradingConfig.SellDCATrailing = modifiers.SellDCATrailing ?? modifiedTradingConfig.SellDCATrailing;
@@ -175,6 +177,8 @@ namespace IntelliTrader.Trading
                 SellStopLossAfterDCA = modifiedTradingConfig.SellStopLossAfterDCA,
                 SellStopLossMinAge = modifiedTradingConfig.SellStopLossMinAge / Application.Speed,
                 SellStopLossMargin = modifiedTradingConfig.SellStopLossMargin,
+                SellMarginDecay = modifiedTradingConfig.SellMarginDecay,
+                SellMarginDecayInterval = modifiedTradingConfig.SellMarginDecayInterval / Application.Speed,
 
                 SwapEnabled = modifiedPairConfig.SwapEnabled,
                 SwapSignalRules = modifiedPairConfig.SwapSignalRules,

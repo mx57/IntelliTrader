@@ -35,6 +35,8 @@ namespace IntelliTrader.Trading
         public bool? SellStopLossAfterDCA { get; set; }
         public double? SellStopLossMinAge { get; set; }
         public decimal? SellStopLossMargin { get; set; }
+        public decimal? SellMarginDecay { get; set; }
+        public double? SellMarginDecayInterval { get; set; }
 
         public decimal? SellDCAMargin { get; set; }
         public decimal? SellDCATrailing { get; set; }

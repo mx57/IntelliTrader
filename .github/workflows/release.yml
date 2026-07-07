@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Setup .NET Core 2.1
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 2.1.818
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build and Publish Windows
+      run: |
+        dotnet publish IntelliTrader/IntelliTrader.csproj -c Release -r win-x64 --self-contained true -o ./publish/win
+        dotnet publish IntelliTrader.Web/IntelliTrader.Web.csproj -c Release -r win-x64 --self-contained true -o ./publish/win
+
+    - name: Build and Publish Linux
+      run: |
+        dotnet publish IntelliTrader/IntelliTrader.csproj -c Release -r linux-x64 --self-contained true -o ./publish/linux
+        dotnet publish IntelliTrader.Web/IntelliTrader.Web.csproj -c Release -r linux-x64 --self-contained true -o ./publish/linux
+
+    - name: Zip Artifacts
+      run: |
+        cd publish/win && zip -r ../../intellitrader-win-x64.zip . && cd ../..
+        cd publish/linux && zip -r ../../intellitrader-linux-x64.zip . && cd ../..
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          intellitrader-win-x64.zip
+          intellitrader-linux-x64.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

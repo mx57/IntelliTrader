@@ -97,10 +97,17 @@ namespace IntelliTrader.Trading
                         ITradingPair tradingPair = tradingService.Account.GetTradingPair(options.Pair);
                         tradingPair.SetCurrentValues(tradingService.GetPrice(options.Pair), tradingService.Exchange.GetPriceSpread(options.Pair));
 
+                        decimal effectiveSellMargin = pairConfig.SellMargin;
+                        if (pairConfig.SellMarginDecay.HasValue && pairConfig.SellMarginDecayInterval.HasValue && pairConfig.SellMarginDecayInterval.Value > 0)
+                        {
+                            int intervals = (int)(tradingPair.CurrentAge / pairConfig.SellMarginDecayInterval.Value);
+                            effectiveSellMargin -= intervals * pairConfig.SellMarginDecay.Value;
+                        }
+
                         var trailingInfo = new SellTrailingInfo
                         {
                             SellOptions = options,
-                            SellMargin = pairConfig.SellMargin,
+                            SellMargin = effectiveSellMargin,
                             Trailing = pairConfig.SellTrailing,
                             TrailingStopMargin = pairConfig.SellTrailingStopMargin,
                             TrailingStopAction = pairConfig.SellTrailingStopAction,

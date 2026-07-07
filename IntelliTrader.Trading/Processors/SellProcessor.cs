@@ -90,7 +90,14 @@ namespace IntelliTrader.Trading.Processors
             }
             else
             {
-                if (pairConfig.SellEnabled && tradingPair.CurrentMargin >= pairConfig.SellMargin)
+                decimal effectiveSellMargin = pairConfig.SellMargin;
+                if (pairConfig.SellMarginDecay.HasValue && pairConfig.SellMarginDecayInterval.HasValue && pairConfig.SellMarginDecayInterval.Value > 0)
+                {
+                    int intervals = (int)(tradingPair.CurrentAge / pairConfig.SellMarginDecayInterval.Value);
+                    effectiveSellMargin -= intervals * pairConfig.SellMarginDecay.Value;
+                }
+
+                if (pairConfig.SellEnabled && tradingPair.CurrentMargin >= effectiveSellMargin)
                 {
                     task.InitiateSell(new SellOptions(tradingPair.Pair));
                 }

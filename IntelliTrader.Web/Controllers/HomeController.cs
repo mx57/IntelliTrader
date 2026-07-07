@@ -377,7 +377,9 @@ namespace IntelliTrader.Web.Controllers
                                    DCA = tradingPair.DCALevel,
                                    TradingViewName = $"{tradingService.Config.Exchange.ToUpperInvariant()}:{tradingPair.Pair}",
                                    Margin = tradingPair.CurrentMargin.ToString("0.00"),
-                                   Target = pairConfig.SellMargin.ToString("0.00"),
+                                   Target = (pairConfig.SellMarginDecay.HasValue && pairConfig.SellMarginDecayInterval.HasValue && pairConfig.SellMarginDecayInterval.Value > 0) ?
+                                        (pairConfig.SellMargin - (int)(tradingPair.CurrentAge / pairConfig.SellMarginDecayInterval.Value) * pairConfig.SellMarginDecay.Value).ToString("0.00") :
+                                        pairConfig.SellMargin.ToString("0.00"),
                                    CurrentPrice = tradingPair.CurrentPrice.ToString("0.00000000"),
                                    CurrentSpread = tradingPair.CurrentSpread.ToString("0.00"),
                                    BoughtPrice = tradingPair.AveragePrice.ToString("0.00000000"),
