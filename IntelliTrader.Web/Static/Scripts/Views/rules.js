@@ -1,7 +1,8 @@
-﻿var table = null;
+var tables = [];
 $(function () {
-    table = $('#rulesTable').DataTable({
-        pageLength: 100,
+    $('.rulesTable').each(function () {
+        var table = $(this).DataTable({
+            pageLength: 100,
         responsive: true,
         colReorder: true,
         stateSave: true,
@@ -14,6 +15,8 @@ $(function () {
             "copy",
             "csv"
         ],
-        order: [[1, "desc"]]
+            order: [[1, "desc"]]
+        });
+        tables.push(table);
     });
 });

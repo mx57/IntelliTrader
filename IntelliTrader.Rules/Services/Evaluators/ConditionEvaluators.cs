@@ -26,18 +26,18 @@ namespace IntelliTrader.Rules
 
         public bool Evaluate(IRuleCondition condition, Dictionary<string, ISignal> signals, double? globalRating, string pair, ITradingPair tradingPair, decimal currentPrice, decimal currentSpread)
         {
-            if (condition.MinArbitrage != null)
+            if (condition.MinArbitrage != null || condition.MaxArbitrage != null)
             {
                 var markets = condition.ArbitrageMarket != null ? new List<ArbitrageMarket> { condition.ArbitrageMarket.Value } : null;
-                if (tradingService.Exchange.GetArbitrage(pair, tradingService.Config.Market, markets, condition.ArbitrageType).Percentage < condition.MinArbitrage)
+                var arbitragePercentage = tradingService.Exchange.GetArbitrage(pair, tradingService.Config.Market, markets, condition.ArbitrageType).Percentage;
+
+                if (condition.MinArbitrage != null && arbitragePercentage < condition.MinArbitrage)
+                    return false;
+
+                if (condition.MaxArbitrage != null && arbitragePercentage > condition.MaxArbitrage)
                     return false;
             }
-            if (condition.MaxArbitrage != null)
-            {
-                var markets = condition.ArbitrageMarket != null ? new List<ArbitrageMarket> { condition.ArbitrageMarket.Value } : null;
-                if (tradingService.Exchange.GetArbitrage(pair, tradingService.Config.Market, markets, condition.ArbitrageType).Percentage > condition.MaxArbitrage)
-                    return false;
-            }
+
             return true;
         }
     }
