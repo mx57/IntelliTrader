@@ -197,45 +197,24 @@ namespace IntelliTrader.Web.Controllers
 
         public IActionResult Rules()
         {
-            var allTades = GetTrades();
-            var signalRuleStats = new Dictionary<string, SignalRuleStats>();
-            foreach (var trade in allTades.Values.SelectMany(t => t))
+            var allTrades = GetTrades();
+            var signalRules = new Dictionary<string, RuleStats>();
+            var tradingRules = new Dictionary<string, RuleStats>();
+
+            foreach (var trade in allTrades.Values.SelectMany(t => t))
             {
                 if (trade.IsSuccessful)
                 {
-                    var signalRule = trade?.Metadata?.SignalRule;
-                    if (!String.IsNullOrWhiteSpace(signalRule))
+                    // Aggregated Signal Rule stats
+                    UpdateRuleStats(signalRules, trade.Metadata?.SignalRule, trade);
+
+                    // Aggregated Trading Rule stats
+                    if (trade.Metadata?.TradingRules != null)
                     {
-                        if (!signalRuleStats.TryGetValue(signalRule, out SignalRuleStats ruleStats))
+                        foreach (var tradingRule in trade.Metadata.TradingRules)
                         {
-                            ruleStats = new SignalRuleStats();
-                            signalRuleStats.Add(signalRule, ruleStats);
+                            UpdateRuleStats(tradingRules, tradingRule, trade);
                         }
-
-                        if (!trade.IsSwap)
-                        {
-                            ruleStats.TotalCost += trade.Cost;
-                            ruleStats.TotalProfit += trade.Profit;
-                            decimal margin = trade.Profit / (trade.Cost + (trade.Metadata?.AdditionalCosts ?? 0)) * 100;
-                            if (trade.OrderDates.Count == 1)
-                            {
-                                ruleStats.Margin.Add(margin);
-                            }
-                            else
-                            {
-                                ruleStats.MarginDCA.Add(margin);
-                            }
-                        }
-                        else
-                        {
-                            ruleStats.TotalSwaps++;
-                        }
-
-                        ruleStats.TotalTrades++;
-                        ruleStats.TotalOrders += trade.OrderDates.Count;
-                        ruleStats.TotalFees += trade.FeesTotal;
-                        ruleStats.Age.Add((trade.SellDate - trade.OrderDates.Min()).TotalDays);
-                        ruleStats.DCA.Add((trade.OrderDates.Count - 1) + (trade.Metadata?.AdditionalDCALevels ?? 0));
                     }
                 }
             }
@@ -247,10 +226,58 @@ namespace IntelliTrader.Web.Controllers
                 InstanceName = coreService.Config.InstanceName,
                 Version = coreService.Version,
                 ReadOnlyMode = webService.Config.ReadOnlyMode,
-                SignalRuleStats = signalRuleStats
+                SignalRules = signalRules,
+                TradingRules = tradingRules
             };
 
             return View(model);
+        }
+
+        private void UpdateRuleStats(Dictionary<string, RuleStats> statsDict, string ruleName, TradeResult trade)
+        {
+            if (string.IsNullOrWhiteSpace(ruleName)) return;
+
+            if (!statsDict.TryGetValue(ruleName, out RuleStats ruleStats))
+            {
+                ruleStats = new RuleStats();
+                statsDict.Add(ruleName, ruleStats);
+            }
+
+            int orderCount = trade.OrderDates?.Count ?? 0;
+
+            if (!trade.IsSwap)
+            {
+                ruleStats.TotalCost += trade.Cost;
+                ruleStats.TotalProfit += trade.Profit;
+
+                decimal totalCostWithAdditional = trade.Cost + (trade.Metadata?.AdditionalCosts ?? 0);
+                if (totalCostWithAdditional != 0)
+                {
+                    decimal margin = trade.Profit / totalCostWithAdditional * 100;
+                    if (orderCount == 1)
+                    {
+                        ruleStats.Margin.Add(margin);
+                    }
+                    else if (orderCount > 1)
+                    {
+                        ruleStats.MarginDCA.Add(margin);
+                    }
+                }
+            }
+            else
+            {
+                ruleStats.TotalSwaps++;
+            }
+
+            ruleStats.TotalTrades++;
+            ruleStats.TotalOrders += orderCount;
+            ruleStats.TotalFees += trade.FeesTotal;
+
+            if (orderCount > 0)
+            {
+                ruleStats.Age.Add((trade.SellDate - trade.OrderDates.Min()).TotalDays);
+                ruleStats.DCA.Add((orderCount - 1) + (trade.Metadata?.AdditionalDCALevels ?? 0));
+            }
         }
 
         public IActionResult Trades(DateTimeOffset id)
