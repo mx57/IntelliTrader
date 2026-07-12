@@ -26,18 +26,19 @@ namespace IntelliTrader.Rules
 
         public bool Evaluate(IRuleCondition condition, Dictionary<string, ISignal> signals, double? globalRating, string pair, ITradingPair tradingPair, decimal currentPrice, decimal currentSpread)
         {
-            if (condition.MinArbitrage != null)
-            {
-                var markets = condition.ArbitrageMarket != null ? new List<ArbitrageMarket> { condition.ArbitrageMarket.Value } : null;
-                if (tradingService.Exchange.GetArbitrage(pair, tradingService.Config.Market, markets, condition.ArbitrageType).Percentage < condition.MinArbitrage)
-                    return false;
-            }
-            if (condition.MaxArbitrage != null)
-            {
-                var markets = condition.ArbitrageMarket != null ? new List<ArbitrageMarket> { condition.ArbitrageMarket.Value } : null;
-                if (tradingService.Exchange.GetArbitrage(pair, tradingService.Config.Market, markets, condition.ArbitrageType).Percentage > condition.MaxArbitrage)
-                    return false;
-            }
+            if (condition.MinArbitrage == null && condition.MaxArbitrage == null) return true;
+
+            var markets = condition.ArbitrageMarket != null ? new List<ArbitrageMarket> { condition.ArbitrageMarket.Value } : null;
+
+            // Optimization: Cache GetArbitrage result to avoid redundant expensive exchange calls when both min and max thresholds are defined.
+            var arbitrage = tradingService.Exchange.GetArbitrage(pair, tradingService.Config.Market, markets, condition.ArbitrageType);
+
+            if (condition.MinArbitrage != null && arbitrage.Percentage < condition.MinArbitrage)
+                return false;
+
+            if (condition.MaxArbitrage != null && arbitrage.Percentage > condition.MaxArbitrage)
+                return false;
+
             return true;
         }
     }
