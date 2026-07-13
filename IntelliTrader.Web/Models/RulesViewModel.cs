@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,10 +7,11 @@ namespace IntelliTrader.Web.Models
 {
     public class RulesViewModel : BaseViewModel
     {
-        public Dictionary<string, SignalRuleStats> SignalRuleStats { get; set; }
+        public Dictionary<string, RuleStats> SignalRuleStats { get; set; }
+        public Dictionary<string, RuleStats> TradingRuleStats { get; set; }
     }
 
-    public class SignalRuleStats
+    public class RuleStats
     {
         public decimal TotalProfit { get; set; }
         public decimal TotalFees { get; set; }
