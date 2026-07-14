@@ -197,23 +197,31 @@ namespace IntelliTrader.Web.Controllers
 
         public IActionResult Rules()
         {
-            var allTrades = GetTrades();
-            var signalRules = new Dictionary<string, RuleStats>();
-            var tradingRules = new Dictionary<string, RuleStats>();
+            var allTades = GetTrades();
+            var signalRuleStats = new Dictionary<string, RuleStats>();
+            var tradingRuleStats = new Dictionary<string, RuleStats>();
 
-            foreach (var trade in allTrades.Values.SelectMany(t => t))
+            foreach (var trade in allTades.Values.SelectMany(t => t))
             {
                 if (trade.IsSuccessful)
                 {
-                    // Aggregated Signal Rule stats
-                    UpdateRuleStats(signalRules, trade.Metadata?.SignalRule, trade);
-
-                    // Aggregated Trading Rule stats
-                    if (trade.Metadata?.TradingRules != null)
+                    // Signal Rules
+                    var signalRule = trade?.Metadata?.SignalRule;
+                    if (!String.IsNullOrWhiteSpace(signalRule))
                     {
-                        foreach (var tradingRule in trade.Metadata.TradingRules)
+                        UpdateRuleStats(signalRuleStats, signalRule, trade);
+                    }
+
+                    // Trading Rules
+                    var tradingRules = trade?.Metadata?.TradingRules;
+                    if (tradingRules != null)
+                    {
+                        foreach (var tradingRule in tradingRules)
                         {
-                            UpdateRuleStats(tradingRules, tradingRule, trade);
+                            if (!String.IsNullOrWhiteSpace(tradingRule))
+                            {
+                                UpdateRuleStats(tradingRuleStats, tradingRule, trade);
+                            }
                         }
                     }
                 }
@@ -226,21 +234,19 @@ namespace IntelliTrader.Web.Controllers
                 InstanceName = coreService.Config.InstanceName,
                 Version = coreService.Version,
                 ReadOnlyMode = webService.Config.ReadOnlyMode,
-                SignalRules = signalRules,
-                TradingRules = tradingRules
+                SignalRuleStats = signalRuleStats,
+                TradingRuleStats = tradingRuleStats
             };
 
             return View(model);
         }
 
-        private void UpdateRuleStats(Dictionary<string, RuleStats> statsDict, string ruleName, TradeResult trade)
+        private void UpdateRuleStats(Dictionary<string, RuleStats> stats, string ruleName, TradeResult trade)
         {
-            if (string.IsNullOrWhiteSpace(ruleName)) return;
-
-            if (!statsDict.TryGetValue(ruleName, out RuleStats ruleStats))
+            if (!stats.TryGetValue(ruleName, out RuleStats ruleStats))
             {
                 ruleStats = new RuleStats();
-                statsDict.Add(ruleName, ruleStats);
+                stats.Add(ruleName, ruleStats);
             }
 
             int orderCount = trade.OrderDates?.Count ?? 0;
@@ -250,10 +256,10 @@ namespace IntelliTrader.Web.Controllers
                 ruleStats.TotalCost += trade.Cost;
                 ruleStats.TotalProfit += trade.Profit;
 
-                decimal totalCostWithAdditional = trade.Cost + (trade.Metadata?.AdditionalCosts ?? 0);
-                if (totalCostWithAdditional != 0)
+                decimal totalInvestment = trade.Cost + (trade.Metadata?.AdditionalCosts ?? 0);
+                if (totalInvestment > 0)
                 {
-                    decimal margin = trade.Profit / totalCostWithAdditional * 100;
+                    decimal margin = trade.Profit / totalInvestment * 100;
                     if (orderCount == 1)
                     {
                         ruleStats.Margin.Add(margin);

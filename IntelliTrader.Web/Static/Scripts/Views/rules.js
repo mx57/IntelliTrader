@@ -1,6 +1,6 @@
 ﻿var tables = [];
 $(function () {
-    $('.rules-table').each(function () {
+    $('.rules-table').each(function() {
         var table = $(this).DataTable({
             pageLength: 100,
             responsive: true,

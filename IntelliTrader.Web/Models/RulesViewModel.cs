@@ -7,8 +7,8 @@ namespace IntelliTrader.Web.Models
 {
     public class RulesViewModel : BaseViewModel
     {
-        public Dictionary<string, RuleStats> SignalRules { get; set; }
-        public Dictionary<string, RuleStats> TradingRules { get; set; }
+        public Dictionary<string, RuleStats> SignalRuleStats { get; set; }
+        public Dictionary<string, RuleStats> TradingRuleStats { get; set; }
     }
 
     public class RuleStats
