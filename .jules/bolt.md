@@ -21,3 +21,6 @@
 ## 2025-07-15 - Case-sensitive resource naming in ExchangeSharp (Linux build)
 **Инсайт:** Сборка под Linux требует строгого соответствия регистра имен файлов ресурсов, указанных в `.resx` и `.csproj`. Несоответствие (например, `poloniexwithdrawalfields.csv` vs `PoloniexWithdrawalFields.csv`) приводит к ошибке `CSC : error CS1566: Error reading resource`.
 **Действие:** При возникновении ошибок чтения ресурсов во время сборки на Linux, проверять соответствие регистра в `.resx`, `.csproj` и в файловой системе.
+## 2025-07-06 - Case-sensitivity in submodule resources
+**Инсайт:** Сборка подпроекта 'ExchangeSharp' на Linux завершалась ошибкой из-за несовпадения регистра имени файла ресурса (`PoloniexWithdrawalFields.csv` на диске vs `poloniexwithdrawalfields.csv` в `.resx` и `.csproj`).
+**Действие:** Обеспечить строгое соответствие регистра имен файлов ресурсов во всех конфигурационных файлах проекта и на файловой системе при работе в Linux-окружениях.

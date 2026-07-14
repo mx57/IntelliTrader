@@ -212,6 +212,23 @@ namespace IntelliTrader.Web.Controllers
                         foreach (var tradingRule in trade.Metadata.TradingRules)
                         {
                             UpdateRuleStats(tradingRuleStats, tradingRule, trade);
+                    // Signal Rules
+                    var signalRule = trade?.Metadata?.SignalRule;
+                    if (!String.IsNullOrWhiteSpace(signalRule))
+                    {
+                        UpdateRuleStats(signalRuleStats, signalRule, trade);
+                    }
+
+                    // Trading Rules
+                    var tradingRules = trade?.Metadata?.TradingRules;
+                    if (tradingRules != null)
+                    {
+                        foreach (var tradingRule in tradingRules)
+                        {
+                            if (!String.IsNullOrWhiteSpace(tradingRule))
+                            {
+                                UpdateRuleStats(tradingRuleStats, tradingRule, trade);
+                            }
                         }
                     }
                 }
@@ -241,6 +258,16 @@ namespace IntelliTrader.Web.Controllers
                 statsMap.Add(ruleName, ruleStats);
             }
 
+        private void UpdateRuleStats(Dictionary<string, RuleStats> stats, string ruleName, TradeResult trade)
+        {
+            if (!stats.TryGetValue(ruleName, out RuleStats ruleStats))
+            {
+                ruleStats = new RuleStats();
+                stats.Add(ruleName, ruleStats);
+            }
+
+            int orderCount = trade.OrderDates?.Count ?? 0;
+
             if (!trade.IsSwap)
             {
                 ruleStats.TotalCost += trade.Cost;
@@ -254,6 +281,19 @@ namespace IntelliTrader.Web.Controllers
                 else
                 {
                     ruleStats.MarginDCA.Add(margin);
+
+                decimal totalInvestment = trade.Cost + (trade.Metadata?.AdditionalCosts ?? 0);
+                if (totalInvestment > 0)
+                {
+                    decimal margin = trade.Profit / totalInvestment * 100;
+                    if (orderCount == 1)
+                    {
+                        ruleStats.Margin.Add(margin);
+                    }
+                    else if (orderCount > 1)
+                    {
+                        ruleStats.MarginDCA.Add(margin);
+                    }
                 }
             }
             else
@@ -269,6 +309,13 @@ namespace IntelliTrader.Web.Controllers
             {
                 ruleStats.Age.Add((trade.SellDate - trade.OrderDates.Min()).TotalDays);
                 ruleStats.DCA.Add((trade.OrderDates.Count - 1) + (trade.Metadata?.AdditionalDCALevels ?? 0));
+            ruleStats.TotalOrders += orderCount;
+            ruleStats.TotalFees += trade.FeesTotal;
+
+            if (orderCount > 0)
+            {
+                ruleStats.Age.Add((trade.SellDate - trade.OrderDates.Min()).TotalDays);
+                ruleStats.DCA.Add((orderCount - 1) + (trade.Metadata?.AdditionalDCALevels ?? 0));
             }
         }
 
