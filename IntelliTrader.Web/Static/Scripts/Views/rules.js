@@ -1,3 +1,6 @@
+﻿$(function () {
+    $('.rules-table').each(function () {
+        $(this).DataTable({
 ﻿var tables = [];
 $(function () {
     $('.rules-table').each(function() {

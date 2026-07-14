@@ -205,6 +205,13 @@ namespace IntelliTrader.Web.Controllers
             {
                 if (trade.IsSuccessful)
                 {
+                    UpdateRuleStats(signalRuleStats, trade.Metadata?.SignalRule, trade);
+
+                    if (trade.Metadata?.TradingRules != null)
+                    {
+                        foreach (var tradingRule in trade.Metadata.TradingRules)
+                        {
+                            UpdateRuleStats(tradingRuleStats, tradingRule, trade);
                     // Signal Rules
                     var signalRule = trade?.Metadata?.SignalRule;
                     if (!String.IsNullOrWhiteSpace(signalRule))
@@ -241,6 +248,16 @@ namespace IntelliTrader.Web.Controllers
             return View(model);
         }
 
+        private void UpdateRuleStats(Dictionary<string, RuleStats> statsMap, string ruleName, TradeResult trade)
+        {
+            if (string.IsNullOrWhiteSpace(ruleName)) return;
+
+            if (!statsMap.TryGetValue(ruleName, out RuleStats ruleStats))
+            {
+                ruleStats = new RuleStats();
+                statsMap.Add(ruleName, ruleStats);
+            }
+
         private void UpdateRuleStats(Dictionary<string, RuleStats> stats, string ruleName, TradeResult trade)
         {
             if (!stats.TryGetValue(ruleName, out RuleStats ruleStats))
@@ -255,6 +272,15 @@ namespace IntelliTrader.Web.Controllers
             {
                 ruleStats.TotalCost += trade.Cost;
                 ruleStats.TotalProfit += trade.Profit;
+                decimal cost = trade.Cost + (trade.Metadata?.AdditionalCosts ?? 0);
+                decimal margin = cost != 0 ? trade.Profit / cost * 100 : 0;
+                if (trade.OrderDates?.Count == 1)
+                {
+                    ruleStats.Margin.Add(margin);
+                }
+                else
+                {
+                    ruleStats.MarginDCA.Add(margin);
 
                 decimal totalInvestment = trade.Cost + (trade.Metadata?.AdditionalCosts ?? 0);
                 if (totalInvestment > 0)
@@ -276,6 +302,13 @@ namespace IntelliTrader.Web.Controllers
             }
 
             ruleStats.TotalTrades++;
+            ruleStats.TotalOrders += trade.OrderDates?.Count ?? 0;
+            ruleStats.TotalFees += trade.FeesTotal;
+
+            if (trade.OrderDates != null && trade.OrderDates.Count > 0)
+            {
+                ruleStats.Age.Add((trade.SellDate - trade.OrderDates.Min()).TotalDays);
+                ruleStats.DCA.Add((trade.OrderDates.Count - 1) + (trade.Metadata?.AdditionalDCALevels ?? 0));
             ruleStats.TotalOrders += orderCount;
             ruleStats.TotalFees += trade.FeesTotal;
 
