@@ -28,20 +28,77 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var trade in Model.SignalRuleStats)
+            @foreach (var rule in Model.SignalRules)
             {
+                <tr>
+                    <td>@trade.Key</td>
+                    <td>@trade.Value.TotalProfit.ToString("0.00000000")</td>
+                    <td>@trade.Value.TotalFees.ToString("0.00000000")</td>
+                    <td>@trade.Value.TotalCost.ToString("0.00000000")</td>
+                    <td>@trade.Value.TotalTrades</td>
+                    <td>@trade.Value.TotalOrders</td>
+                    <td>@trade.Value.TotalSwaps</td>
+                    <td>@trade.Value.Age.DefaultIfEmpty(0).Average().ToString("0.00")</td>
+                    <td>@trade.Value.Margin.DefaultIfEmpty(0).Average().ToString("0.00")</td>
+                    <td>@trade.Value.MarginDCA.DefaultIfEmpty(0).Average().ToString("0.00")</td>
+                    <td>@trade.Value.DCA.DefaultIfEmpty(0).Average().ToString("0.00")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="sub-header" style="margin-top: 30px;">Trading Rules: @Model.TradingRuleStats.Count</div>
+    <table class="table table-hover table-striped rulesTable" style="width: 100%">
+        <thead>
             <tr>
-                <td>@trade.Key</td>
-                <td>@trade.Value.TotalProfit.ToString("0.00000000")</td>
-                <td>@trade.Value.TotalFees.ToString("0.00000000")</td>
-                <td>@trade.Value.TotalCost.ToString("0.00000000")</td>
-                <td>@trade.Value.TotalTrades</td>
-                <td>@trade.Value.TotalOrders</td>
-                <td>@trade.Value.TotalSwaps</td>
-                <td>@trade.Value.Age.DefaultIfEmpty(0).Average().ToString("0.00")</td>
-                <td>@trade.Value.Margin.DefaultIfEmpty(0).Average().ToString("0.00")</td>
-                <td>@trade.Value.MarginDCA.DefaultIfEmpty(0).Average().ToString("0.00")</td>
-                <td>@trade.Value.DCA.DefaultIfEmpty(0).Average().ToString("0.00")</td>
+                <th>Trading Rule</th>
+                <th>Profit</th>
+                <th>Fees</th>
+                <th>Cost</th>
+                <th>Trades</th>
+                <th>Orders</th>
+                <th>Swaps</th>
+                <th>Avg. Age</th>
+                <th>Avg. Margin</th>
+                <th>Avg. Margin DCA</th>
+                <th>Avg. DCA</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var trade in Model.TradingRuleStats)
+            {
+                <tr>
+                    <td>@trade.Key</td>
+                    <td>@trade.Value.TotalProfit.ToString("0.00000000")</td>
+                    <td>@trade.Value.TotalFees.ToString("0.00000000")</td>
+                    <td>@trade.Value.TotalCost.ToString("0.00000000")</td>
+                    <td>@trade.Value.TotalTrades</td>
+                    <td>@trade.Value.TotalOrders</td>
+                    <td>@trade.Value.TotalSwaps</td>
+                    <td>@trade.Value.Age.DefaultIfEmpty(0).Average().ToString("0.00")</td>
+                    <td>@trade.Value.Margin.DefaultIfEmpty(0).Average().ToString("0.00")</td>
+                    <td>@trade.Value.MarginDCA.DefaultIfEmpty(0).Average().ToString("0.00")</td>
+                    <td>@trade.Value.DCA.DefaultIfEmpty(0).Average().ToString("0.00")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="sub-header" style="margin-top: 30px;">Trading Rules: @Model.TradingRuleStats.Count</div>
+    <table class="table table-hover table-striped" id="tradingRulesTable" style="width: 100%">
+        <thead>
+            <tr>
+                <td>@rule.Key</td>
+                <td>@rule.Value.TotalProfit.ToString("0.00000000")</td>
+                <td>@rule.Value.TotalFees.ToString("0.00000000")</td>
+                <td>@rule.Value.TotalCost.ToString("0.00000000")</td>
+                <td>@rule.Value.TotalTrades</td>
+                <td>@rule.Value.TotalOrders</td>
+                <td>@rule.Value.TotalSwaps</td>
+                <td>@rule.Value.Age.DefaultIfEmpty(0).Average().ToString("0.00")</td>
+                <td>@rule.Value.Margin.DefaultIfEmpty(0).Average().ToString("0.00")</td>
+                <td>@rule.Value.MarginDCA.DefaultIfEmpty(0).Average().ToString("0.00")</td>
+                <td>@rule.Value.DCA.DefaultIfEmpty(0).Average().ToString("0.00")</td>
             </tr>
             }
         </tbody>
