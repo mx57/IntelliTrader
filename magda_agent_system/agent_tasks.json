@@ -172,7 +172,7 @@
     },
     {
       "id": "magda-mcp-skill-exporter",
-      "status": "todo",
+      "status": "done",
       "area": "integration",
       "risk": "medium",
       "title": "Export Magda skills as MCP-compliant tools",
@@ -218,6 +218,55 @@
       "acceptance": [
         "Parallel backtesting runs in isolated worktrees",
         "Results are aggregated and compared by the lead evaluator agent"
+      ]
+    },
+    {
+      "id": "trading-trailing-dca-optimization",
+      "status": "todo",
+      "area": "trading",
+      "risk": "medium",
+      "title": "Optimize DcaProcessor with rating-based scaling and safety limits",
+      "description": "Refactor DcaProcessor to dynamically scale DCA orders based on the global rating and enforce MaxTrailingSpread safety checks to prevent buying on high-volatility spikes.",
+      "allowed_paths": [
+        "IntelliTrader.Trading/Processors/DcaProcessor.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "DcaProcessor dynamically scales cost and respects trailing safety configuration",
+        "Tests verify that DCA is paused under high spread conditions"
+      ]
+    },
+    {
+      "id": "web-dashboard-realtime-logs",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add automatic long-polling for real-time logs inside Web Dashboard",
+      "description": "Implement a script or AJAX endpoint in HomeController and Dashboard view to automatically poll and update log files on the dashboard without full page refreshes.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Controllers/HomeController.cs",
+        "IntelliTrader.Web/Views/Home/Index.cshtml",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "AJAX polling endpoint returns the latest lines of trade logs",
+        "Dashboard UI refreshes log output periodically without page reload"
+      ]
+    },
+    {
+      "id": "trading-performance-benchmark",
+      "status": "todo",
+      "area": "trading",
+      "risk": "low",
+      "title": "Implement backtesting performance benchmark suite",
+      "description": "Create a benchmarking utility to evaluate and log the execution time of backtesting runs over multi-month trade log histories.",
+      "allowed_paths": [
+        "IntelliTrader.Backtesting/Benchmarks/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Benchmarking utility can be run via dotnet or command line",
+        "Benchmark results are successfully generated and saved to a report file"
       ]
     }
   ]

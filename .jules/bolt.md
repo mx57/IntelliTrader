@@ -28,3 +28,7 @@
 ## 2025-07-06 - Case-sensitivity in submodule resources
 **Инсайт:** Сборка подпроекта 'ExchangeSharp' на Linux завершалась ошибкой из-за несовпадения регистра имени файла ресурса (`PoloniexWithdrawalFields.csv` на диске vs `poloniexwithdrawalfields.csv` в `.resx` и `.csproj`).
 **Действие:** Обеспечить строгое соответствие регистра имен файлов ресурсов во всех конфигурационных файлах проекта и на файловой системе при работе в Linux-окружениях.
+
+## 2026-07-07 - Python SkillRegistry execute_skill argument name collision
+**Инсайт:** Метод `SkillRegistry.execute_skill(self, name: str, **kwargs)` принимает первый аргумент как `name`. Из-за этого при передаче и распаковке `**arguments` в инструментах, если у инструмента есть параметр по имени `name`, Python выбрасывает `TypeError: got multiple values for argument 'name'` из-за конфликта имен.
+**Действие:** Избегать использования имени параметра `name` в аргументах регистрируемых функций-навыков (skills), заменяя его более специфичными именами (например, `person_name`, `skill_name`, `target_name`), чтобы исключить конфликты при вызове `execute_skill`.

@@ -56,5 +56,100 @@ async def test_integration():
 
     logging.info("Integration Test Successful!")
 
+
+@pytest.mark.asyncio
+async def test_mcp_exporter():
+    logging.info("Starting MCP Exporter Integration and Compliance Test...")
+
+    from magda_agent.skills import initialize_skills
+    from magda_agent.integration.mcp_exporter import MCPExporter
+    from magda_agent.skills.exporter import SkillExporter
+    from magda_agent.memory.procedural import ProceduralMemory
+
+    skills = initialize_skills()
+    exporter = MCPExporter(skills)
+
+    # 1. Test tools listing and format
+    tools = exporter.export_tools()
+    assert len(tools) > 0, "No tools exported!"
+
+    # Verify all tools comply with the MCP tool specification
+    assert exporter.validate_mcp_compliance(tools) is True
+
+    # 2. Test JSON-RPC tools/list
+    list_req = {
+        "jsonrpc": "2.0",
+        "method": "tools/list",
+        "id": "test-list-1"
+    }
+    list_resp = await exporter.handle_rpc_request(list_req)
+    assert list_resp["jsonrpc"] == "2.0"
+    assert list_resp["id"] == "test-list-1"
+    assert "result" in list_resp
+    assert "tools" in list_resp["result"]
+    assert len(list_resp["result"]["tools"]) == len(tools)
+
+    # 3. Test JSON-RPC tools/call for a direct valid call
+    def greet(person_name: str) -> str:
+        return f"Hello, {person_name}!"
+
+    skills.register_skill("greet_tool", greet, "Greets a person by name. Input: 'person_name' string.")
+
+    call_req = {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+            "name": "greet_tool",
+            "arguments": {
+                "person_name": "Jules"
+            }
+        },
+        "id": "test-call-1"
+    }
+    call_resp = await exporter.handle_rpc_request(call_req)
+    assert call_resp["jsonrpc"] == "2.0"
+    assert call_resp["id"] == "test-call-1"
+    assert "result" in call_resp
+    assert call_resp["result"]["isError"] is False
+    assert "Hello, Jules!" in call_resp["result"]["content"][0]["text"]
+
+    # 4. Test compliance validation with non-compliant data
+    bad_tool_missing_name = {
+        "description": "Missing name",
+        "inputSchema": {"type": "object"}
+    }
+    with pytest.raises(ValueError, match="is missing required field 'name'"):
+        exporter.validate_mcp_compliance([bad_tool_missing_name])
+
+    bad_tool_invalid_name = {
+        "name": "bad tool name containing spaces",
+        "description": "Invalid name pattern",
+        "inputSchema": {"type": "object"}
+    }
+    with pytest.raises(ValueError, match="does not match MCP regex pattern"):
+        exporter.validate_mcp_compliance([bad_tool_invalid_name])
+
+    bad_tool_wrong_schema_type = {
+        "name": "bad_schema_type",
+        "description": "Wrong schema type",
+        "inputSchema": {"type": "array"}
+    }
+    with pytest.raises(ValueError, match="inputSchema must have type 'object'"):
+        exporter.validate_mcp_compliance([bad_tool_wrong_schema_type])
+
+    # 5. Test SkillExporter serialize capability
+    procedural_memory = ProceduralMemory()
+    skill_exporter = SkillExporter(procedural_memory)
+
+    json_mcp_str = skill_exporter.export_skills_as_mcp(skills, export_format="json")
+    assert '"tools":' in json_mcp_str
+
+    yaml_mcp_str = skill_exporter.export_skills_as_mcp(skills, export_format="yaml")
+    assert 'tools:' in yaml_mcp_str
+
+    logging.info("MCP Exporter and Compliance Tests passed!")
+
+
 if __name__ == "__main__":
     asyncio.run(test_integration())
+    asyncio.run(test_mcp_exporter())
