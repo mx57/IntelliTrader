@@ -222,7 +222,7 @@
     },
     {
       "id": "trading-trailing-dca-optimization",
-      "status": "todo",
+      "status": "done",
       "area": "trading",
       "risk": "medium",
       "title": "Optimize DcaProcessor with rating-based scaling and safety limits",

@@ -35,7 +35,7 @@ namespace IntelliTrader.Trading
             this.processors = new List<Processors.ITradingProcessor>
             {
                 new Processors.SellProcessor(loggingService, tradingService, orderingService, this),
-                new Processors.DcaProcessor(loggingService, tradingService, this)
+                new Processors.DcaProcessor(loggingService, tradingService, signalsService, this)
             };
             this.buyProcessor = new Processors.BuyProcessor(loggingService, tradingService, orderingService, this);
         }

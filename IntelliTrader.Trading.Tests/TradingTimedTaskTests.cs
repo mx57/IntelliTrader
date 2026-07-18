@@ -136,5 +136,109 @@ namespace IntelliTrader.Trading.Tests
 
             _orderingService.Verify(o => o.PlaceBuyOrder(It.IsAny<BuyOptions>()), Times.Once());
         }
+
+        [Fact]
+        public void DcaProcessor_PausesOnHighSpread()
+        {
+            // Arrange
+            var pair = "BTCUSDT";
+            var pairConfig = new Mock<IPairConfig>();
+            pairConfig.Setup(c => c.NextDCAMargin).Returns(-3.0m);
+            pairConfig.Setup(c => c.BuyEnabled).Returns(true);
+            pairConfig.Setup(c => c.BuyMultiplier).Returns(1.5m);
+            pairConfig.Setup(c => c.BuyTrailing).Returns(0m);
+            pairConfig.Setup(c => c.Rules).Returns(new List<string>());
+
+            var safety = new TrailingSafetyOptions
+            {
+                MaxTrailingSpread = 1.0m,
+                PauseOnHighSpread = true
+            };
+            pairConfig.Setup(c => c.TrailingSafety).Returns(safety);
+
+            _tradingService.Setup(s => s.GetPairConfig(pair)).Returns(pairConfig.Object);
+
+            var tradingPair = new Mock<ITradingPair>();
+            tradingPair.Setup(p => p.Pair).Returns(pair);
+            tradingPair.Setup(p => p.CurrentMargin).Returns(-5.0m); // below next DCA margin (-3.0m)
+            tradingPair.Setup(p => p.CurrentSpread).Returns(1.5m); // high spread (1.5% > 1.0% max spread)
+            tradingPair.Setup(p => p.Cost).Returns(100m);
+            tradingPair.Setup(p => p.Metadata).Returns(new OrderMetadata());
+
+            _account.Setup(a => a.GetTradingPairs(It.IsAny<bool>())).Returns(new List<ITradingPair> { tradingPair.Object });
+            _tradingService.Setup(s => s.GetPrice(pair, It.IsAny<TradePriceType?>(), It.IsAny<bool>())).Returns(10000m);
+
+            var task = new TradingTimedTask(
+                _loggingService.Object,
+                _notificationService.Object,
+                _healthCheckService.Object,
+                _signalsService.Object,
+                _orderingService.Object,
+                _tradingService.Object);
+
+            // Act
+            task.ProcessTradingPairs();
+
+            // Assert - Should NOT trigger DCA because spread is high and PauseOnHighSpread is true
+            _tradingService.Verify(s => s.CanBuy(It.IsAny<BuyOptions>(), out It.Ref<string>.IsAny), Times.Never());
+            _orderingService.Verify(o => o.PlaceBuyOrder(It.IsAny<BuyOptions>()), Times.Never());
+        }
+
+        [Fact]
+        public void DcaProcessor_ScalesCostBasedOnGlobalRating()
+        {
+            // Arrange
+            var pair = "BTCUSDT";
+            var pairConfig = new Mock<IPairConfig>();
+            pairConfig.Setup(c => c.NextDCAMargin).Returns(-3.0m);
+            pairConfig.Setup(c => c.BuyEnabled).Returns(true);
+            pairConfig.Setup(c => c.BuyMultiplier).Returns(1.5m);
+            pairConfig.Setup(c => c.BuyTrailing).Returns(0m);
+            pairConfig.Setup(c => c.Rules).Returns(new List<string>());
+
+            var safety = new TrailingSafetyOptions
+            {
+                MaxTrailingSpread = 1.0m,
+                PauseOnHighSpread = true
+            };
+            pairConfig.Setup(c => c.TrailingSafety).Returns(safety);
+
+            _tradingService.Setup(s => s.GetPairConfig(pair)).Returns(pairConfig.Object);
+
+            var tradingPair = new Mock<ITradingPair>();
+            tradingPair.Setup(p => p.Pair).Returns(pair);
+            tradingPair.Setup(p => p.CurrentMargin).Returns(-5.0m); // below next DCA margin (-3.0m)
+            tradingPair.Setup(p => p.CurrentSpread).Returns(0.2m); // low spread
+            tradingPair.Setup(p => p.Cost).Returns(100m);
+            tradingPair.Setup(p => p.Metadata).Returns(new OrderMetadata());
+
+            _account.Setup(a => a.GetTradingPairs(It.IsAny<bool>())).Returns(new List<ITradingPair> { tradingPair.Object });
+            _tradingService.Setup(s => s.GetPrice(pair, It.IsAny<TradePriceType?>(), It.IsAny<bool>())).Returns(10000m);
+
+            // Positive global rating (+0.5) => multiplier scaling factor = 1.5
+            // Expected cost = 100 * 1.5 (BuyMultiplier) * 1.5 (Scaling factor) = 225
+            _signalsService.Setup(s => s.GetGlobalRating()).Returns(0.5);
+
+            string outMsg = "";
+            _tradingService.Setup(s => s.CanBuy(It.IsAny<BuyOptions>(), out outMsg)).Returns(true);
+
+            var task = new TradingTimedTask(
+                _loggingService.Object,
+                _notificationService.Object,
+                _healthCheckService.Object,
+                _signalsService.Object,
+                _orderingService.Object,
+                _tradingService.Object);
+
+            // Act
+            task.ProcessTradingPairs();
+
+            // Assert - Should trigger DCA with scaled cost
+            _orderingService.Verify(o => o.PlaceBuyOrder(It.Is<BuyOptions>(opt =>
+                opt.Pair == pair &&
+                opt.MaxCost == 225m &&
+                opt.Metadata != null &&
+                opt.Metadata.BoughtGlobalRating == 0.5)), Times.Once());
+        }
     }
 }
