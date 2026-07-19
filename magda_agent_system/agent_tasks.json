@@ -238,7 +238,7 @@
     },
     {
       "id": "web-dashboard-realtime-logs",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Add automatic long-polling for real-time logs inside Web Dashboard",

@@ -119,7 +119,15 @@ namespace IntelliTrader.Web.Controllers
 
         public IActionResult Index()
         {
-            return Dashboard();
+            var coreService = Application.Resolve<ICoreService>();
+            var webService = Application.Resolve<IWebService>();
+            var model = new DashboardViewModel
+            {
+                InstanceName = coreService.Config.InstanceName,
+                Version = coreService.Version,
+                ReadOnlyMode = webService.Config.ReadOnlyMode
+            };
+            return View(nameof(Index), model);
         }
 
         public IActionResult Dashboard()
@@ -132,7 +140,7 @@ namespace IntelliTrader.Web.Controllers
                 Version = coreService.Version,
                 ReadOnlyMode = webService.Config.ReadOnlyMode
             };
-            return View(nameof(Dashboard), model);
+            return View(nameof(Index), model);
         }
 
         public IActionResult Market()
@@ -640,6 +648,83 @@ namespace IntelliTrader.Web.Controllers
             {
                 return new BadRequestResult();
             }
+        }
+
+        [HttpGet]
+        public IActionResult TradeLogLines(int take = 100)
+        {
+            var logsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log");
+            if (!Directory.Exists(logsPath))
+            {
+                logsPath = Path.Combine(Directory.GetCurrentDirectory(), "log");
+                if (!Directory.Exists(logsPath))
+                {
+                    return Json(new string[0]);
+                }
+            }
+
+            var tradeLogFiles = Directory.EnumerateFiles(logsPath, "*-trades.txt", SearchOption.TopDirectoryOnly)
+                                         .OrderByDescending(f => f)
+                                         .ToList();
+
+            if (!tradeLogFiles.Any())
+            {
+                return Json(new string[0]);
+            }
+
+            var activeTradeLogFile = tradeLogFiles.First();
+            try
+            {
+                var lines = ReadLastLines(activeTradeLogFile, take);
+                return Json(lines);
+            }
+            catch (Exception ex)
+            {
+                return Json(new string[] { $"Error reading trade logs: {ex.Message}" });
+            }
+        }
+
+        private static List<string> ReadLastLines(string filePath, int maxLines)
+        {
+            var lines = new List<string>();
+            var buffer = new byte[4096];
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                long position = fs.Length;
+                int lineCount = 0;
+                var leftover = "";
+
+                while (position > 0 && lineCount < maxLines)
+                {
+                    int toRead = position >= buffer.Length ? buffer.Length : (int)position;
+                    position -= toRead;
+                    fs.Seek(position, SeekOrigin.Begin);
+                    int bytesRead = fs.Read(buffer, 0, toRead);
+
+                    var text = Encoding.UTF8.GetString(buffer, 0, bytesRead) + leftover;
+                    var parts = text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+
+                    leftover = parts[0];
+
+                    for (int i = parts.Length - 1; i >= 1; i--)
+                    {
+                        lines.Add(parts[i]);
+                        lineCount++;
+                        if (lineCount >= maxLines)
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                if (lineCount < maxLines && !string.IsNullOrEmpty(leftover))
+                {
+                    lines.Add(leftover);
+                }
+            }
+
+            lines.Reverse();
+            return lines;
         }
 
         private Dictionary<DateTimeOffset, List<TradeResult>> GetTrades(DateTimeOffset? date = null)
