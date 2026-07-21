@@ -695,5 +695,102 @@ namespace IntelliTrader.Web.Controllers
             }
             return trades;
         }
+
+        [HttpGet]
+        public IActionResult PollLogs(string type = "general", int count = 50)
+        {
+            var logsPath = Path.Combine(Directory.GetCurrentDirectory(), "log");
+            if (!Directory.Exists(logsPath))
+            {
+                return Json(new List<string> { "Log directory does not exist yet." });
+            }
+
+            string pattern = type == "trades" ? "*-trades.txt" : "*-general.txt";
+            var logFiles = Directory.EnumerateFiles(logsPath, pattern, SearchOption.TopDirectoryOnly)
+                                    .OrderByDescending(System.IO.File.GetLastWriteTime)
+                                    .ToList();
+
+            if (!logFiles.Any())
+            {
+                return Json(new List<string> { $"No {type} log files found." });
+            }
+
+            var latestFile = logFiles.First();
+            var lines = ReadLatestLinesOfFile(latestFile, count);
+            return Json(lines);
+        }
+
+        private List<string> ReadLatestLinesOfFile(string filePath, int lineCount)
+        {
+            var lines = new List<string>();
+            if (!System.IO.File.Exists(filePath))
+            {
+                return lines;
+            }
+
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                long fileLength = fs.Length;
+                if (fileLength == 0)
+                    return lines;
+
+                long position = fileLength;
+                var lineBytes = new List<byte>();
+                int foundLines = 0;
+
+                // Skip the very last byte if it's a newline to avoid starting with a trailing empty line
+                fs.Position = fileLength - 1;
+                int lastByte = fs.ReadByte();
+                if (lastByte == '\n')
+                {
+                    position--;
+                }
+
+                const int bufferSize = 4096;
+                byte[] buffer = new byte[bufferSize];
+
+                while (position > 0 && foundLines < lineCount)
+                {
+                    int toRead = (int)Math.Min(bufferSize, position);
+                    position -= toRead;
+                    fs.Position = position;
+                    int read = fs.Read(buffer, 0, toRead);
+
+                    for (int i = read - 1; i >= 0; i--)
+                    {
+                        byte b = buffer[i];
+                        if (b == '\n')
+                        {
+                            if (lineBytes.Count > 0 || foundLines > 0)
+                            {
+                                lineBytes.Reverse();
+                                string line = Encoding.UTF8.GetString(lineBytes.ToArray()).TrimEnd('\r');
+                                lines.Add(line);
+                                lineBytes.Clear();
+                                foundLines++;
+                                if (foundLines >= lineCount)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            lineBytes.Add(b);
+                        }
+                    }
+                }
+
+                if (position == 0 && lineBytes.Count > 0 && foundLines < lineCount)
+                {
+                    lineBytes.Reverse();
+                    string line = Encoding.UTF8.GetString(lineBytes.ToArray()).TrimEnd('\r');
+                    lines.Add(line);
+                }
+            }
+
+            lines.Reverse();
+            return lines;
+        }
     }
 }
