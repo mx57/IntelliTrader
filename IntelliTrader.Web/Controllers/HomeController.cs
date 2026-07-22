@@ -642,6 +642,99 @@ namespace IntelliTrader.Web.Controllers
             }
         }
 
+        [HttpGet]
+        public IActionResult PollLogs(string type = "trades", int count = 100)
+        {
+            var logsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log");
+            if (!Directory.Exists(logsPath))
+            {
+                logsPath = Path.Combine(Directory.GetCurrentDirectory(), "log");
+            }
+
+            if (!Directory.Exists(logsPath))
+            {
+                return Json(new { success = false, message = "Logs directory not found." });
+            }
+
+            string pattern = type == "general" ? "*-general.txt" : "*-trades.txt";
+            var logFiles = Directory.EnumerateFiles(logsPath, pattern, SearchOption.TopDirectoryOnly)
+                                    .OrderByDescending(f => f)
+                                    .ToList();
+
+            if (logFiles.Count == 0)
+            {
+                return Json(new { success = true, lines = new List<string>() });
+            }
+
+            var latestLogFile = logFiles.First();
+            var lastLines = ReadLastLines(latestLogFile, count);
+
+            return Json(new { success = true, lines = lastLines });
+        }
+
+        private List<string> ReadLastLines(string filePath, int lineCount)
+        {
+            var lines = new List<string>();
+            if (!System.IO.File.Exists(filePath))
+            {
+                return lines;
+            }
+
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                long fileLength = fs.Length;
+                if (fileLength == 0) return lines;
+
+                long position = fileLength;
+                var lineBytes = new List<byte>();
+                int bufferSize = 4096;
+                var buffer = new byte[bufferSize];
+
+                while (position > 0 && lines.Count < lineCount)
+                {
+                    long toRead = Math.Min(bufferSize, position);
+                    position -= toRead;
+                    fs.Position = position;
+                    int bytesRead = fs.Read(buffer, 0, (int)toRead);
+
+                    for (int i = bytesRead - 1; i >= 0; i--)
+                    {
+                        byte b = buffer[i];
+                        if (b == 10) // '\n'
+                        {
+                            if (lineBytes.Count > 0)
+                            {
+                                lineBytes.Reverse();
+                                string line = Encoding.UTF8.GetString(lineBytes.ToArray()).TrimEnd('\r');
+                                lines.Add(line);
+                                lineBytes.Clear();
+
+                                if (lines.Count >= lineCount)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            lineBytes.Add(b);
+                        }
+                    }
+                }
+
+                if (lineBytes.Count > 0 && lines.Count < lineCount)
+                {
+                    lineBytes.Reverse();
+                    string line = Encoding.UTF8.GetString(lineBytes.ToArray()).TrimEnd('\r');
+                    lines.Add(line);
+                }
+            }
+
+            // Since we read backwards, we must reverse the list so lines are in correct chronological order
+            lines.Reverse();
+            return lines;
+        }
+
         private Dictionary<DateTimeOffset, List<TradeResult>> GetTrades(DateTimeOffset? date = null)
         {
             var coreService = Application.Resolve<ICoreService>();
