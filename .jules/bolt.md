@@ -32,3 +32,7 @@
 ## 2026-07-07 - Python SkillRegistry execute_skill argument name collision
 **Инсайт:** Метод `SkillRegistry.execute_skill(self, name: str, **kwargs)` принимает первый аргумент как `name`. Из-за этого при передаче и распаковке `**arguments` в инструментах, если у инструмента есть параметр по имени `name`, Python выбрасывает `TypeError: got multiple values for argument 'name'` из-за конфликта имен.
 **Действие:** Избегать использования имени параметра `name` в аргументах регистрируемых функций-навыков (skills), заменяя его более специфичными именами (например, `person_name`, `skill_name`, `target_name`), чтобы исключить конфликты при вызове `execute_skill`.
+
+## 2026-07-23 - Real-time Log Monitor Terminal and seek-based backward stream reader
+**Инсайт:** Полное чтение логов (`File.ReadAllLines`) или использование обратных фильтров в веб-контроллерах при высокой частоте запросов (long-polling/regular polling) приводит к серьезным проблемам с памятью и сборкой мусора (Garbage Collection overhead), вплоть до `OutOfMemoryException`.
+**Действие:** Для реализации real-time лог-монитора на веб-панелях использовать seek-based алгоритмы обратного чтения файлов (`FileShare.ReadWrite`), считывая только последние $N$ строк с конца файла. На фронтенде обязательно задействовать событие `visibilitychange` для приостановки веб-запросов, когда вкладка браузера неактивна, снижая паразитную нагрузку на сервер.

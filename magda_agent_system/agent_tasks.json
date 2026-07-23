@@ -238,14 +238,17 @@
     },
     {
       "id": "web-dashboard-realtime-logs",
-      "status": "todo",
+      "status": "done",
+      "claimed_by": "Jules",
+      "claimed_at": "2026-07-23T20:26:56Z",
       "area": "web",
       "risk": "low",
       "title": "Add automatic long-polling for real-time logs inside Web Dashboard",
       "description": "Implement a script or AJAX endpoint in HomeController and Dashboard view to automatically poll and update log files on the dashboard without full page refreshes.",
       "allowed_paths": [
         "IntelliTrader.Web/Controllers/HomeController.cs",
-        "IntelliTrader.Web/Views/Home/Index.cshtml",
+        "IntelliTrader.Web/Views/Home/Dashboard.cshtml",
+        "IntelliTrader.Web/Static/Scripts/Views/dashboard.js",
         "magda_agent_system/agent_tasks.json"
       ],
       "acceptance": [

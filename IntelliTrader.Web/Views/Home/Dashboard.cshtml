@@ -59,6 +59,22 @@
         </tfoot>
     </table>
 
+    <!-- Real-time Log Monitor Terminal -->
+    <div class="card mt-4" style="background-color: #1e1e2f; color: #a9b7c6; border-radius: 4px; border: 1px solid #2b2b36; margin-top: 20px;">
+        <div class="card-header" style="background-color: #2b2b36; border-bottom: 1px solid #32324d; padding: 10px 15px; display: flex; align-items: center; justify-content: space-between;">
+            <h5 class="mb-0" style="color: #ffffff; font-size: 16px; margin: 0;"><i class="fas fa-terminal mr-2"></i>Live Log Monitor</h5>
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-sm btn-outline-light active" id="logTypeGeneralBtn" style="border-color: #4a4a6a; margin-right: 5px;" onclick="setLogType('general')">General Log</button>
+                <button type="button" class="btn btn-sm btn-outline-light" id="logTypeTradesBtn" style="border-color: #4a4a6a;" onclick="setLogType('trades')">Trades Log</button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div id="logTerminal" style="height: 250px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 13px; padding: 15px; background-color: #12121a; color: #39FF14; line-height: 1.5; white-space: pre-wrap; border-radius: 0 0 4px 4px;">
+                <div class="text-muted">Initializing log connection...</div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
