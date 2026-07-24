@@ -189,7 +189,7 @@
     },
     {
       "id": "trading-rl-feedback-loop",
-      "status": "todo",
+      "status": "done",
       "area": "learning",
       "risk": "medium",
       "title": "Implement Online RL for trading parameter optimization",
