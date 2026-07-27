@@ -119,7 +119,15 @@ namespace IntelliTrader.Web.Controllers
 
         public IActionResult Index()
         {
-            return Dashboard();
+            var coreService = Application.Resolve<ICoreService>();
+            var webService = Application.Resolve<IWebService>();
+            var model = new DashboardViewModel
+            {
+                InstanceName = coreService.Config.InstanceName,
+                Version = coreService.Version,
+                ReadOnlyMode = webService.Config.ReadOnlyMode
+            };
+            return View(nameof(Index), model);
         }
 
         public IActionResult Dashboard()
@@ -132,7 +140,7 @@ namespace IntelliTrader.Web.Controllers
                 Version = coreService.Version,
                 ReadOnlyMode = webService.Config.ReadOnlyMode
             };
-            return View(nameof(Dashboard), model);
+            return View(nameof(Index), model);
         }
 
         public IActionResult Market()

@@ -1,0 +1,83 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["Instance"] = Model.InstanceName;
+}
+
+@section AddToHead{
+    <link rel="stylesheet" type="text/css" href="@Url.Content("~/Static/Styles/Views/dashboard.css")">
+    <script type="text/javascript" src="@Url.Content("~/Static/Scripts/Views/dashboard.js")"></script>
+}
+
+<div>
+    @await Html.PartialAsync("Dashboard", Model)
+
+    <!-- Real-time Trade Logs Section -->
+    <div class="card mt-4" style="margin-top: 30px; border: 1px solid #3e3e5a; background-color: #1e1e2f; color: #f8f9fa;">
+        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #2a2a3e; border-bottom: 1px solid #3e3e5a; padding: 10px 15px;">
+            <span style="font-weight: bold; font-size: 16px;">
+                <i class="fas fa-list-alt text-info" style="margin-right: 8px;"></i>Real-time Trade Logs
+            </span>
+            <div class="d-flex align-items-center">
+                <span id="logStatus" class="badge badge-success" style="margin-right: 15px; font-size: 11px;">Polling Active</span>
+                <button class="btn btn-sm btn-outline-info" type="button" data-toggle="collapse" data-target="#tradeLogsCollapse" aria-expanded="true" aria-controls="tradeLogsCollapse">
+                    Toggle Logs
+                </button>
+            </div>
+        </div>
+        <div class="collapse show" id="tradeLogsCollapse">
+            <div class="card-body" style="background-color: #12121e; padding: 15px;">
+                <div id="tradeLogsContent" style="max-height: 250px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 13px; color: #4af626; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word;">Loading trade logs...</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function () {
+            var logContainer = document.getElementById("tradeLogsContent");
+            var logStatus = document.getElementById("logStatus");
+            var isScrolledToBottom = true;
+
+            if (logContainer) {
+                logContainer.addEventListener('scroll', function() {
+                    isScrolledToBottom = logContainer.scrollHeight - logContainer.clientHeight <= logContainer.scrollTop + 20;
+                });
+            }
+
+            function pollTradeLogs() {
+                fetch("/TradeLogLines?take=100")
+                    .then(function(response) {
+                        if (!response.ok) {
+                            throw new Error("HTTP error " + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        if (logStatus) {
+                            logStatus.textContent = "Polling Active";
+                            logStatus.className = "badge badge-success";
+                        }
+                        if (logContainer) {
+                            if (data && data.length > 0) {
+                                logContainer.textContent = data.join("\n");
+                                if (isScrolledToBottom) {
+                                    logContainer.scrollTop = logContainer.scrollHeight;
+                                }
+                            } else {
+                                logContainer.textContent = "No trade log entries found.";
+                            }
+                        }
+                    })
+                    .catch(function(error) {
+                        if (logStatus) {
+                            logStatus.textContent = "Connection Error";
+                            logStatus.className = "badge badge-warning";
+                        }
+                    });
+            }
+
+            pollTradeLogs();
+            setInterval(pollTradeLogs, 5000);
+        });
+    </script>
+</div>
