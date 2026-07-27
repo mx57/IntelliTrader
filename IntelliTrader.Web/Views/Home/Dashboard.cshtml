@@ -59,6 +59,22 @@
         </tfoot>
     </table>
 
+    <!-- Real-time Log Monitor Terminal -->
+    <div class="card mt-4" style="background-color: #1e1e2f; color: #a9b7c6; border-radius: 4px; border: 1px solid #2b2b36; margin-top: 20px;">
+        <div class="card-header" style="background-color: #2b2b36; border-bottom: 1px solid #32324d; padding: 10px 15px; display: flex; align-items: center; justify-content: space-between;">
+            <h5 class="mb-0" style="color: #ffffff; font-size: 16px; margin: 0;"><i class="fas fa-terminal mr-2"></i>Live Log Monitor</h5>
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-sm btn-outline-light active" id="logTypeGeneralBtn" style="border-color: #4a4a6a; margin-right: 5px;" onclick="setLogType('general')">General Log</button>
+                <button type="button" class="btn btn-sm btn-outline-light" id="logTypeTradesBtn" style="border-color: #4a4a6a;" onclick="setLogType('trades')">Trades Log</button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div id="logTerminal" style="height: 250px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 13px; padding: 15px; background-color: #12121a; color: #39FF14; line-height: 1.5; white-space: pre-wrap; border-radius: 0 0 4px 4px;">
+                <div class="text-muted">Initializing log connection...</div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
@@ -119,180 +135,91 @@
         </div>
     </script>
 
-    <!-- Real-time Log Viewer Panel -->
-    <div class="card mt-4 mb-4" style="background-color: #1e1e2f; border: 1px solid #2d2d3f; color: #e2e2e2; border-radius: 6px;">
-        <div class="card-header d-flex flex-wrap justify-content-between align-items-center" style="background-color: #252538; border-bottom: 1px solid #2d2d3f; padding: 10px 15px;">
-            <h5 class="mb-0" style="font-weight: 600; color: #ffffff;"><i class="fas fa-terminal text-info mr-2"></i> Real-time Log Monitor</h5>
-            <div class="d-flex flex-wrap align-items-center" style="gap: 12px; margin-top: 5px; margin-bottom: 5px;">
-                <!-- Log Type Selection -->
-                <div class="input-group input-group-sm" style="width: auto;">
-                    <div class="input-group-prepend">
-                        <label class="input-group-text" for="realtimeLogType" style="background-color: #2d2d3f; color: #a5a5b5; border: 1px solid #3d3d5c;">Type</label>
-                    </div>
-                    <select class="custom-select custom-select-sm" id="realtimeLogType" style="background-color: #2d2d3f; color: #ffffff; border: 1px solid #3d3d5c; min-width: 130px;">
-                        <option value="general" selected>General Logs</option>
-                        <option value="trades">Trade Logs</option>
-                    </select>
-                </div>
-
-                <!-- Lines Count -->
-                <div class="input-group input-group-sm" style="width: auto;">
-                    <div class="input-group-prepend">
-                        <label class="input-group-text" for="realtimeLogCount" style="background-color: #2d2d3f; color: #a5a5b5; border: 1px solid #3d3d5c;">Lines</label>
-                    </div>
-                    <select class="custom-select custom-select-sm" id="realtimeLogCount" style="background-color: #2d2d3f; color: #ffffff; border: 1px solid #3d3d5c;">
-                        <option value="25">25</option>
-                        <option value="50" selected>50</option>
-                        <option value="100">100</option>
-                        <option value="200">200</option>
-                    </select>
-                </div>
-
-                <!-- Auto Scroll Checkbox -->
-                <div class="custom-control custom-checkbox custom-control-inline" style="margin-right: 0;">
-                    <input type="checkbox" class="custom-control-input" id="realtimeLogAutoScroll" checked>
-                    <label class="custom-control-label" for="realtimeLogAutoScroll" style="color: #a5a5b5; user-select: none; cursor: pointer;">Auto-scroll</label>
-                </div>
-
-                <!-- Refresh Rate selection -->
-                <div class="input-group input-group-sm" style="width: auto;">
-                    <div class="input-group-prepend">
-                        <label class="input-group-text" for="realtimeLogInterval" style="background-color: #2d2d3f; color: #a5a5b5; border: 1px solid #3d3d5c;">Poll</label>
-                    </div>
-                    <select class="custom-select custom-select-sm" id="realtimeLogInterval" style="background-color: #2d2d3f; color: #ffffff; border: 1px solid #3d3d5c;">
-                        <option value="2000">2s</option>
-                        <option value="5000" selected>5s</option>
-                        <option value="10000">10s</option>
-                    </select>
-                </div>
-
-                <!-- Control Buttons -->
-                <button class="btn btn-sm btn-outline-warning" id="realtimeLogPauseBtn"><i class="fas fa-pause mr-1"></i>Pause</button>
-                <button class="btn btn-sm btn-outline-danger" id="realtimeLogClearBtn"><i class="fas fa-trash-alt mr-1"></i>Clear</button>
+    <div class="card mt-4" style="background-color: #1e1e2e; border: 1px solid #3b3b4f; color: #a9b1d6; font-family: 'Courier New', Courier, monospace;">
+        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #1a1a26; border-bottom: 1px solid #3b3b4f;">
+            <span style="font-weight: bold; color: #7aa2f7;"><i class="fas fa-terminal"></i> Live Trade Logs Terminal</span>
+            <div class="d-flex align-items-center">
+                <select id="logTypeSelect" class="form-control form-control-sm d-inline-block" style="width: auto; background-color: #24283b; color: #a9b1d6; border: 1px solid #3b3b4f; margin-right: 10px;">
+                    <option value="trades" selected>Trade Logs</option>
+                    <option value="general">General Logs</option>
+                </select>
+                <button id="clearTerminalBtn" class="btn btn-sm btn-outline-secondary" style="border-color: #3b3b4f; color: #a9b1d6;">Clear</button>
             </div>
         </div>
-        <div class="card-body p-0">
-            <div id="realtimeLogConsole" style="height: 350px; overflow-y: auto; background-color: #12121a; color: #cfcfd8; font-family: 'Courier New', Courier, monospace; font-size: 13px; padding: 15px; line-height: 1.6; white-space: pre-wrap; word-break: break-all;">Loading logs...</div>
+        <div class="card-body" id="logTerminal" style="height: 250px; overflow-y: auto; font-size: 13px; line-height: 1.5; padding: 10px; background-color: #1a1a26; border-radius: 0 0 4px 4px;">
+            <div class="text-muted">Initializing live log polling...</div>
         </div>
     </div>
 
-    <script type="text/javascript">
+    <script>
         document.addEventListener("DOMContentLoaded", function () {
-            var logConsole = document.getElementById("realtimeLogConsole");
-            var logTypeSelect = document.getElementById("realtimeLogType");
-            var logCountSelect = document.getElementById("realtimeLogCount");
-            var logIntervalSelect = document.getElementById("realtimeLogInterval");
-            var autoScrollCheck = document.getElementById("realtimeLogAutoScroll");
-            var pauseBtn = document.getElementById("realtimeLogPauseBtn");
-            var clearBtn = document.getElementById("realtimeLogClearBtn");
+            const logTerminal = document.getElementById("logTerminal");
+            const logTypeSelect = document.getElementById("logTypeSelect");
+            const clearTerminalBtn = document.getElementById("clearTerminalBtn");
 
-            var isPaused = false;
-            var pollTimer = null;
-
-            function escapeHtml(text) {
-                return text
-                    .replace(/&/g, "&amp;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;")
-                    .replace(/"/g, "&quot;")
-                    .replace(/'/g, "&#039;");
-            }
+            let lastLogContent = "";
 
             function fetchLogs() {
-                if (isPaused || document.hidden) {
-                    return;
-                }
+                const logType = logTypeSelect.value;
+                fetch(`/Home/PollLogs?type=${logType}&maxLines=100`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.lines) {
+                            const content = data.lines.join("\n");
+                            if (content !== lastLogContent) {
+                                lastLogContent = content;
 
-                var type = logTypeSelect.value;
-                var count = logCountSelect.value;
+                                logTerminal.innerHTML = "";
+                                if (data.lines.length === 0) {
+                                    logTerminal.innerHTML = '<div class="text-muted">No logs found.</div>';
+                                } else {
+                                    data.lines.forEach(line => {
+                                        const div = document.createElement("div");
+                                        div.style.whiteSpace = "pre-wrap";
+                                        div.style.wordBreak = "break-all";
+                                        div.style.marginBottom = "4px";
 
-                $.ajax({
-                    url: "/Home/PollLogs",
-                    type: "GET",
-                    data: { type: type, count: count },
-                    success: function (data) {
-                        if (Array.isArray(data)) {
-                            if (data.length === 0) {
-                                logConsole.innerHTML = '<span class="text-muted">No log entries found.</span>';
-                                return;
-                            }
+                                        if (line.includes("[ERR]") || line.includes("Error") || line.includes("Exception") || line.includes("fail")) {
+                                            div.style.color = "#f7768e";
+                                        } else if (line.includes("[WRN]") || line.includes("Warning") || line.includes("warn")) {
+                                            div.style.color = "#e0af68";
+                                        } else if (line.includes("[INF]") || line.includes("Success") || line.includes("Buy") || line.includes("Sell")) {
+                                            div.style.color = "#9ece6a";
+                                        } else {
+                                            div.style.color = "#a9b1d6";
+                                        }
 
-                            var formatted = data.map(function (line) {
-                                var escaped = escapeHtml(line);
-                                // Add color coding based on log levels
-                                if (escaped.indexOf("[ERR]") !== -1 || escaped.indexOf("[FTL]") !== -1) {
-                                    return '<span style="color: #ff5555; font-weight: bold;">' + escaped + '</span>';
-                                } else if (escaped.indexOf("[WRN]") !== -1) {
-                                    return '<span style="color: #ffb86c;">' + escaped + '</span>';
-                                } else if (escaped.indexOf("[INF]") !== -1) {
-                                    return '<span style="color: #8be9fd;">' + escaped + '</span>';
-                                } else if (escaped.indexOf("[DBG]") !== -1) {
-                                    return '<span style="color: #6272a4;">' + escaped + '</span>';
+                                        div.textContent = line;
+                                        logTerminal.appendChild(div);
+                                    });
+
+                                    logTerminal.scrollTop = logTerminal.scrollHeight;
                                 }
-                                return escaped;
-                            }).join("\n");
-
-                            logConsole.innerHTML = formatted;
-
-                            if (autoScrollCheck.checked) {
-                                logConsole.scrollTop = logConsole.scrollHeight;
                             }
                         } else {
-                            logConsole.innerHTML = '<span class="text-danger">Invalid log data format.</span>';
+                            logTerminal.innerHTML = `<div class="text-danger">Error: ${data.message || 'Unknown error'}</div>`;
                         }
-                    },
-                    error: function (xhr, status, err) {
-                        logConsole.innerHTML = '<span class="text-danger">Error fetching logs: ' + escapeHtml(err || status) + '</span>';
-                    }
-                });
+                    })
+                    .catch(error => {
+                        console.error("Error polling logs:", error);
+                        logTerminal.innerHTML = `<div class="text-danger">Connection lost: ${error.message}</div>`;
+                    });
             }
 
-            function startPolling() {
-                stopPolling();
+            fetchLogs();
+
+            const intervalId = setInterval(fetchLogs, 3000);
+
+            logTypeSelect.addEventListener("change", function() {
+                lastLogContent = "";
+                logTerminal.innerHTML = '<div class="text-muted">Loading logs...</div>';
                 fetchLogs();
-                var interval = parseInt(logIntervalSelect.value, 10) || 5000;
-                pollTimer = setInterval(fetchLogs, interval);
-            }
-
-            function stopPolling() {
-                if (pollTimer) {
-                    clearInterval(pollTimer);
-                    pollTimer = null;
-                }
-            }
-
-            // Event listeners
-            logTypeSelect.addEventListener("change", fetchLogs);
-            logCountSelect.addEventListener("change", fetchLogs);
-            logIntervalSelect.addEventListener("change", startPolling);
-
-            pauseBtn.addEventListener("click", function () {
-                isPaused = !isPaused;
-                if (isPaused) {
-                    pauseBtn.innerHTML = '<i class="fas fa-play mr-1"></i>Resume';
-                    pauseBtn.className = "btn btn-sm btn-outline-success";
-                } else {
-                    pauseBtn.innerHTML = '<i class="fas fa-pause mr-1"></i>Pause';
-                    pauseBtn.className = "btn btn-sm btn-outline-warning";
-                    fetchLogs();
-                }
             });
 
-            clearBtn.addEventListener("click", function () {
-                logConsole.innerHTML = '<span class="text-muted">Console cleared.</span>';
+            clearTerminalBtn.addEventListener("click", function() {
+                logTerminal.innerHTML = '<div class="text-muted">Terminal cleared.</div>';
+                lastLogContent = "CLEARED";
             });
-
-            // Initialize polling
-            startPolling();
-
-            // Pause polling when tab is inactive to save resources
-            document.addEventListener("visibilitychange", function () {
-                if (document.hidden) {
-                    stopPolling();
-                } else {
-                    startPolling();
-                }
-            }, false);
         });
     </script>
 </div>

@@ -180,10 +180,62 @@ $(function () {
         refreshTable();
     }, 5000);
 
+    pollLiveLogs();
+    setInterval(function () {
+        pollLiveLogs();
+    }, 5000);
+
     document.addEventListener("visibilitychange", function () {
         refreshTable();
+        pollLiveLogs();
     }, false);
 });
+
+var currentLogType = "general";
+
+function setLogType(type) {
+    if (currentLogType === type) return;
+    currentLogType = type;
+
+    if (type === "general") {
+        $("#logTypeGeneralBtn").addClass("active");
+        $("#logTypeTradesBtn").removeClass("active");
+    } else {
+        $("#logTypeTradesBtn").addClass("active");
+        $("#logTypeGeneralBtn").removeClass("active");
+    }
+
+    $("#logTerminal").html('<div class="text-muted">Loading logs...</div>');
+    pollLiveLogs();
+}
+
+function pollLiveLogs() {
+    if (document.hidden)
+        return;
+
+    $.get("/Home/PollLogs", { type: currentLogType, maxLines: 100 }, function (data) {
+        var terminal = $("#logTerminal");
+        if (data.error) {
+            terminal.html('<div class="text-danger">Error: ' + data.error + '</div>');
+            return;
+        }
+
+        if (!data.lines || data.lines.length === 0) {
+            terminal.html('<div class="text-muted">No logs available for ' + currentLogType + '.</div>');
+            return;
+        }
+
+        var htmlContent = data.lines.map(function(line) {
+            var escaped = $('<div>').text(line).html();
+            return '<div>' + escaped + '</div>';
+        }).join('');
+
+        terminal.html(htmlContent);
+        terminal.scrollTop(terminal[0].scrollHeight);
+    }).fail(function() {
+        $("#logTerminal").html('<div class="text-danger">Failed to connect to log server.</div>');
+    });
+}
 
 function refreshTable() {
     if (!document.hidden && $(".additional-details").length == 0 && $(".dtr-details").length == 0) {
