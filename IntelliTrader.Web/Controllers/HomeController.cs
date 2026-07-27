@@ -362,7 +362,86 @@ namespace IntelliTrader.Web.Controllers
             return View(model);
         }
 
+        [HttpGet]
+        public IActionResult PollLogs(string type = "general", int maxLines = 100)
+        {
+            try
+            {
+                maxLines = Math.Min(Math.Max(maxLines, 1), 1000);
+                string pattern = "general".Equals(type, StringComparison.OrdinalIgnoreCase) ? "*-general.txt" : "*-trades.txt";
+                string filePath = GetLatestLogFilePath(pattern);
 
+                if (string.IsNullOrEmpty(filePath) || !System.IO.File.Exists(filePath))
+                {
+                    return Json(new { lines = new List<string>(), message = "No log file found." });
+                }
+
+                var lines = ReadLastLines(filePath, maxLines);
+                return Json(new { lines });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { lines = new List<string>(), error = ex.Message });
+            }
+        }
+
+        private string GetLatestLogFilePath(string pattern)
+        {
+            var logsPath = Path.Combine(Directory.GetCurrentDirectory(), "log");
+            if (!Directory.Exists(logsPath)) return null;
+
+            return Directory.EnumerateFiles(logsPath, pattern)
+                .OrderByDescending(f => f)
+                .FirstOrDefault();
+        }
+
+        private List<string> ReadLastLines(string filePath, int maxLines)
+        {
+            var lines = new List<string>();
+            if (!System.IO.File.Exists(filePath))
+            {
+                return lines;
+            }
+
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                long position = fs.Length;
+                if (position == 0) return lines;
+
+                const int bufferSize = 4096;
+                byte[] buffer = new byte[bufferSize];
+                int newlineCount = 0;
+
+                while (position > 0 && newlineCount < maxLines + 1)
+                {
+                    int toRead = (int)Math.Min(bufferSize, position);
+                    position -= toRead;
+                    fs.Seek(position, SeekOrigin.Begin);
+                    int read = fs.Read(buffer, 0, toRead);
+
+                    for (int i = read - 1; i >= 0; i--)
+                    {
+                        if (buffer[i] == 10) // '\n'
+                        {
+                            newlineCount++;
+                            if (newlineCount > maxLines)
+                            {
+                                position = position + i + 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                fs.Seek(position, SeekOrigin.Begin);
+                using (var sr = new StreamReader(fs, Encoding.UTF8))
+                {
+                    string content = sr.ReadToEnd();
+                    var allLines = content.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                    return allLines.Where(l => !string.IsNullOrWhiteSpace(l)).Skip(Math.Max(0, allLines.Length - maxLines)).ToList();
+                }
+            }
+        }
 
         public IActionResult Status()
         {

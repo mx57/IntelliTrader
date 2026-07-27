@@ -245,7 +245,8 @@
       "description": "Implement a script or AJAX endpoint in HomeController and Dashboard view to automatically poll and update log files on the dashboard without full page refreshes.",
       "allowed_paths": [
         "IntelliTrader.Web/Controllers/HomeController.cs",
-        "IntelliTrader.Web/Views/Home/Index.cshtml",
+        "IntelliTrader.Web/Views/Home/Dashboard.cshtml",
+        "IntelliTrader.Web/Static/Scripts/Views/dashboard.js",
         "magda_agent_system/agent_tasks.json"
       ],
       "acceptance": [
