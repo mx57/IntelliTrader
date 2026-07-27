@@ -357,3 +357,7 @@ wheels/
 *.egg
 .pytest_cache/
 magda_agent_system/semantic_memory_db/
+magda_agent_system/memory_db/
+magda_agent_system/procedural_memory_db/
+magda_agent_system/episodic_memory_db/
+magda_agent_system/habits_db/
