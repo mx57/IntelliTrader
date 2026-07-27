@@ -59,6 +59,22 @@
         </tfoot>
     </table>
 
+    <!-- Real-time Log Monitor Terminal -->
+    <div class="card mt-4" style="background-color: #1e1e2f; color: #a9b7c6; border-radius: 4px; border: 1px solid #2b2b36; margin-top: 20px;">
+        <div class="card-header" style="background-color: #2b2b36; border-bottom: 1px solid #32324d; padding: 10px 15px; display: flex; align-items: center; justify-content: space-between;">
+            <h5 class="mb-0" style="color: #ffffff; font-size: 16px; margin: 0;"><i class="fas fa-terminal mr-2"></i>Live Log Monitor</h5>
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-sm btn-outline-light active" id="logTypeGeneralBtn" style="border-color: #4a4a6a; margin-right: 5px;" onclick="setLogType('general')">General Log</button>
+                <button type="button" class="btn btn-sm btn-outline-light" id="logTypeTradesBtn" style="border-color: #4a4a6a;" onclick="setLogType('trades')">Trades Log</button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div id="logTerminal" style="height: 250px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 13px; padding: 15px; background-color: #12121a; color: #39FF14; line-height: 1.5; white-space: pre-wrap; border-radius: 0 0 4px 4px;">
+                <div class="text-muted">Initializing log connection...</div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
@@ -119,120 +135,90 @@
         </div>
     </script>
 
-    <br />
-    <div class="card mt-4" style="background-color: #1e1e2f; color: #a9b7c6; border: 1px solid #2d2d44; border-radius: 4px;">
-        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #2b2b3d; border-bottom: 1px solid #2d2d44; padding: 10px 15px;">
-            <h5 class="card-title mb-0" style="font-size: 1.1rem; font-weight: 600; color: #fff; margin: 0;">
-                <i class="fas fa-terminal mr-2" style="color: #4fc3f7;"></i> Real-Time Logs
-            </h5>
-            <div class="d-flex align-items-center" style="gap: 15px;">
-                <select id="logTypeSelect" class="form-control form-control-sm" style="width: auto; background-color: #1e1e2f; color: #fff; border: 1px solid #4e4e6a; height: 30px; padding: 2px 10px;">
-                    <option value="trades">Trade Logs</option>
+    <div class="card mt-4" style="background-color: #1e1e2e; border: 1px solid #3b3b4f; color: #a9b1d6; font-family: 'Courier New', Courier, monospace;">
+        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #1a1a26; border-bottom: 1px solid #3b3b4f;">
+            <span style="font-weight: bold; color: #7aa2f7;"><i class="fas fa-terminal"></i> Live Trade Logs Terminal</span>
+            <div class="d-flex align-items-center">
+                <select id="logTypeSelect" class="form-control form-control-sm d-inline-block" style="width: auto; background-color: #24283b; color: #a9b1d6; border: 1px solid #3b3b4f; margin-right: 10px;">
+                    <option value="trades" selected>Trade Logs</option>
                     <option value="general">General Logs</option>
                 </select>
-                <span class="badge badge-success" id="logPollStatus" style="padding: 6px 10px; font-size: 0.75rem;">Polling Active</span>
-                <button class="btn btn-sm btn-outline-secondary" id="clearTerminalBtn" style="color: #a9b7c6; border-color: #4e4e6a; height: 30px; padding: 2px 12px; line-height: 1.5;">Clear</button>
+                <button id="clearTerminalBtn" class="btn btn-sm btn-outline-secondary" style="border-color: #3b3b4f; color: #a9b1d6;">Clear</button>
             </div>
         </div>
-        <div class="card-body" style="padding: 15px;">
-            <div id="logTerminal" style="height: 250px; overflow-y: auto; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.85rem; line-height: 1.4; background-color: #12121e; border: 1px solid #2d2d44; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word;">
-                <div style="color: #6a737d;">Initializing log terminal...</div>
-            </div>
+        <div class="card-body" id="logTerminal" style="height: 250px; overflow-y: auto; font-size: 13px; line-height: 1.5; padding: 10px; background-color: #1a1a26; border-radius: 0 0 4px 4px;">
+            <div class="text-muted">Initializing live log polling...</div>
         </div>
     </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const logTerminal = document.getElementById("logTerminal");
-            const logPollStatus = document.getElementById("logPollStatus");
-            const clearTerminalBtn = document.getElementById("clearTerminalBtn");
             const logTypeSelect = document.getElementById("logTypeSelect");
+            const clearTerminalBtn = document.getElementById("clearTerminalBtn");
 
-            let lastLinesJson = "";
+            let lastLogContent = "";
 
-            function pollLogs() {
-                if (document.hidden) return;
-
-                const logType = logTypeSelect ? logTypeSelect.value : "trades";
-                fetch(`/Home/PollLogs?type=${logType}&count=100`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error("HTTP status " + response.status);
-                        }
-                        return response.json();
-                    })
+            function fetchLogs() {
+                const logType = logTypeSelect.value;
+                fetch(`/Home/PollLogs?type=${logType}&maxLines=100`)
+                    .then(response => response.json())
                     .then(data => {
-                        if (data && data.success && Array.isArray(data.lines)) {
-                            const currentJson = JSON.stringify(data.lines);
-                            if (currentJson !== lastLinesJson) {
-                                lastLinesJson = currentJson;
+                        if (data.success && data.lines) {
+                            const content = data.lines.join("\n");
+                            if (content !== lastLogContent) {
+                                lastLogContent = content;
+
+                                logTerminal.innerHTML = "";
                                 if (data.lines.length === 0) {
-                                    logTerminal.innerHTML = '<div style="color: #6a737d;">No logs found for this category.</div>';
+                                    logTerminal.innerHTML = '<div class="text-muted">No logs found.</div>';
                                 } else {
-                                    logTerminal.innerHTML = data.lines.map(line => {
-                                        if (line.includes("Error") || line.includes("Fatal") || line.includes("ERR")) {
-                                            return `<div style="color: #f44336;">${escapeHtml(line)}</div>`;
-                                        } else if (line.includes("Warning") || line.includes("WARN")) {
-                                            return `<div style="color: #ffeb3b;">${escapeHtml(line)}</div>`;
-                                        } else if (line.includes("TradeResult") || line.includes("Placed")) {
-                                            return `<div style="color: #a5d6a7;">${escapeHtml(line)}</div>`;
+                                    data.lines.forEach(line => {
+                                        const div = document.createElement("div");
+                                        div.style.whiteSpace = "pre-wrap";
+                                        div.style.wordBreak = "break-all";
+                                        div.style.marginBottom = "4px";
+
+                                        if (line.includes("[ERR]") || line.includes("Error") || line.includes("Exception") || line.includes("fail")) {
+                                            div.style.color = "#f7768e";
+                                        } else if (line.includes("[WRN]") || line.includes("Warning") || line.includes("warn")) {
+                                            div.style.color = "#e0af68";
+                                        } else if (line.includes("[INF]") || line.includes("Success") || line.includes("Buy") || line.includes("Sell")) {
+                                            div.style.color = "#9ece6a";
+                                        } else {
+                                            div.style.color = "#a9b1d6";
                                         }
-                                        return `<div>${escapeHtml(line)}</div>`;
-                                    }).join("");
+
+                                        div.textContent = line;
+                                        logTerminal.appendChild(div);
+                                    });
+
                                     logTerminal.scrollTop = logTerminal.scrollHeight;
                                 }
                             }
-                            if (logPollStatus) {
-                                logPollStatus.textContent = "Polling Active";
-                                logPollStatus.className = "badge badge-success";
-                            }
                         } else {
-                            if (logPollStatus) {
-                                logPollStatus.textContent = "Data Error";
-                                logPollStatus.className = "badge badge-warning";
-                            }
+                            logTerminal.innerHTML = `<div class="text-danger">Error: ${data.message || 'Unknown error'}</div>`;
                         }
                     })
-                    .catch(err => {
-                        console.error("Error polling logs:", err);
-                        if (logPollStatus) {
-                            logPollStatus.textContent = "Connection Error";
-                            logPollStatus.className = "badge badge-danger";
-                        }
+                    .catch(error => {
+                        console.error("Error polling logs:", error);
+                        logTerminal.innerHTML = `<div class="text-danger">Connection lost: ${error.message}</div>`;
                     });
             }
 
-            function escapeHtml(text) {
-                return text
-                    .replace(/&/g, "&amp;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;")
-                    .replace(/"/g, "&quot;")
-                    .replace(/'/g, "&#039;");
-            }
+            fetchLogs();
 
-            if (clearTerminalBtn) {
-                clearTerminalBtn.addEventListener("click", function () {
-                    logTerminal.innerHTML = '<div style="color: #6a737d;">Terminal cleared. Waiting for next poll...</div>';
-                    lastLinesJson = "";
-                });
-            }
+            const intervalId = setInterval(fetchLogs, 3000);
 
-            if (logTypeSelect) {
-                logTypeSelect.addEventListener("change", function () {
-                    logTerminal.innerHTML = '<div style="color: #6a737d;">Switching log category...</div>';
-                    lastLinesJson = "";
-                    pollLogs();
-                });
-            }
+            logTypeSelect.addEventListener("change", function() {
+                lastLogContent = "";
+                logTerminal.innerHTML = '<div class="text-muted">Loading logs...</div>';
+                fetchLogs();
+            });
 
-            setInterval(pollLogs, 3000);
-            pollLogs();
-
-            document.addEventListener("visibilitychange", function () {
-                if (!document.hidden) {
-                    pollLogs();
-                }
+            clearTerminalBtn.addEventListener("click", function() {
+                logTerminal.innerHTML = '<div class="text-muted">Terminal cleared.</div>';
+                lastLogContent = "CLEARED";
             });
         });
     </script>

@@ -189,7 +189,7 @@
     },
     {
       "id": "trading-rl-feedback-loop",
-      "status": "todo",
+      "status": "done",
       "area": "learning",
       "risk": "medium",
       "title": "Implement Online RL for trading parameter optimization",
@@ -246,6 +246,7 @@
       "allowed_paths": [
         "IntelliTrader.Web/Controllers/HomeController.cs",
         "IntelliTrader.Web/Views/Home/Dashboard.cshtml",
+        "IntelliTrader.Web/Static/Scripts/Views/dashboard.js",
         "magda_agent_system/agent_tasks.json"
       ],
       "acceptance": [
@@ -267,6 +268,38 @@
       "acceptance": [
         "Benchmarking utility can be run via dotnet or command line",
         "Benchmark results are successfully generated and saved to a report file"
+      ]
+    },
+    {
+      "id": "web-dashboard-agent-status-panel",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add Agent Status and Memory Panel to Web Dashboard",
+      "description": "Implement an 'Agent Status' section/tab on the main sidebar displaying stored episodic memory count, cognitive drives, and active tasks.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Controllers/HomeController.cs",
+        "IntelliTrader.Web/Views/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "The Web Dashboard renders a dedicated Agent Status page with episodic memory counts and metadata"
+      ]
+    },
+    {
+      "id": "online-rl-parameter-drift-charts",
+      "status": "todo",
+      "area": "learning",
+      "risk": "medium",
+      "title": "Implement parameter drift analytics visual line charts",
+      "description": "Implement a line chart on the dashboard displaying historical adjustments of BuyTrailing and SellMargin parameters over time using Chart.js.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/**",
+        "IntelliTrader.Web/Controllers/HomeController.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "The Web Dashboard contains a line chart displaying historical parameter tuning shifts"
       ]
     }
   ]

@@ -362,7 +362,86 @@ namespace IntelliTrader.Web.Controllers
             return View(model);
         }
 
+        [HttpGet]
+        public IActionResult PollLogs(string type = "general", int maxLines = 100)
+        {
+            try
+            {
+                maxLines = Math.Min(Math.Max(maxLines, 1), 1000);
+                string pattern = "general".Equals(type, StringComparison.OrdinalIgnoreCase) ? "*-general.txt" : "*-trades.txt";
+                string filePath = GetLatestLogFilePath(pattern);
 
+                if (string.IsNullOrEmpty(filePath) || !System.IO.File.Exists(filePath))
+                {
+                    return Json(new { lines = new List<string>(), message = "No log file found." });
+                }
+
+                var lines = ReadLastLines(filePath, maxLines);
+                return Json(new { lines });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { lines = new List<string>(), error = ex.Message });
+            }
+        }
+
+        private string GetLatestLogFilePath(string pattern)
+        {
+            var logsPath = Path.Combine(Directory.GetCurrentDirectory(), "log");
+            if (!Directory.Exists(logsPath)) return null;
+
+            return Directory.EnumerateFiles(logsPath, pattern)
+                .OrderByDescending(f => f)
+                .FirstOrDefault();
+        }
+
+        private List<string> ReadLastLines(string filePath, int maxLines)
+        {
+            var lines = new List<string>();
+            if (!System.IO.File.Exists(filePath))
+            {
+                return lines;
+            }
+
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                long position = fs.Length;
+                if (position == 0) return lines;
+
+                const int bufferSize = 4096;
+                byte[] buffer = new byte[bufferSize];
+                int newlineCount = 0;
+
+                while (position > 0 && newlineCount < maxLines + 1)
+                {
+                    int toRead = (int)Math.Min(bufferSize, position);
+                    position -= toRead;
+                    fs.Seek(position, SeekOrigin.Begin);
+                    int read = fs.Read(buffer, 0, toRead);
+
+                    for (int i = read - 1; i >= 0; i--)
+                    {
+                        if (buffer[i] == 10) // '\n'
+                        {
+                            newlineCount++;
+                            if (newlineCount > maxLines)
+                            {
+                                position = position + i + 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                fs.Seek(position, SeekOrigin.Begin);
+                using (var sr = new StreamReader(fs, Encoding.UTF8))
+                {
+                    string content = sr.ReadToEnd();
+                    var allLines = content.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                    return allLines.Where(l => !string.IsNullOrWhiteSpace(l)).Skip(Math.Max(0, allLines.Length - maxLines)).ToList();
+                }
+            }
+        }
 
         public IActionResult Status()
         {
@@ -643,36 +722,30 @@ namespace IntelliTrader.Web.Controllers
         }
 
         [HttpGet]
-        public IActionResult PollLogs(string type = "trades", int count = 100)
+        public IActionResult PollLogs(string type = "trades", int maxLines = 100)
         {
-            var logsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log");
+            maxLines = Math.Max(1, Math.Min(maxLines, 1000));
+            var logsPath = Path.Combine(Directory.GetCurrentDirectory(), "log");
             if (!Directory.Exists(logsPath))
             {
-                logsPath = Path.Combine(Directory.GetCurrentDirectory(), "log");
+                return Json(new { success = false, message = "Logs directory does not exist." });
             }
 
-            if (!Directory.Exists(logsPath))
+            string searchPattern = type == "general" ? "*-general.txt" : "*-trades.txt";
+            var file = Directory.EnumerateFiles(logsPath, searchPattern, SearchOption.TopDirectoryOnly)
+                                 .OrderByDescending(f => f)
+                                 .FirstOrDefault();
+
+            if (file == null)
             {
-                return Json(new { success = false, message = "Logs directory not found." });
+                return Json(new { success = false, message = $"No log files found for type '{type}'." });
             }
 
-            string pattern = type == "general" ? "*-general.txt" : "*-trades.txt";
-            var logFiles = Directory.EnumerateFiles(logsPath, pattern, SearchOption.TopDirectoryOnly)
-                                    .OrderByDescending(f => f)
-                                    .ToList();
-
-            if (logFiles.Count == 0)
-            {
-                return Json(new { success = true, lines = new List<string>() });
-            }
-
-            var latestLogFile = logFiles.First();
-            var lastLines = ReadLastLines(latestLogFile, count);
-
-            return Json(new { success = true, lines = lastLines });
+            var lines = ReadLastLines(file, maxLines);
+            return Json(new { success = true, lines = lines });
         }
 
-        private List<string> ReadLastLines(string filePath, int lineCount)
+        private List<string> ReadLastLines(string filePath, int maxLines)
         {
             var lines = new List<string>();
             if (!System.IO.File.Exists(filePath))
@@ -680,58 +753,80 @@ namespace IntelliTrader.Web.Controllers
                 return lines;
             }
 
+            const int bufferSize = 4096;
+            byte[] buffer = new byte[bufferSize];
+            var linePositions = new List<long>();
+
             using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 long fileLength = fs.Length;
-                if (fileLength == 0) return lines;
-
                 long position = fileLength;
-                var lineBytes = new List<byte>();
-                int bufferSize = 4096;
-                var buffer = new byte[bufferSize];
 
-                while (position > 0 && lines.Count < lineCount)
+                while (position > 0 && linePositions.Count <= maxLines)
                 {
-                    long toRead = Math.Min(bufferSize, position);
+                    int toRead = (int)Math.Min(bufferSize, position);
                     position -= toRead;
                     fs.Position = position;
-                    int bytesRead = fs.Read(buffer, 0, (int)toRead);
+                    int read = fs.Read(buffer, 0, toRead);
 
-                    for (int i = bytesRead - 1; i >= 0; i--)
+                    for (int i = read - 1; i >= 0; i--)
                     {
-                        byte b = buffer[i];
-                        if (b == 10) // '\n'
+                        if (buffer[i] == (byte)'\n')
                         {
-                            if (lineBytes.Count > 0)
+                            long absoluteOffset = position + i;
+                            linePositions.Add(absoluteOffset);
+                            if (linePositions.Count > maxLines)
                             {
-                                lineBytes.Reverse();
-                                string line = Encoding.UTF8.GetString(lineBytes.ToArray()).TrimEnd('\r');
-                                lines.Add(line);
-                                lineBytes.Clear();
-
-                                if (lines.Count >= lineCount)
-                                {
-                                    break;
-                                }
+                                break;
                             }
-                        }
-                        else
-                        {
-                            lineBytes.Add(b);
                         }
                     }
                 }
 
-                if (lineBytes.Count > 0 && lines.Count < lineCount)
+                linePositions.Reverse();
+                int startIndex = 0;
+                if (linePositions.Count > maxLines)
                 {
-                    lineBytes.Reverse();
-                    string line = Encoding.UTF8.GetString(lineBytes.ToArray()).TrimEnd('\r');
+                    startIndex = linePositions.Count - maxLines;
+                }
+
+                long lastPos = startIndex > 0 ? linePositions[startIndex - 1] + 1 : 0;
+
+                for (int i = startIndex; i < linePositions.Count; i++)
+                {
+                    long nextPos = linePositions[i];
+                    long length = nextPos - lastPos;
+                    if (length > 0)
+                    {
+                        fs.Position = lastPos;
+                        byte[] lineBytes = new byte[length];
+                        fs.Read(lineBytes, 0, (int)length);
+                        string line = Encoding.UTF8.GetString(lineBytes).TrimEnd('\r', '\n');
+                        lines.Add(line);
+                    }
+                    else
+                    {
+                        lines.Add(string.Empty);
+                    }
+                    lastPos = nextPos + 1;
+                }
+
+                if (lastPos < fileLength)
+                {
+                    long length = fileLength - lastPos;
+                    fs.Position = lastPos;
+                    byte[] lineBytes = new byte[length];
+                    fs.Read(lineBytes, 0, (int)length);
+                    string line = Encoding.UTF8.GetString(lineBytes).TrimEnd('\r', '\n');
                     lines.Add(line);
                 }
             }
 
-            // Since we read backwards, we must reverse the list so lines are in correct chronological order
-            lines.Reverse();
+            if (lines.Count > maxLines)
+            {
+                lines = lines.Skip(lines.Count - maxLines).ToList();
+            }
+
             return lines;
         }
 
