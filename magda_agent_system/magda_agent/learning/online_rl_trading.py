@@ -1,453 +1,268 @@
-import json
 import logging
 import re
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+import random
+from typing import Optional, Dict, Any, List, Tuple
 from magda_agent.memory.episodic import EpisodicMemory
-from magda_agent.llm_client import LLMClient
 
 class OnlineRLTradingOptimizer:
     """
-    Online Reinforcement Learning Trading Parameter Optimizer.
-    Adjusts trading parameters (BuyTrailing, SellMargin) based on trade success stored in EpisodicMemory.
-    Tracks adjustment history and evaluates long-term improvements.
+    OnlineRLTradingOptimizer implements a reinforcement learning feedback loop
+    to optimize trading parameters (BuyTrailing and SellMargin) based on trade success.
+
+    It retrieves historical trade events from EpisodicMemory, evaluates their profit/ROI,
+    uses a Policy Gradient (REINFORCE) continuous parameter update algorithm to shift
+    parameters towards more profitable zones, and records the parameter adjustment
+    history back into EpisodicMemory as episodic events.
     """
 
     def __init__(
         self,
         episodic_memory: EpisodicMemory,
-        llm: Optional[LLMClient] = None
+        learning_rate: float = 0.1,
+        min_buy_trailing: float = 0.05,
+        max_buy_trailing: float = 2.0,
+        min_sell_margin: float = 0.1,
+        max_sell_margin: float = 10.0
     ) -> None:
         """
         Initializes the OnlineRLTradingOptimizer.
 
         Args:
-            episodic_memory (EpisodicMemory): The episodic memory module used to store and retrieve trades and adjustments.
-            llm (LLMClient, optional): The LLM client for advanced semantic adjustment proposals.
+            episodic_memory (EpisodicMemory): The episodic memory system for storing and retrieving events.
+            learning_rate (float): The learning rate/step size for reinforcement learning updates.
+            min_buy_trailing (float): The minimum safe value for BuyTrailing.
+            max_buy_trailing (float): The maximum safe value for BuyTrailing.
+            min_sell_margin (float): The minimum safe value for SellMargin.
+            max_sell_margin (float): The maximum safe value for SellMargin.
         """
-        self.episodic_memory = episodic_memory
-        self.llm = llm
-        logging.info("Initialized OnlineRLTradingOptimizer")
+        self.episodic_memory: EpisodicMemory = episodic_memory
+        self.learning_rate: float = learning_rate
+        self.min_buy_trailing: float = min_buy_trailing
+        self.max_buy_trailing: float = max_buy_trailing
+        self.min_sell_margin: float = min_sell_margin
+        self.max_sell_margin: float = max_sell_margin
+        logging.info("OnlineRLTradingOptimizer initialized successfully.")
 
-    def store_trade_event(
+    def record_trade(
         self,
         pair: str,
         buy_trailing: float,
         sell_margin: float,
-        profit: float,
-        cost: float,
-        success: bool,
-        user_id: Optional[int] = None,
+        profit_pct: float,
         metadata: Optional[Dict[str, Any]] = None
     ) -> None:
         """
-        Stores a completed trade event in episodic memory with rich metadata.
+        Records a completed trade into EpisodicMemory.
 
         Args:
             pair (str): The trading pair (e.g., BTC/USDT).
-            buy_trailing (float): The buy trailing parameter when the trade occurred.
-            sell_margin (float): The sell margin parameter when the trade occurred.
-            profit (float): The profit/loss from the trade.
-            cost (float): The cost basis of the trade.
-            success (bool): Whether the trade was successful.
-            user_id (int, optional): The user ID context.
-            metadata (dict, optional): Additional metadata.
+            buy_trailing (float): The BuyTrailing parameter used for this trade.
+            sell_margin (float): The SellMargin parameter used for this trade.
+            profit_pct (float): The realized profit percentage of the trade.
+            metadata (Optional[Dict[str, Any]]): Additional trade-related metadata.
         """
-        timestamp = datetime.utcnow().isoformat()
-        text = f"Completed trade: Pair {pair}, BuyTrailing: {buy_trailing}, SellMargin: {sell_margin}, Profit: {profit}, Cost: {cost}, Success: {success}, Timestamp: {timestamp}"
+        text = (
+            f"Completed trade on {pair}: profit {profit_pct:+.2f}%, "
+            f"BuyTrailing={buy_trailing:.3f}, SellMargin={sell_margin:.3f}"
+        )
 
         meta = {
-            "type": "completed_trade",
+            "type": "trade",
             "pair": pair,
-            "buy_trailing": float(buy_trailing),
-            "sell_margin": float(sell_margin),
-            "profit": float(profit),
-            "cost": float(cost),
-            "success": bool(success),
-            "timestamp": timestamp
+            "BuyTrailing": buy_trailing,
+            "SellMargin": sell_margin,
+            "profit_pct": profit_pct,
+            "decayed": False
         }
-
         if metadata:
             meta.update(metadata)
 
-        try:
-            self.episodic_memory.store_event(text, metadata=meta, user_id=user_id)
-            logging.info(f"Stored completed trade event for {pair} (Profit: {profit})")
-        except Exception as e:
-            logging.error(f"Failed to store completed trade event: {e}")
+        self.episodic_memory.store_event(text, metadata=meta)
+        logging.info(f"OnlineRLTradingOptimizer: Recorded trade event: {text}")
 
-    def get_completed_trades(self, pair: Optional[str] = None) -> List[Dict[str, Any]]:
+    def _parse_trade_from_text(self, text: str) -> Tuple[Optional[float], Optional[float], Optional[float]]:
         """
-        Retrieves and parses completed trades from episodic memory.
+        Helper method to parse trade parameters and profit from free text.
 
         Args:
-            pair (str, optional): If specified, filters trades by this specific trading pair.
+            text (str): The episodic event text.
 
         Returns:
-            List[Dict[str, Any]]: A list of parsed completed trades.
+            Tuple[Optional[float], Optional[float], Optional[float]]:
+                (profit_pct, buy_trailing, sell_margin) values if parsed, else None.
         """
-        events = self.episodic_memory.get_all_events(include_decayed=True, limit=1000)
-        trades: List[Dict[str, Any]] = []
+        profit_pct: Optional[float] = None
+        buy_trailing: Optional[float] = None
+        sell_margin: Optional[float] = None
 
-        for ev in events:
-            meta = ev.get("metadata") or {}
-            doc_text = ev.get("text") or ""
-
-            # Check if this is a completed trade by metadata or document content
-            is_trade = meta.get("type") == "completed_trade" or doc_text.startswith("Completed trade:")
-
-            if not is_trade:
-                continue
-
-            # Parse trade info preferring metadata with text fallbacks
+        # Regex for profit
+        profit_match = re.search(r"profit\s*[:=]?\s*([+-]?\d+(?:\.\d+)?)%?", text, re.IGNORECASE)
+        if profit_match:
             try:
-                trade_pair = meta.get("pair")
-                if not trade_pair:
-                    # Fallback regex parsing
-                    match = re.search(r"Pair ([A-Z0-9_/]+)", doc_text)
-                    if match:
-                        trade_pair = match.group(1)
+                profit_pct = float(profit_match.group(1))
+            except ValueError:
+                pass
 
-                if pair and trade_pair != pair:
-                    continue
+        # Regex for BuyTrailing
+        buy_match = re.search(r"BuyTrailing\s*[:=]?\s*(\d+(?:\.\d+)?)", text, re.IGNORECASE)
+        if buy_match:
+            try:
+                buy_trailing = float(buy_match.group(1))
+            except ValueError:
+                pass
 
-                buy_trailing = meta.get("buy_trailing")
-                if buy_trailing is None:
-                    match = re.search(r"BuyTrailing:\s*([\d\.-]+)", doc_text)
-                    buy_trailing = float(match.group(1)) if match else 0.0
+        # Regex for SellMargin
+        sell_match = re.search(r"SellMargin\s*[:=]?\s*(\d+(?:\.\d+)?)", text, re.IGNORECASE)
+        if sell_match:
+            try:
+                sell_margin = float(sell_match.group(1))
+            except ValueError:
+                pass
 
-                sell_margin = meta.get("sell_margin")
-                if sell_margin is None:
-                    match = re.search(r"SellMargin:\s*([\d\.-]+)", doc_text)
-                    sell_margin = float(match.group(1)) if match else 0.0
+        return profit_pct, buy_trailing, sell_margin
 
-                profit = meta.get("profit")
-                if profit is None:
-                    match = re.search(r"Profit:\s*([\d\.-]+)", doc_text)
-                    profit = float(match.group(1)) if match else 0.0
-
-                cost = meta.get("cost")
-                if cost is None:
-                    match = re.search(r"Cost:\s*([\d\.-]+)", doc_text)
-                    cost = float(match.group(1)) if match else 0.0
-
-                success = meta.get("success")
-                if success is None:
-                    match = re.search(r"Success:\s*(\w+)", doc_text)
-                    success = match.group(1).lower() == "true" if match else False
-
-                timestamp = meta.get("timestamp")
-                if not timestamp:
-                    match = re.search(r"Timestamp:\s*([\d\w\.-]+T[\d\w\.:-]+)", doc_text)
-                    timestamp = match.group(1) if match else datetime.utcnow().isoformat()
-
-                trades.append({
-                    "id": ev["id"],
-                    "pair": trade_pair,
-                    "buy_trailing": float(buy_trailing),
-                    "sell_margin": float(sell_margin),
-                    "profit": float(profit),
-                    "cost": float(cost),
-                    "success": bool(success),
-                    "timestamp": timestamp
-                })
-            except Exception as e:
-                logging.error(f"Error parsing trade event: {e}")
-
-        # Sort trades chronologically
-        trades.sort(key=lambda t: t.get("timestamp") or "")
-        return trades
-
-    def analyze_trade_performance(self, pair: str) -> Dict[str, Any]:
-        """
-        Calculates performance metrics for a specific trading pair.
-
-        Args:
-            pair (str): The trading pair to analyze.
-
-        Returns:
-            Dict[str, Any]: Performance metrics dictionary.
-        """
-        trades = self.get_completed_trades(pair=pair)
-        total_trades = len(trades)
-
-        if total_trades == 0:
-            return {
-                "total_trades": 0,
-                "successful_trades": 0,
-                "win_rate": 0.0,
-                "total_profit": 0.0,
-                "avg_profit": 0.0,
-                "avg_buy_trailing": 0.0,
-                "avg_sell_margin": 0.0,
-                "trades": []
-            }
-
-        successful_trades = sum(1 for t in trades if t["success"])
-        win_rate = successful_trades / total_trades
-        total_profit = sum(t["profit"] for t in trades)
-        avg_profit = total_profit / total_trades
-
-        avg_buy_trailing = sum(t["buy_trailing"] for t in trades) / total_trades
-        avg_sell_margin = sum(t["sell_margin"] for t in trades) / total_trades
-
-        return {
-            "total_trades": total_trades,
-            "successful_trades": successful_trades,
-            "win_rate": win_rate,
-            "total_profit": total_profit,
-            "avg_profit": avg_profit,
-            "avg_buy_trailing": avg_buy_trailing,
-            "avg_sell_margin": avg_sell_margin,
-            "trades": trades
-        }
-
-    async def propose_parameter_adjustments(
+    def analyze_and_optimize(
         self,
         pair: str,
         current_buy_trailing: float,
-        current_sell_margin: float
+        current_sell_margin: float,
+        explore: bool = True
     ) -> Dict[str, Any]:
         """
-        Proposes adjustments to BuyTrailing and SellMargin based on trade success.
-        Uses both an algorithmic/heuristic fallback policy and an optional LLM-based policy.
+        Analyzes historical trades from EpisodicMemory and proposes optimized trading parameters.
+        Implements a Policy Gradient / REINFORCE continuous optimization algorithm.
 
         Args:
-            pair (str): The trading pair to optimize.
-            current_buy_trailing (float): Current buy trailing setting.
-            current_sell_margin (float): Current sell margin setting.
+            pair (str): The trading pair to optimize parameters for.
+            current_buy_trailing (float): Current BuyTrailing parameter value.
+            current_sell_margin (float): Current SellMargin parameter value.
+            explore (bool): If True, adds a small random perturbation for parameter exploration.
 
         Returns:
-            Dict[str, Any]: Proposed parameters and explanatory reasoning.
+            Dict[str, Any]: A dictionary containing optimized parameters and execution status.
         """
-        performance = self.analyze_trade_performance(pair)
-        total_trades = performance["total_trades"]
-        win_rate = performance["win_rate"]
-        total_profit = performance["total_profit"]
+        # Fetch all episodic events
+        events = self.episodic_memory.get_all_events(limit=500)
 
-        # 1. Base Algorithmic / Heuristic Proposal (Always available)
-        proposed_buy_trailing = current_buy_trailing
-        proposed_sell_margin = current_sell_margin
-        explanation = ""
-
-        if total_trades == 0:
-            explanation = f"No trade history available for {pair}. Retaining current parameters."
-        elif win_rate < 0.6 or total_profit < 0:
-            # Sub-optimal performance: optimize conservatively
-            proposed_buy_trailing = round(current_buy_trailing + 0.05, 3)
-            proposed_sell_margin = round(max(0.3, current_sell_margin - 0.15), 3)
-            explanation = (
-                f"Sub-optimal performance for {pair} (Win Rate: {win_rate:.1%}, Total Profit: {total_profit:.4f}). "
-                f"Decreased SellMargin to exit trades faster and increased BuyTrailing to wait for deeper pullbacks before entering."
-            )
-        elif win_rate >= 0.8 and total_profit > 0:
-            # High-performing strategy: scale up target margins
-            proposed_buy_trailing = round(max(0.05, current_buy_trailing - 0.05), 3)
-            proposed_sell_margin = round(current_sell_margin + 0.2, 3)
-            explanation = (
-                f"Excellent performance for {pair} (Win Rate: {win_rate:.1%}, Total Profit: {total_profit:.4f}). "
-                f"Increased SellMargin to capture larger trends and decreased BuyTrailing to allow more entries."
-            )
-        else:
-            explanation = f"Stable performance for {pair} (Win Rate: {win_rate:.1%}, Total Profit: {total_profit:.4f}). Parameters are kept stable."
-
-        proposal = {
-            "proposed_buy_trailing": float(proposed_buy_trailing),
-            "proposed_sell_margin": float(proposed_sell_margin),
-            "explanation": explanation,
-            "method": "algorithmic"
-        }
-
-        # 2. Advanced LLM-based Proposal (Optional)
-        if self.llm:
-            try:
-                prompt = f"""
-                You are Magda's Trading RL Optimizer. Optimize the trading parameters for pair {pair}.
-                Current Parameters:
-                - BuyTrailing: {current_buy_trailing}
-                - SellMargin: {current_sell_margin}
-
-                Recent Trade History for {pair}:
-                {json.dumps(performance, indent=2)}
-
-                Analyze the trade history. Propose optimized parameters for 'BuyTrailing' and 'SellMargin'.
-                Provide a JSON response with the following format:
-                {{
-                    "proposed_buy_trailing": <float>,
-                    "proposed_sell_margin": <float>,
-                    "explanation": "<string explaining the reasoning>"
-                }}
-                """
-                response = await self.llm.chat_completion(
-                    [{"role": "user", "content": prompt}],
-                    temperature=0.2
-                )
-
-                # Attempt to extract json from response
-                json_match = re.search(r"({.*})", response, re.DOTALL)
-                if json_match:
-                    data = json.loads(json_match.group(1))
-                    proposal["proposed_buy_trailing"] = float(data["proposed_buy_trailing"])
-                    proposal["proposed_sell_margin"] = float(data["proposed_sell_margin"])
-                    proposal["explanation"] = str(data["explanation"])
-                    proposal["method"] = "llm"
-                    logging.info(f"LLM-based parameter optimization successful for {pair}")
-            except Exception as e:
-                logging.error(f"Failed to propose parameters via LLM, falling back to algorithmic: {e}")
-
-        return proposal
-
-    def apply_and_record_adjustment(
-        self,
-        pair: str,
-        old_params: Dict[str, float],
-        new_params: Dict[str, float],
-        reason: str,
-        user_id: Optional[int] = None
-    ) -> None:
-        """
-        Applies and records the parameter adjustment in episodic memory.
-
-        Args:
-            pair (str): The trading pair.
-            old_params (Dict[str, float]): Dictionary of old parameters.
-            new_params (Dict[str, float]): Dictionary of new parameters.
-            reason (str): The reasoning behind the adjustment.
-            user_id (int, optional): The user ID context.
-        """
-        timestamp = datetime.utcnow().isoformat()
-        text = f"Applied parameter adjustment for {pair}: old={old_params}, new={new_params}. Reason: {reason}, Timestamp: {timestamp}"
-
-        metadata = {
-            "type": "parameter_adjustment",
-            "pair": pair,
-            "old_buy_trailing": float(old_params.get("buy_trailing", 0.0)),
-            "old_sell_margin": float(old_params.get("sell_margin", 0.0)),
-            "new_buy_trailing": float(new_params.get("buy_trailing", 0.0)),
-            "new_sell_margin": float(new_params.get("sell_margin", 0.0)),
-            "reason": reason,
-            "timestamp": timestamp
-        }
-
-        try:
-            self.episodic_memory.store_event(text, metadata=metadata, user_id=user_id)
-            logging.info(f"Recorded parameter adjustment for {pair} to episodic memory")
-        except Exception as e:
-            logging.error(f"Failed to record parameter adjustment: {e}")
-
-    def evaluate_adjustment_impact(self, pair: str) -> Dict[str, Any]:
-        """
-        Compares trade performance before and after the last recorded adjustment for a pair.
-
-        Args:
-            pair (str): The trading pair.
-
-        Returns:
-            Dict[str, Any]: Comparison dictionary evaluating the long-term impact.
-        """
-        events = self.episodic_memory.get_all_events(include_decayed=True, limit=1000)
-        adjustments: List[Dict[str, Any]] = []
-
+        trades: List[Dict[str, Any]] = []
         for ev in events:
-            meta = ev.get("metadata") or {}
-            doc_text = ev.get("text") or ""
-            is_adj = meta.get("type") == "parameter_adjustment" or "Applied parameter adjustment" in doc_text
+            metadata = ev.get("metadata", {})
+            text = ev.get("text", "")
 
-            if not is_adj:
+            # Check if this is a trade event
+            is_trade = metadata.get("type") == "trade" or "completed trade" in text.lower()
+            if not is_trade:
                 continue
 
-            try:
-                adj_pair = meta.get("pair")
-                if not adj_pair:
-                    match = re.search(r"Applied parameter adjustment for ([A-Z0-9_/]+)", doc_text)
-                    if match:
-                        adj_pair = match.group(1)
+            # Filter by pair if possible
+            event_pair = metadata.get("pair") or (pair if pair in text else None)
+            if event_pair != pair:
+                continue
 
-                if adj_pair != pair:
-                    continue
+            # Try to extract parameters
+            profit_pct = metadata.get("profit_pct")
+            buy_trailing = metadata.get("BuyTrailing")
+            sell_margin = metadata.get("SellMargin")
 
-                timestamp = meta.get("timestamp")
-                if not timestamp:
-                    match = re.search(r"Timestamp:\s*([\d\w\.-]+T[\d\w\.:-]+)", doc_text)
-                    timestamp = match.group(1) if match else datetime.utcnow().isoformat()
+            # Fallback to parsing text
+            if profit_pct is None or buy_trailing is None or sell_margin is None:
+                p, b, s = self._parse_trade_from_text(text)
+                profit_pct = profit_pct if profit_pct is not None else p
+                buy_trailing = buy_trailing if buy_trailing is not None else b
+                sell_margin = sell_margin if sell_margin is not None else s
 
-                adjustments.append({
-                    "timestamp": timestamp,
-                    "new_buy_trailing": meta.get("new_buy_trailing"),
-                    "new_sell_margin": meta.get("new_sell_margin"),
-                    "reason": meta.get("reason", "")
+            if profit_pct is not None and buy_trailing is not None and sell_margin is not None:
+                trades.append({
+                    "profit_pct": profit_pct,
+                    "BuyTrailing": buy_trailing,
+                    "SellMargin": sell_margin
                 })
-            except Exception as e:
-                logging.error(f"Error parsing adjustment event: {e}")
 
-        if not adjustments:
-            return {
-                "status": "no_adjustments_recorded",
-                "message": "No adjustments recorded for this pair yet."
-            }
+        logging.info(f"OnlineRLTradingOptimizer: Found {len(trades)} trades for optimization of {pair}.")
 
-        # Sort adjustments chronologically and pick the latest one
-        adjustments.sort(key=lambda a: a["timestamp"])
-        latest_adj = adjustments[-1]
-        adj_time_str = latest_adj["timestamp"]
-        try:
-            adj_time = datetime.fromisoformat(adj_time_str)
-        except Exception:
-            # Fallback in case of string parsing issues
-            adj_time = datetime.utcnow()
+        new_buy_trailing = current_buy_trailing
+        new_sell_margin = current_sell_margin
+        status = "unchanged"
+        message = "No trades found to analyze."
 
-        # Split completed trades into before and after
-        all_trades = self.get_completed_trades(pair=pair)
-        before_trades: List[Dict[str, Any]] = []
-        after_trades: List[Dict[str, Any]] = []
+        # If we have enough trades, perform policy gradient update
+        if len(trades) >= 3:
+            total_bt_update = 0.0
+            total_sm_update = 0.0
 
-        for trade in all_trades:
-            trade_time_str = trade.get("timestamp") or ""
-            try:
-                trade_time = datetime.fromisoformat(trade_time_str)
-            except Exception:
-                trade_time = datetime.utcnow()
+            # Policy gradient update (REINFORCE derivative for gaussian policy mean update):
+            # shift = reward * (action - mean)
+            for trade in trades:
+                # Use profit_pct as the reward signal
+                reward = trade["profit_pct"]
 
-            if trade_time < adj_time:
-                before_trades.append(trade)
+                # BT update
+                bt_action = trade["BuyTrailing"]
+                bt_grad = bt_action - current_buy_trailing
+                total_bt_update += reward * bt_grad
+
+                # SM update
+                sm_action = trade["SellMargin"]
+                sm_grad = sm_action - current_sell_margin
+                total_sm_update += reward * sm_grad
+
+            avg_bt_update = total_bt_update / len(trades)
+            avg_sm_update = total_sm_update / len(trades)
+
+            # Adjust parameters
+            new_buy_trailing += self.learning_rate * avg_bt_update
+            new_sell_margin += self.learning_rate * avg_sm_update
+
+            status = "optimized"
+            message = f"Optimized based on {len(trades)} historical trades."
+        else:
+            # Not enough data, perform exploration step if allowed
+            if explore:
+                # Add uniform perturbation to encourage parameter space search
+                new_buy_trailing += random.uniform(-0.05, 0.05)
+                new_sell_margin += random.uniform(-0.1, 0.1)
+                status = "explored"
+                message = "Insufficient trade history. Performed random parameter exploration."
             else:
-                after_trades.append(trade)
+                status = "kept_current"
+                message = "Insufficient trade history. Exploration disabled; kept current parameters."
 
-        def calculate_stats(trades_list: List[Dict[str, Any]]) -> Dict[str, Any]:
-            count = len(trades_list)
-            if count == 0:
-                return {
-                    "count": 0,
-                    "win_rate": 0.0,
-                    "total_profit": 0.0,
-                    "avg_profit": 0.0
-                }
-            successes = sum(1 for t in trades_list if t["success"])
-            total_prof = sum(t["profit"] for t in trades_list)
-            return {
-                "count": count,
-                "win_rate": successes / count,
-                "total_profit": total_prof,
-                "avg_profit": total_prof / count
+        # Add optional exploration noise to optimized parameters to avoid local minima
+        if status == "optimized" and explore:
+            new_buy_trailing += random.normalvariate(0.0, 0.01)
+            new_sell_margin += random.normalvariate(0.0, 0.02)
+
+        # Enforce safety boundaries
+        new_buy_trailing = max(self.min_buy_trailing, min(new_buy_trailing, self.max_buy_trailing))
+        new_sell_margin = max(self.min_sell_margin, min(new_sell_margin, self.max_sell_margin))
+
+        # Round to 3 decimal places for cleaner trading execution representation
+        new_buy_trailing = round(new_buy_trailing, 3)
+        new_sell_margin = round(new_sell_margin, 3)
+
+        # Record adjustment event to episodic memory if parameters actually changed
+        if new_buy_trailing != current_buy_trailing or new_sell_margin != current_sell_margin:
+            adj_text = (
+                f"Adjusted parameters for {pair}: "
+                f"BuyTrailing={new_buy_trailing:.3f} (was {current_buy_trailing:.3f}), "
+                f"SellMargin={new_sell_margin:.3f} (was {current_sell_margin:.3f})"
+            )
+            adj_meta = {
+                "type": "parameter_adjustment",
+                "pair": pair,
+                "old_BuyTrailing": current_buy_trailing,
+                "new_BuyTrailing": new_buy_trailing,
+                "old_SellMargin": current_sell_margin,
+                "new_SellMargin": new_sell_margin,
+                "decayed": False
             }
-
-        before_stats = calculate_stats(before_trades)
-        after_stats = calculate_stats(after_trades)
-
-        # Check for improvement
-        win_rate_diff = after_stats["win_rate"] - before_stats["win_rate"]
-        profit_diff = after_stats["total_profit"] - before_stats["total_profit"]
-        avg_profit_diff = after_stats["avg_profit"] - before_stats["avg_profit"]
+            self.episodic_memory.store_event(adj_text, metadata=adj_meta)
+            logging.info(f"OnlineRLTradingOptimizer: Recorded parameter adjustment event: {adj_text}")
 
         return {
-            "status": "evaluated",
-            "last_adjustment": latest_adj,
-            "before_adjustment": before_stats,
-            "after_adjustment": after_stats,
-            "improvement": {
-                "win_rate_change": win_rate_diff,
-                "total_profit_change": profit_diff,
-                "avg_profit_change": avg_profit_diff,
-                "is_improvement": avg_profit_diff > 0 or win_rate_diff > 0
-            }
+            "BuyTrailing": new_buy_trailing,
+            "SellMargin": new_sell_margin,
+            "status": status,
+            "trades_analyzed": len(trades),
+            "message": message
         }
