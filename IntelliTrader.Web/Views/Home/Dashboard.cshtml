@@ -134,4 +134,92 @@
             </div>
         </div>
     </script>
+
+    <div class="card mt-4" style="background-color: #1e1e2e; border: 1px solid #3b3b4f; color: #a9b1d6; font-family: 'Courier New', Courier, monospace;">
+        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #1a1a26; border-bottom: 1px solid #3b3b4f;">
+            <span style="font-weight: bold; color: #7aa2f7;"><i class="fas fa-terminal"></i> Live Trade Logs Terminal</span>
+            <div class="d-flex align-items-center">
+                <select id="logTypeSelect" class="form-control form-control-sm d-inline-block" style="width: auto; background-color: #24283b; color: #a9b1d6; border: 1px solid #3b3b4f; margin-right: 10px;">
+                    <option value="trades" selected>Trade Logs</option>
+                    <option value="general">General Logs</option>
+                </select>
+                <button id="clearTerminalBtn" class="btn btn-sm btn-outline-secondary" style="border-color: #3b3b4f; color: #a9b1d6;">Clear</button>
+            </div>
+        </div>
+        <div class="card-body" id="logTerminal" style="height: 250px; overflow-y: auto; font-size: 13px; line-height: 1.5; padding: 10px; background-color: #1a1a26; border-radius: 0 0 4px 4px;">
+            <div class="text-muted">Initializing live log polling...</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const logTerminal = document.getElementById("logTerminal");
+            const logTypeSelect = document.getElementById("logTypeSelect");
+            const clearTerminalBtn = document.getElementById("clearTerminalBtn");
+
+            let lastLogContent = "";
+
+            function fetchLogs() {
+                const logType = logTypeSelect.value;
+                fetch(`/Home/PollLogs?type=${logType}&maxLines=100`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.lines) {
+                            const content = data.lines.join("\n");
+                            if (content !== lastLogContent) {
+                                lastLogContent = content;
+
+                                logTerminal.innerHTML = "";
+                                if (data.lines.length === 0) {
+                                    logTerminal.innerHTML = '<div class="text-muted">No logs found.</div>';
+                                } else {
+                                    data.lines.forEach(line => {
+                                        const div = document.createElement("div");
+                                        div.style.whiteSpace = "pre-wrap";
+                                        div.style.wordBreak = "break-all";
+                                        div.style.marginBottom = "4px";
+
+                                        if (line.includes("[ERR]") || line.includes("Error") || line.includes("Exception") || line.includes("fail")) {
+                                            div.style.color = "#f7768e";
+                                        } else if (line.includes("[WRN]") || line.includes("Warning") || line.includes("warn")) {
+                                            div.style.color = "#e0af68";
+                                        } else if (line.includes("[INF]") || line.includes("Success") || line.includes("Buy") || line.includes("Sell")) {
+                                            div.style.color = "#9ece6a";
+                                        } else {
+                                            div.style.color = "#a9b1d6";
+                                        }
+
+                                        div.textContent = line;
+                                        logTerminal.appendChild(div);
+                                    });
+
+                                    logTerminal.scrollTop = logTerminal.scrollHeight;
+                                }
+                            }
+                        } else {
+                            logTerminal.innerHTML = `<div class="text-danger">Error: ${data.message || 'Unknown error'}</div>`;
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error polling logs:", error);
+                        logTerminal.innerHTML = `<div class="text-danger">Connection lost: ${error.message}</div>`;
+                    });
+            }
+
+            fetchLogs();
+
+            const intervalId = setInterval(fetchLogs, 3000);
+
+            logTypeSelect.addEventListener("change", function() {
+                lastLogContent = "";
+                logTerminal.innerHTML = '<div class="text-muted">Loading logs...</div>';
+                fetchLogs();
+            });
+
+            clearTerminalBtn.addEventListener("click", function() {
+                logTerminal.innerHTML = '<div class="text-muted">Terminal cleared.</div>';
+                lastLogContent = "CLEARED";
+            });
+        });
+    </script>
 </div>

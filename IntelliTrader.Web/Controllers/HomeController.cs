@@ -721,6 +721,115 @@ namespace IntelliTrader.Web.Controllers
             }
         }
 
+        [HttpGet]
+        public IActionResult PollLogs(string type = "trades", int maxLines = 100)
+        {
+            maxLines = Math.Max(1, Math.Min(maxLines, 1000));
+            var logsPath = Path.Combine(Directory.GetCurrentDirectory(), "log");
+            if (!Directory.Exists(logsPath))
+            {
+                return Json(new { success = false, message = "Logs directory does not exist." });
+            }
+
+            string searchPattern = type == "general" ? "*-general.txt" : "*-trades.txt";
+            var file = Directory.EnumerateFiles(logsPath, searchPattern, SearchOption.TopDirectoryOnly)
+                                 .OrderByDescending(f => f)
+                                 .FirstOrDefault();
+
+            if (file == null)
+            {
+                return Json(new { success = false, message = $"No log files found for type '{type}'." });
+            }
+
+            var lines = ReadLastLines(file, maxLines);
+            return Json(new { success = true, lines = lines });
+        }
+
+        private List<string> ReadLastLines(string filePath, int maxLines)
+        {
+            var lines = new List<string>();
+            if (!System.IO.File.Exists(filePath))
+            {
+                return lines;
+            }
+
+            const int bufferSize = 4096;
+            byte[] buffer = new byte[bufferSize];
+            var linePositions = new List<long>();
+
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                long fileLength = fs.Length;
+                long position = fileLength;
+
+                while (position > 0 && linePositions.Count <= maxLines)
+                {
+                    int toRead = (int)Math.Min(bufferSize, position);
+                    position -= toRead;
+                    fs.Position = position;
+                    int read = fs.Read(buffer, 0, toRead);
+
+                    for (int i = read - 1; i >= 0; i--)
+                    {
+                        if (buffer[i] == (byte)'\n')
+                        {
+                            long absoluteOffset = position + i;
+                            linePositions.Add(absoluteOffset);
+                            if (linePositions.Count > maxLines)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                linePositions.Reverse();
+                int startIndex = 0;
+                if (linePositions.Count > maxLines)
+                {
+                    startIndex = linePositions.Count - maxLines;
+                }
+
+                long lastPos = startIndex > 0 ? linePositions[startIndex - 1] + 1 : 0;
+
+                for (int i = startIndex; i < linePositions.Count; i++)
+                {
+                    long nextPos = linePositions[i];
+                    long length = nextPos - lastPos;
+                    if (length > 0)
+                    {
+                        fs.Position = lastPos;
+                        byte[] lineBytes = new byte[length];
+                        fs.Read(lineBytes, 0, (int)length);
+                        string line = Encoding.UTF8.GetString(lineBytes).TrimEnd('\r', '\n');
+                        lines.Add(line);
+                    }
+                    else
+                    {
+                        lines.Add(string.Empty);
+                    }
+                    lastPos = nextPos + 1;
+                }
+
+                if (lastPos < fileLength)
+                {
+                    long length = fileLength - lastPos;
+                    fs.Position = lastPos;
+                    byte[] lineBytes = new byte[length];
+                    fs.Read(lineBytes, 0, (int)length);
+                    string line = Encoding.UTF8.GetString(lineBytes).TrimEnd('\r', '\n');
+                    lines.Add(line);
+                }
+            }
+
+            if (lines.Count > maxLines)
+            {
+                lines = lines.Skip(lines.Count - maxLines).ToList();
+            }
+
+            return lines;
+        }
+
         private Dictionary<DateTimeOffset, List<TradeResult>> GetTrades(DateTimeOffset? date = null)
         {
             var coreService = Application.Resolve<ICoreService>();
