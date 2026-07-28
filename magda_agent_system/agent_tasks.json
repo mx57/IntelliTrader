@@ -272,7 +272,7 @@
     },
     {
       "id": "web-dashboard-agent-status-panel",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Add Agent Status and Memory Panel to Web Dashboard",
