@@ -346,6 +346,96 @@ namespace IntelliTrader.Web.Controllers
             return View(model);
         }
 
+        public IActionResult AgentStatus()
+        {
+            var coreService = Application.Resolve<ICoreService>();
+            var webService = Application.Resolve<IWebService>();
+
+            int episodicMemoryCount = 0;
+            double energy = 0.85;
+            double boredom = 0.15;
+
+            try
+            {
+                var startInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "python3",
+                    Arguments = "magda_agent_system/scripts/get_agent_status.py",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using (var process = System.Diagnostics.Process.Start(startInfo))
+                {
+                    using (var reader = process.StandardOutput)
+                    {
+                        string result = reader.ReadToEnd();
+                        if (!string.IsNullOrWhiteSpace(result))
+                        {
+                            var dynamicStatus = JsonConvert.DeserializeObject<Dictionary<string, double>>(result);
+                            if (dynamicStatus != null)
+                            {
+                                if (dynamicStatus.TryGetValue("episodic_memory_count", out double countVal))
+                                {
+                                    episodicMemoryCount = (int)countVal;
+                                }
+                                if (dynamicStatus.TryGetValue("energy", out double energyVal))
+                                {
+                                    energy = energyVal;
+                                }
+                                if (dynamicStatus.TryGetValue("boredom", out double boredomVal))
+                                {
+                                    boredom = boredomVal;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Fallback to default values
+            }
+
+            var activeTasks = new List<AgentTask>();
+            var allTasks = new List<AgentTask>();
+
+            try
+            {
+                string tasksPath = Path.Combine(Directory.GetCurrentDirectory(), "magda_agent_system", "agent_tasks.json");
+                if (System.IO.File.Exists(tasksPath))
+                {
+                    string tasksJson = System.IO.File.ReadAllText(tasksPath);
+                    var tasksData = JsonConvert.DeserializeObject<AgentTasksData>(tasksJson);
+                    if (tasksData != null && tasksData.Tasks != null)
+                    {
+                        allTasks = tasksData.Tasks;
+                        activeTasks = tasksData.Tasks
+                            .Where(t => t.Status == "todo" || t.Status == "running")
+                            .ToList();
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Silent fallback
+            }
+
+            var model = new AgentStatusViewModel
+            {
+                InstanceName = coreService.Config.InstanceName,
+                Version = coreService.Version,
+                ReadOnlyMode = webService.Config.ReadOnlyMode,
+                EpisodicMemoryCount = episodicMemoryCount,
+                Energy = energy,
+                Boredom = boredom,
+                ActiveTasks = activeTasks,
+                AllTasks = allTasks
+            };
+
+            return View(model);
+        }
+
         public IActionResult Help(string lang = "en")
         {
             var coreService = Application.Resolve<ICoreService>();
