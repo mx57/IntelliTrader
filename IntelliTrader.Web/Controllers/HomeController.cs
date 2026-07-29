@@ -436,6 +436,40 @@ namespace IntelliTrader.Web.Controllers
             return View(model);
         }
 
+        [HttpGet]
+        public IActionResult GetParameterDrift()
+        {
+            try
+            {
+                var startInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "python3",
+                    Arguments = "magda_agent_system/scripts/get_parameter_drift.py",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using (var process = System.Diagnostics.Process.Start(startInfo))
+                {
+                    using (var reader = process.StandardOutput)
+                    {
+                        string result = reader.ReadToEnd();
+                        if (!string.IsNullOrWhiteSpace(result))
+                        {
+                            var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(result);
+                            return Json(new { success = true, data });
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+
+            return Json(new { success = false, message = "Unable to fetch parameter drift data." });
+        }
+
         public IActionResult Help(string lang = "en")
         {
             var coreService = Application.Resolve<ICoreService>();
