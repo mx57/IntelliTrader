@@ -288,7 +288,7 @@
     },
     {
       "id": "online-rl-parameter-drift-charts",
-      "status": "todo",
+      "status": "done",
       "area": "learning",
       "risk": "medium",
       "title": "Implement parameter drift analytics visual line charts",
@@ -300,6 +300,22 @@
       ],
       "acceptance": [
         "The Web Dashboard contains a line chart displaying historical parameter tuning shifts"
+      ]
+    },
+    {
+      "id": "web-dashboard-realtime-trades-refresh",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Implement real-time visual indicator on trade completion",
+      "description": "Implement a real-time visual indicator and desktop sound notification on the Web Dashboard when a new trade successfully completes.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/**",
+        "IntelliTrader.Web/Controllers/HomeController.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "The Dashboard displays a visual pop-up or notification on trade completion"
       ]
     }
   ]

@@ -6,6 +6,7 @@
 
 @section AddToHead{
     <link rel="stylesheet" type="text/css" href="@Url.Content("~/Static/Styles/Views/dashboard.css")">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="text/javascript" src="@Url.Content("~/Static/Scripts/Views/dashboard.js")"></script>
 }
 
@@ -58,6 +59,19 @@
             </tr>
         </tfoot>
     </table>
+
+    <!-- Online RL Parameter Drift Analytics Chart -->
+    <div class="card mt-4" style="background-color: #1e1e2e; border: 1px solid #3b3b4f; color: #a9b1d6; margin-top: 20px;">
+        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #1a1a26; border-bottom: 1px solid #3b3b4f; padding: 10px 15px;">
+            <span style="font-weight: bold; color: #7aa2f7;"><i class="fas fa-chart-line mr-2"></i>Аналитика дрейфа параметров (Online RL Parameter Drift)</span>
+            <span id="chartSourceBadge" class="badge badge-info">Загрузка...</span>
+        </div>
+        <div class="card-body" style="background-color: #1a1a26; padding: 20px; border-radius: 0 0 4px 4px;">
+            <div style="position: relative; height: 320px; width: 100%;">
+                <canvas id="parameterDriftChart"></canvas>
+            </div>
+        </div>
+    </div>
 
     <!-- Real-time Log Monitor Terminal -->
     <div class="card mt-4" style="background-color: #1e1e2f; color: #a9b7c6; border-radius: 4px; border: 1px solid #2b2b36; margin-top: 20px;">
@@ -146,14 +160,14 @@
                 <button id="clearTerminalBtn" class="btn btn-sm btn-outline-secondary" style="border-color: #3b3b4f; color: #a9b1d6;">Clear</button>
             </div>
         </div>
-        <div class="card-body" id="logTerminal" style="height: 250px; overflow-y: auto; font-size: 13px; line-height: 1.5; padding: 10px; background-color: #1a1a26; border-radius: 0 0 4px 4px;">
+        <div class="card-body" id="tradeLogTerminal" style="height: 250px; overflow-y: auto; font-size: 13px; line-height: 1.5; padding: 10px; background-color: #1a1a26; border-radius: 0 0 4px 4px;">
             <div class="text-muted">Initializing live log polling...</div>
         </div>
     </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const logTerminal = document.getElementById("logTerminal");
+            const logTerminal = document.getElementById("tradeLogTerminal");
             const logTypeSelect = document.getElementById("logTypeSelect");
             const clearTerminalBtn = document.getElementById("clearTerminalBtn");
 
@@ -220,6 +234,122 @@
                 logTerminal.innerHTML = '<div class="text-muted">Terminal cleared.</div>';
                 lastLogContent = "CLEARED";
             });
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const ctx = document.getElementById('parameterDriftChart');
+            if (!ctx) return;
+
+            fetch('/Home/GetParameterDrift')
+                .then(response => response.json())
+                .then(res => {
+                    if (res.success && res.data) {
+                        const isMock = res.data.is_mock;
+                        const adjustments = res.data.adjustments || [];
+
+                        const badge = document.getElementById('chartSourceBadge');
+                        if (badge) {
+                            if (isMock) {
+                                badge.textContent = "Демо-режим (симуляция)";
+                                badge.className = "badge badge-warning";
+                            } else {
+                                badge.textContent = "Реальные данные (ChromaDB)";
+                                badge.className = "badge badge-success";
+                            }
+                        }
+
+                        const labels = adjustments.map(item => {
+                            const parts = item.timestamp.split(' ');
+                            return parts.length > 1 ? parts[0] + " " + parts[1].substring(0, 5) : item.timestamp;
+                        });
+
+                        const buyTrailingData = adjustments.map(item => item.new_BuyTrailing);
+                        const sellMarginData = adjustments.map(item => item.new_SellMargin);
+
+                        new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: labels,
+                                datasets: [
+                                    {
+                                        label: 'BuyTrailing (%)',
+                                        data: buyTrailingData,
+                                        borderColor: '#f7768e',
+                                        backgroundColor: 'rgba(247, 118, 142, 0.1)',
+                                        borderWidth: 2,
+                                        tension: 0.3,
+                                        yAxisID: 'yBuy'
+                                    },
+                                    {
+                                        label: 'SellMargin (%)',
+                                        data: sellMarginData,
+                                        borderColor: '#9ece6a',
+                                        backgroundColor: 'rgba(158, 206, 106, 0.1)',
+                                        borderWidth: 2,
+                                        tension: 0.3,
+                                        yAxisID: 'ySell'
+                                    }
+                                ]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    x: {
+                                        grid: {
+                                            color: '#2b2b3f'
+                                        },
+                                        ticks: {
+                                            color: '#a9b1d6'
+                                        }
+                                    },
+                                    yBuy: {
+                                        type: 'linear',
+                                        display: true,
+                                        position: 'left',
+                                        title: {
+                                            display: true,
+                                            text: 'BuyTrailing %',
+                                            color: '#f7768e'
+                                        },
+                                        grid: {
+                                            color: '#2b2b3f'
+                                        },
+                                        ticks: {
+                                            color: '#f7768e'
+                                        }
+                                    },
+                                    ySell: {
+                                        type: 'linear',
+                                        display: true,
+                                        position: 'right',
+                                        title: {
+                                            display: true,
+                                            text: 'SellMargin %',
+                                            color: '#9ece6a'
+                                        },
+                                        grid: {
+                                            drawOnChartArea: false
+                                        },
+                                        ticks: {
+                                            color: '#9ece6a'
+                                        }
+                                    }
+                                },
+                                plugins: {
+                                    legend: {
+                                        labels: {
+                                            color: '#a9b1d6'
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                })
+                .catch(err => {
+                    console.error('Error fetching parameter drift:', err);
+                });
         });
     </script>
 </div>
