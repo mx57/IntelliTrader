@@ -11,6 +11,244 @@
 }
 
 <div>
+    <!-- Панель мониторинга завершения сделок в реальном времени -->
+    <div class="d-flex justify-content-between align-items-center mb-3" style="background-color: #1a1a26; padding: 10px 15px; border-radius: 4px; border: 1px solid #3b3b4f; color: #a9b1d6; margin-bottom: 20px;">
+        <div>
+            <i class="fas fa-bell text-success mr-2" style="color: #9ece6a !important;"></i> <span style="font-size: 14px;">Мониторинг завершения сделок в реальном времени активен.</span>
+        </div>
+        <div class="d-flex align-items-center">
+            <button id="soundToggleBtn" class="btn btn-sm btn-outline-success" style="font-weight: bold; border-color: #9ece6a; color: #9ece6a; background: transparent; transition: all 0.3s; margin-right: 8px;">
+                <i class="fas fa-volume-up mr-1"></i> Звук: Вкл
+            </button>
+            <button id="testSoundBtn" class="btn btn-sm btn-outline-secondary" style="font-weight: bold; border-color: #4a4a6a; color: #a9b1d6; background: transparent; transition: all 0.3s;">
+                <i class="fas fa-music mr-1"></i> Проверить звук
+            </button>
+        </div>
+    </div>
+
+    <div id="notificationContainer" style="position: fixed; top: 80px; right: 20px; z-index: 9999; width: 360px; pointer-events: none;"></div>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const soundToggleBtn = document.getElementById("soundToggleBtn");
+        const testSoundBtn = document.getElementById("testSoundBtn");
+        const notificationContainer = document.getElementById("notificationContainer");
+
+        let isSoundEnabled = localStorage.getItem("realtime_sound_enabled") !== "false";
+        updateSoundButtonUI();
+
+        let knownTrades = new Set();
+        let isFirstLoad = true;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx && audioCtx.state === "suspended") {
+                audioCtx.resume();
+            }
+        }
+
+        function playNotificationSound() {
+            if (!isSoundEnabled) return;
+            try {
+                initAudio();
+                if (!audioCtx) return;
+
+                function playTone(freq, type, startTime, duration, volume) {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, startTime);
+
+                    gain.gain.setValueAtTime(volume, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+                    osc.start(startTime);
+                    osc.stop(startTime + duration);
+                }
+
+                const now = audioCtx.currentTime;
+                playTone(523.25, 'sine', now, 0.4, 0.1);       // C5
+                playTone(659.25, 'sine', now + 0.1, 0.45, 0.1);  // E5
+                playTone(783.99, 'sine', now + 0.2, 0.5, 0.1);   // G5
+            } catch (err) {
+                console.error("Failed to play notification sound:", err);
+            }
+        }
+
+        function updateSoundButtonUI() {
+            if (isSoundEnabled) {
+                soundToggleBtn.innerHTML = '<i class="fas fa-volume-up mr-1"></i> Звук: Вкл';
+                soundToggleBtn.className = "btn btn-sm btn-outline-success";
+                soundToggleBtn.style.color = "#9ece6a";
+                soundToggleBtn.style.borderColor = "#9ece6a";
+            } else {
+                soundToggleBtn.innerHTML = '<i class="fas fa-volume-mute mr-1"></i> Звук: Выкл';
+                soundToggleBtn.className = "btn btn-sm btn-outline-secondary";
+                soundToggleBtn.style.color = "#a9b1d6";
+                soundToggleBtn.style.borderColor = "#4a4a6a";
+            }
+        }
+
+        soundToggleBtn.addEventListener("click", function () {
+            isSoundEnabled = !isSoundEnabled;
+            localStorage.setItem("realtime_sound_enabled", isSoundEnabled);
+            updateSoundButtonUI();
+            initAudio();
+            if (isSoundEnabled) {
+                playNotificationSound();
+            }
+        });
+
+        testSoundBtn.addEventListener("click", function () {
+            initAudio();
+            const prev = isSoundEnabled;
+            isSoundEnabled = true;
+            playNotificationSound();
+            isSoundEnabled = prev;
+
+            showToastNotification({
+                Pair: "BTCUSDT",
+                Amount: 0.052,
+                AveragePrice: 96450.00,
+                SellPrice: 97890.00,
+                Profit: 0.07488,
+                ProfitMargin: "1.49",
+                SellDate: new Date().toISOString().replace('T', ' ').substring(0, 19),
+                IsSwap: false,
+                IsArbitrage: false
+            }, true);
+        });
+
+        function showToastNotification(trade, isTest = false) {
+            const card = document.createElement("div");
+            card.style.pointerEvents = "auto";
+            card.style.backgroundColor = "#1f2335";
+            card.style.border = "1px solid #3b3b4f";
+            card.style.borderRadius = "6px";
+            card.style.padding = "15px";
+            card.style.marginBottom = "10px";
+            card.style.boxShadow = "0 4px 15px rgba(0,0,0,0.5)";
+            card.style.color = "#a9b1d6";
+            card.style.opacity = "0";
+            card.style.transition = "opacity 0.4s ease, transform 0.4s ease";
+            card.style.transform = "translateX(50px)";
+
+            const isProfitable = parseFloat(trade.Profit) >= 0;
+            const colorAccent = trade.IsSwap ? "#7aa2f7" : (isProfitable ? "#9ece6a" : "#f7768e");
+            const profitSign = isProfitable ? "+" : "";
+
+            card.style.borderLeft = `5px solid ${colorAccent}`;
+
+            let titleText = "Сделка завершена!";
+            let iconClass = "fa-check-circle";
+            if (isTest) {
+                titleText = "Проверка уведомления";
+                iconClass = "fa-vial";
+            } else if (trade.IsSwap) {
+                titleText = "Выполнен SWAP!";
+                iconClass = "fa-sync-alt";
+            } else if (trade.IsArbitrage) {
+                titleText = "Выполнен Арбитраж!";
+                iconClass = "fa-random";
+            } else if (isProfitable) {
+                titleText = "Продажа в ПЛЮС!";
+                iconClass = "fa-money-bill-wave";
+            } else {
+                titleText = "Продажа в минус/ноль";
+                iconClass = "fa-arrow-down";
+            }
+
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                    <span style="font-weight: bold; color: ${colorAccent}; font-size: 14px;">
+                        <i class="fas ${iconClass} mr-1"></i> ${titleText}
+                    </span>
+                    <button class="close-toast-btn" style="background: none; border: none; color: #565f89; cursor: pointer; padding: 0; font-size: 16px; line-height: 1;">&times;</button>
+                </div>
+                <div style="font-size: 13px;">
+                    <strong>Пара:</strong> <span style="color: #ffffff;">${trade.Pair}</span><br/>
+                    <strong>Количество:</strong> ${Number(trade.Amount).toFixed(6)}<br/>
+                    <strong>Цена покупки:</strong> ${Number(trade.AveragePrice).toFixed(2)}<br/>
+                    <strong>Цена продажи:</strong> ${Number(trade.SellPrice).toFixed(2)}<br/>
+                    <strong>Профит:</strong> <span style="font-weight: bold; color: ${isProfitable ? '#9ece6a' : '#f7768e'}">${profitSign}${Number(trade.Profit).toFixed(8)} (${profitSign}${trade.ProfitMargin}%)</span><br/>
+                    <span style="font-size: 11px; color: #565f89; display: block; margin-top: 5px;">${trade.SellDate}</span>
+                </div>
+            `;
+
+            notificationContainer.appendChild(card);
+
+            setTimeout(() => {
+                card.style.opacity = "1";
+                card.style.transform = "translateX(0)";
+            }, 50);
+
+            const closeBtn = card.querySelector(".close-toast-btn");
+            closeBtn.addEventListener("click", () => {
+                card.style.opacity = "0";
+                card.style.transform = "translateX(50px)";
+                setTimeout(() => {
+                    card.remove();
+                }, 400);
+            });
+
+            setTimeout(() => {
+                if (card.parentNode) {
+                    card.style.opacity = "0";
+                    card.style.transform = "translateX(50px)";
+                    setTimeout(() => {
+                        if (card.parentNode) card.remove();
+                    }, 400);
+                }
+            }, 8000);
+        }
+
+        function checkNewTrades() {
+            if (document.hidden) return;
+
+            fetch("/Home/GetLatestTrades?limit=10")
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.trades) {
+                        let hasNewTrade = false;
+
+                        data.trades.forEach(trade => {
+                            const tradeId = `${trade.Pair}_${trade.SellDate}`;
+                            if (!knownTrades.has(tradeId)) {
+                                knownTrades.add(tradeId);
+
+                                if (!isFirstLoad) {
+                                    hasNewTrade = true;
+                                    showToastNotification(trade);
+                                }
+                            }
+                        });
+
+                        if (hasNewTrade && !isFirstLoad) {
+                            playNotificationSound();
+                            if (typeof refreshTable === "function") {
+                                refreshTable();
+                            }
+                        }
+
+                        isFirstLoad = false;
+                    }
+                })
+                .catch(error => {
+                    console.error("Error polling latest trades:", error);
+                });
+        }
+
+        checkNewTrades();
+        setInterval(checkNewTrades, 5000);
+    });
+    </script>
+
     <table class="table table-hover table-striped" id="tradingPairsTable" style="width: 100%">
         <thead>
             <tr>
