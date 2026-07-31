@@ -37,3 +37,41 @@
     width: 60px;
     padding: 2px;
 }
+
+/* Custom range slider styling */
+input[type=range]#soundVolumeSlider {
+    -webkit-appearance: none;
+    background: #24283b;
+    border-radius: 4px;
+    outline: none;
+    height: 6px;
+}
+
+input[type=range]#soundVolumeSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #7aa2f7;
+    cursor: pointer;
+    transition: background .15s ease-in-out;
+}
+
+input[type=range]#soundVolumeSlider::-webkit-slider-thumb:hover {
+    background: #9ece6a;
+}
+
+input[type=range]#soundVolumeSlider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border: 0;
+    border-radius: 50%;
+    background: #7aa2f7;
+    cursor: pointer;
+    transition: background .15s ease-in-out;
+}
+
+input[type=range]#soundVolumeSlider::-moz-range-thumb:hover {
+    background: #9ece6a;
+}

@@ -12,17 +12,41 @@
 
 <div>
     <!-- Панель мониторинга завершения сделок в реальном времени -->
-    <div class="d-flex justify-content-between align-items-center mb-3" style="background-color: #1a1a26; padding: 10px 15px; border-radius: 4px; border: 1px solid #3b3b4f; color: #a9b1d6; margin-bottom: 20px;">
-        <div>
-            <i class="fas fa-bell text-success mr-2" style="color: #9ece6a !important;"></i> <span style="font-size: 14px;">Мониторинг завершения сделок в реальном времени активен.</span>
+    <div class="mb-3" style="background-color: #1a1a26; padding: 15px 20px; border-radius: 4px; border: 1px solid #3b3b4f; color: #a9b1d6; margin-bottom: 20px;">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div style="margin-bottom: 10px;">
+                <i class="fas fa-bell text-success mr-2" style="color: #9ece6a !important;"></i> <span style="font-size: 14px;">Мониторинг завершения сделок в реальном времени активен.</span>
+            </div>
+            <div class="d-flex align-items-center flex-wrap" style="margin-bottom: 10px;">
+                <button id="soundToggleBtn" class="btn btn-sm btn-outline-success mr-2" style="font-weight: bold; border-color: #9ece6a; color: #9ece6a; background: transparent; transition: all 0.3s;">
+                    <i class="fas fa-volume-up mr-1"></i> Звук: Вкл
+                </button>
+                <button id="testSoundBtn" class="btn btn-sm btn-outline-secondary" style="font-weight: bold; border-color: #4a4a6a; color: #a9b1d6; background: transparent; transition: all 0.3s;">
+                    <i class="fas fa-music mr-1"></i> Проверить звук
+                </button>
+            </div>
         </div>
-        <div class="d-flex align-items-center">
-            <button id="soundToggleBtn" class="btn btn-sm btn-outline-success" style="font-weight: bold; border-color: #9ece6a; color: #9ece6a; background: transparent; transition: all 0.3s; margin-right: 8px;">
-                <i class="fas fa-volume-up mr-1"></i> Звук: Вкл
-            </button>
-            <button id="testSoundBtn" class="btn btn-sm btn-outline-secondary" style="font-weight: bold; border-color: #4a4a6a; color: #a9b1d6; background: transparent; transition: all 0.3s;">
-                <i class="fas fa-music mr-1"></i> Проверить звук
-            </button>
+
+        <!-- Дополнительные настройки звука -->
+        <div class="row align-items-center mt-2 pt-2" style="border-top: 1px solid #2e2e3f; font-size: 13px;">
+            <div class="col-md-5 d-flex align-items-center mb-2 mb-md-0">
+                <i class="fas fa-sliders-h mr-2" style="color: #7aa2f7;"></i>
+                <span class="mr-2" style="white-space: nowrap;">Громкость:</span>
+                <input type="range" id="soundVolumeSlider" min="0" max="1" step="0.05" value="0.5" style="flex-grow: 1; height: 4px; background: #24283b; outline: none; transition: background 450ms ease-in-out; -webkit-appearance: none; cursor: pointer;" />
+                <span id="soundVolumeValue" class="ml-2" style="font-weight: bold; color: #7aa2f7; min-width: 40px; text-align: right;">50%</span>
+            </div>
+            <div class="col-md-5 d-flex align-items-center mb-2 mb-md-0">
+                <i class="fas fa-music mr-2" style="color: #bb9af3;"></i>
+                <span class="mr-2" style="white-space: nowrap;">Профиль звука:</span>
+                <select id="soundProfileSelect" class="form-control form-control-sm" style="background-color: #1e1e2e; color: #a9b1d6; border: 1px solid #3b3b4f; border-radius: 4px; height: 28px; padding: 2px 8px; font-size: 12px; width: auto;">
+                    <option value="chime">Приятный звон (Chime)</option>
+                    <option value="beep">Высокий писк (Beep)</option>
+                    <option value="arcade">Ретро аркада (Arcade)</option>
+                </select>
+            </div>
+            <div class="col-md-2 text-md-right text-muted" style="font-size: 11px;">
+                Настройки звука
+            </div>
         </div>
     </div>
 
@@ -32,9 +56,29 @@
     document.addEventListener("DOMContentLoaded", function () {
         const soundToggleBtn = document.getElementById("soundToggleBtn");
         const testSoundBtn = document.getElementById("testSoundBtn");
+        const soundVolumeSlider = document.getElementById("soundVolumeSlider");
+        const soundVolumeValue = document.getElementById("soundVolumeValue");
+        const soundProfileSelect = document.getElementById("soundProfileSelect");
         const notificationContainer = document.getElementById("notificationContainer");
 
         let isSoundEnabled = localStorage.getItem("realtime_sound_enabled") !== "false";
+
+        // Load volume with fallback to 0.5
+        let soundVolume = localStorage.getItem("realtime_sound_volume");
+        if (soundVolume === null) {
+            soundVolume = 0.5;
+        } else {
+            soundVolume = parseFloat(soundVolume);
+        }
+
+        // Load sound profile with fallback to 'chime'
+        let soundProfile = localStorage.getItem("realtime_sound_profile") || "chime";
+
+        // Sync UI controls with values
+        soundVolumeSlider.value = soundVolume;
+        soundVolumeValue.textContent = Math.round(soundVolume * 100) + "%";
+        soundProfileSelect.value = soundProfile;
+
         updateSoundButtonUI();
 
         let knownTrades = new Set();
@@ -56,6 +100,9 @@
                 initAudio();
                 if (!audioCtx) return;
 
+                const volumeScale = soundVolume;
+                if (volumeScale <= 0) return;
+
                 function playTone(freq, type, startTime, duration, volume) {
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
@@ -65,7 +112,7 @@
                     osc.type = type;
                     osc.frequency.setValueAtTime(freq, startTime);
 
-                    gain.gain.setValueAtTime(volume, startTime);
+                    gain.gain.setValueAtTime(volume * volumeScale, startTime);
                     gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
 
                     osc.start(startTime);
@@ -73,9 +120,51 @@
                 }
 
                 const now = audioCtx.currentTime;
-                playTone(523.25, 'sine', now, 0.4, 0.1);       // C5
-                playTone(659.25, 'sine', now + 0.1, 0.45, 0.1);  // E5
-                playTone(783.99, 'sine', now + 0.2, 0.5, 0.1);   // G5
+
+                if (soundProfile === "chime") {
+                    // Pleasant Chime (C5, E5, G5)
+                    playTone(523.25, 'sine', now, 0.4, 0.1);       // C5
+                    playTone(659.25, 'sine', now + 0.1, 0.45, 0.1);  // E5
+                    playTone(783.99, 'sine', now + 0.2, 0.5, 0.1);   // G5
+                } else if (soundProfile === "beep") {
+                    // High Beep (Double crisp high tone)
+                    playTone(880.00, 'sine', now, 0.1, 0.15);        // A5
+                    playTone(1174.66, 'sine', now + 0.12, 0.15, 0.15); // D6
+                } else if (soundProfile === "arcade") {
+                    // Retro Arcade (triangle sweep + square arpeggio)
+                    const sweepDuration = 0.3;
+                    const oscSweep = audioCtx.createOscillator();
+                    const gainSweep = audioCtx.createGain();
+                    oscSweep.connect(gainSweep);
+                    gainSweep.connect(audioCtx.destination);
+
+                    oscSweep.type = 'triangle';
+                    oscSweep.frequency.setValueAtTime(150, now);
+                    oscSweep.frequency.exponentialRampToValueAtTime(1200, now + sweepDuration);
+
+                    gainSweep.gain.setValueAtTime(0.12 * volumeScale, now);
+                    gainSweep.gain.exponentialRampToValueAtTime(0.0001, now + sweepDuration);
+
+                    oscSweep.start(now);
+                    oscSweep.stop(now + sweepDuration);
+
+                    // Quick rapid square notes
+                    const oscSeq = audioCtx.createOscillator();
+                    const gainSeq = audioCtx.createGain();
+                    oscSeq.connect(gainSeq);
+                    gainSeq.connect(audioCtx.destination);
+
+                    oscSeq.type = 'square';
+                    oscSeq.frequency.setValueAtTime(800, now + 0.1);
+                    oscSeq.frequency.setValueAtTime(1000, now + 0.15);
+                    oscSeq.frequency.setValueAtTime(1200, now + 0.2);
+
+                    gainSeq.gain.setValueAtTime(0.04 * volumeScale, now + 0.1);
+                    gainSeq.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+
+                    oscSeq.start(now + 0.1);
+                    oscSeq.stop(now + 0.25);
+                }
             } catch (err) {
                 console.error("Failed to play notification sound:", err);
             }
@@ -84,12 +173,12 @@
         function updateSoundButtonUI() {
             if (isSoundEnabled) {
                 soundToggleBtn.innerHTML = '<i class="fas fa-volume-up mr-1"></i> Звук: Вкл';
-                soundToggleBtn.className = "btn btn-sm btn-outline-success";
+                soundToggleBtn.className = "btn btn-sm btn-outline-success mr-2";
                 soundToggleBtn.style.color = "#9ece6a";
                 soundToggleBtn.style.borderColor = "#9ece6a";
             } else {
                 soundToggleBtn.innerHTML = '<i class="fas fa-volume-mute mr-1"></i> Звук: Выкл';
-                soundToggleBtn.className = "btn btn-sm btn-outline-secondary";
+                soundToggleBtn.className = "btn btn-sm btn-outline-secondary mr-2";
                 soundToggleBtn.style.color = "#a9b1d6";
                 soundToggleBtn.style.borderColor = "#4a4a6a";
             }
@@ -103,6 +192,26 @@
             if (isSoundEnabled) {
                 playNotificationSound();
             }
+        });
+
+        // Volume slider handling
+        soundVolumeSlider.addEventListener("input", function () {
+            soundVolume = parseFloat(soundVolumeSlider.value);
+            soundVolumeValue.textContent = Math.round(soundVolume * 100) + "%";
+            localStorage.setItem("realtime_sound_volume", soundVolume);
+        });
+
+        soundVolumeSlider.addEventListener("change", function () {
+            initAudio();
+            playNotificationSound();
+        });
+
+        // Sound profile select handling
+        soundProfileSelect.addEventListener("change", function () {
+            soundProfile = soundProfileSelect.value;
+            localStorage.setItem("realtime_sound_profile", soundProfile);
+            initAudio();
+            playNotificationSound();
         });
 
         testSoundBtn.addEventListener("click", function () {
