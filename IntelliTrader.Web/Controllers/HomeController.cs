@@ -470,6 +470,50 @@ namespace IntelliTrader.Web.Controllers
             return Json(new { success = false, message = "Unable to fetch parameter drift data." });
         }
 
+        [HttpGet]
+        public IActionResult GetLatestTrades(int limit = 10)
+        {
+            try
+            {
+                var tradesDict = GetTrades();
+                var allTrades = new List<object>();
+
+                if (tradesDict != null)
+                {
+                    var sortedTrades = tradesDict.Values
+                        .SelectMany(t => t)
+                        .OrderByDescending(t => t.SellDate)
+                        .Take(limit);
+
+                    foreach (var t in sortedTrades)
+                    {
+                        decimal totalCost = t.Cost + (t.Metadata?.AdditionalCosts ?? 0);
+                        decimal profitMargin = totalCost != 0 ? (t.Profit / totalCost) * 100 : 0;
+
+                        allTrades.Add(new
+                        {
+                            Pair = t.Metadata?.OriginalPair ?? t.Pair,
+                            t.Amount,
+                            t.AveragePrice,
+                            t.SellPrice,
+                            SellDate = t.SellDate.ToString("yyyy-MM-dd HH:mm:ss"),
+                            t.Profit,
+                            ProfitMargin = profitMargin.ToString("0.00"),
+                            t.IsSwap,
+                            t.IsArbitrage,
+                            SwapPair = t.Metadata?.SwapPair ?? "N/A"
+                        });
+                    }
+                }
+
+                return Json(new { success = true, trades = allTrades });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
         public IActionResult Help(string lang = "en")
         {
             var coreService = Application.Resolve<ICoreService>();

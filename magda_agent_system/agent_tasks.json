@@ -304,7 +304,7 @@
     },
     {
       "id": "web-dashboard-realtime-trades-refresh",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Implement real-time visual indicator on trade completion",
@@ -316,6 +316,55 @@
       ],
       "acceptance": [
         "The Dashboard displays a visual pop-up or notification on trade completion"
+      ]
+    },
+    {
+      "id": "trading-strategy-dca-scaling",
+      "status": "todo",
+      "area": "trading",
+      "risk": "medium",
+      "title": "Optimize DCA Step Spacing based on Market Volatility",
+      "description": "Implement dynamic adjustment of DCA price steps based on Average True Range (ATR) or CurrentSpread volatility to prevent premature DCA buys in extremely volatile markets.",
+      "allowed_paths": [
+        "IntelliTrader.Trading/Processors/DcaProcessor.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "DcaProcessor calculates price step spacing dynamically",
+        "Tests verify wider spacing under higher spread/volatility conditions"
+      ]
+    },
+    {
+      "id": "web-dashboard-sound-settings",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add UI Settings for sound control and custom volume",
+      "description": "Add a volume slider and sound profile options (pleasant chime, high beep, retro arcade) directly on the dashboard under settings.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/**",
+        "IntelliTrader.Web/Controllers/HomeController.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "The Settings page includes volume and sound profile options",
+        "Sound notifications play at selected volume and use chosen sound profile"
+      ]
+    },
+    {
+      "id": "trading-backtesting-report-exporter",
+      "status": "todo",
+      "area": "trading",
+      "risk": "low",
+      "title": "Export backtesting trade results to interactive HTML report",
+      "description": "Implement an export feature that generates a beautiful, standalone HTML/CSS report with charts summarizing backtesting equity curve and metrics.",
+      "allowed_paths": [
+        "IntelliTrader.Backtesting/Benchmarks/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "The backtesting service can export runs to an HTML file",
+        "Exported report contains interactive visualizations and performance metrics"
       ]
     }
   ]
