@@ -336,7 +336,7 @@
     },
     {
       "id": "web-dashboard-sound-settings",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Add UI Settings for sound control and custom volume",
