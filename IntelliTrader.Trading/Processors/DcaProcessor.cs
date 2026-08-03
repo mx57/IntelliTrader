@@ -24,7 +24,56 @@ namespace IntelliTrader.Trading.Processors
             if (pairConfig.NextDCAMargin != null && pairConfig.BuyEnabled &&
                 !trailingBuys.ContainsKey(tradingPair.Pair) && !trailingSells.ContainsKey(tradingPair.Pair))
             {
-                if (tradingPair.CurrentMargin <= pairConfig.NextDCAMargin)
+                double multiplier = 1.0;
+
+                // 1. Spread-based multiplier
+                decimal maxSpread = (pairConfig.TrailingSafety != null && pairConfig.TrailingSafety.MaxTrailingSpread > 0)
+                    ? pairConfig.TrailingSafety.MaxTrailingSpread
+                    : 0.2m;
+
+                if (maxSpread > 0)
+                {
+                    double spreadMultiplier = (double)(tradingPair.CurrentSpread / maxSpread);
+                    if (spreadMultiplier > multiplier)
+                    {
+                        multiplier = spreadMultiplier;
+                    }
+                }
+
+                // 2. Volatility-based multiplier from signal volatility relative to a 4.0 base
+                var signals = signalsService.GetSignalsByPair(tradingPair.Pair);
+                if (signals != null)
+                {
+                    foreach (var sig in signals)
+                    {
+                        if (sig.Volatility.HasValue)
+                        {
+                            double volVal = sig.Volatility.Value;
+                            if (!double.IsNaN(volVal) && !double.IsInfinity(volVal))
+                            {
+                                double volMultiplier = volVal / 4.0;
+                                if (volMultiplier > multiplier)
+                                {
+                                    multiplier = volMultiplier;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Apply bounds [1.0, 5.0]
+                if (multiplier > 5.0)
+                {
+                    multiplier = 5.0;
+                }
+                if (multiplier < 1.0)
+                {
+                    multiplier = 1.0;
+                }
+
+                decimal effectiveNextDCAMargin = pairConfig.NextDCAMargin.Value * (decimal)multiplier;
+
+                if (tradingPair.CurrentMargin <= effectiveNextDCAMargin)
                 {
                     // Enforce MaxTrailingSpread safety checks to prevent buying on high-volatility spikes
                     var safety = pairConfig.TrailingSafety;
@@ -68,7 +117,8 @@ namespace IntelliTrader.Trading.Processors
                         if (task.LoggingEnabled)
                         {
                             loggingService.Info($"DCA triggered for {tradingPair.FormattedName}. Margin: {tradingPair.CurrentMargin:0.00}, " +
-                                $"Level: {pairConfig.NextDCAMargin:0.00}, Multiplier: {pairConfig.BuyMultiplier}, " +
+                                $"Level (base): {pairConfig.NextDCAMargin:0.00}, Effective Level: {effectiveNextDCAMargin:0.00}, Volatility Multiplier: {multiplier:0.00}, " +
+                                $"Multiplier: {pairConfig.BuyMultiplier}, " +
                                 $"Global Rating: {(globalRating.HasValue ? globalRating.Value.ToString("0.00") : "N/A")}, " +
                                 $"Scaling Factor: {scalingFactor:0.00}, Base Cost: {tradingPair.Cost * pairConfig.BuyMultiplier:0.00}, Scaled Cost: {buyOptions.MaxCost:0.00}");
                         }
