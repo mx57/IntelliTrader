@@ -24,22 +24,71 @@ namespace IntelliTrader.Trading.Processors
             if (pairConfig.NextDCAMargin != null && pairConfig.BuyEnabled &&
                 !trailingBuys.ContainsKey(tradingPair.Pair) && !trailingSells.ContainsKey(tradingPair.Pair))
             {
-                if (tradingPair.CurrentMargin <= pairConfig.NextDCAMargin)
+                // Enforce MaxTrailingSpread safety checks to prevent buying on high-volatility spikes
+                var safety = pairConfig.TrailingSafety;
+                if (safety != null && safety.MaxTrailingSpread > 0 && tradingPair.CurrentSpread > safety.MaxTrailingSpread)
                 {
-                    // Enforce MaxTrailingSpread safety checks to prevent buying on high-volatility spikes
-                    var safety = pairConfig.TrailingSafety;
-                    if (safety != null && safety.MaxTrailingSpread > 0 && tradingPair.CurrentSpread > safety.MaxTrailingSpread)
+                    if (safety.PauseOnHighSpread)
                     {
-                        if (safety.PauseOnHighSpread)
+                        if (task.LoggingEnabled)
                         {
-                            if (task.LoggingEnabled)
-                            {
-                                loggingService.Info($"DCA paused for {tradingPair.FormattedName} due to high spread: {tradingPair.CurrentSpread:0.00}%");
-                            }
-                            return;
+                            loggingService.Info($"DCA paused for {tradingPair.FormattedName} due to high spread: {tradingPair.CurrentSpread:0.00}%");
+                        }
+                        return;
+                    }
+                }
+
+                // Dynamic adjustment of DCA price steps based on CurrentSpread or Average True Range (ATR) / Signal Volatility to prevent premature DCA buys in extremely volatile markets
+                decimal effectiveNextDCAMargin = pairConfig.NextDCAMargin.Value;
+                decimal spreadFactor = 1.0m;
+                if (tradingPair.CurrentSpread > 0)
+                {
+                    decimal baseSpread = 0.2m;
+                    if (pairConfig.TrailingSafety != null && pairConfig.TrailingSafety.MaxTrailingSpread > 0)
+                    {
+                        baseSpread = pairConfig.TrailingSafety.MaxTrailingSpread;
+                    }
+                    if (tradingPair.CurrentSpread > baseSpread)
+                    {
+                        spreadFactor = 1.0m + (tradingPair.CurrentSpread - baseSpread);
+                    }
+                }
+
+                decimal signalVolatilityFactor = 1.0m;
+                var signals = signalsService.GetSignalsByPair(tradingPair.Pair);
+                double maxSignalVolatility = 0;
+                if (signals != null)
+                {
+                    foreach (var signal in signals)
+                    {
+                        if (signal.Volatility.HasValue && signal.Volatility.Value > maxSignalVolatility)
+                        {
+                            maxSignalVolatility = signal.Volatility.Value;
                         }
                     }
+                }
+                if (maxSignalVolatility > 0)
+                {
+                    decimal baseVolatility = 4.0m;
+                    if ((decimal)maxSignalVolatility > baseVolatility)
+                    {
+                        signalVolatilityFactor = 1.0m + (((decimal)maxSignalVolatility - baseVolatility) / baseVolatility);
+                    }
+                }
 
+                decimal volatilityFactor = Math.Max(spreadFactor, signalVolatilityFactor);
+                if (volatilityFactor > 5.0m)
+                {
+                    volatilityFactor = 5.0m;
+                }
+
+                if (volatilityFactor > 1.0m)
+                {
+                    effectiveNextDCAMargin = effectiveNextDCAMargin * volatilityFactor;
+                }
+
+                if (tradingPair.CurrentMargin <= effectiveNextDCAMargin)
+                {
                     // Dynamically scale DCA orders based on the global rating
                     double? globalRating = signalsService.GetGlobalRating();
                     decimal scalingFactor = 1.0m;
@@ -68,7 +117,9 @@ namespace IntelliTrader.Trading.Processors
                         if (task.LoggingEnabled)
                         {
                             loggingService.Info($"DCA triggered for {tradingPair.FormattedName}. Margin: {tradingPair.CurrentMargin:0.00}, " +
-                                $"Level: {pairConfig.NextDCAMargin:0.00}, Multiplier: {pairConfig.BuyMultiplier}, " +
+                                $"Level (Base): {pairConfig.NextDCAMargin:0.00}, Level (Effective): {effectiveNextDCAMargin:0.00}, " +
+                                $"Volatility Factor: {volatilityFactor:0.00} (Spread: {tradingPair.CurrentSpread:0.00}%, Signal Vol: {maxSignalVolatility:0.00}), " +
+                                $"Multiplier: {pairConfig.BuyMultiplier}, " +
                                 $"Global Rating: {(globalRating.HasValue ? globalRating.Value.ToString("0.00") : "N/A")}, " +
                                 $"Scaling Factor: {scalingFactor:0.00}, Base Cost: {tradingPair.Cost * pairConfig.BuyMultiplier:0.00}, Scaled Cost: {buyOptions.MaxCost:0.00}");
                         }

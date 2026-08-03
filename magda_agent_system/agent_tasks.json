@@ -320,7 +320,7 @@
     },
     {
       "id": "trading-strategy-dca-scaling",
-      "status": "todo",
+      "status": "done",
       "area": "trading",
       "risk": "medium",
       "title": "Optimize DCA Step Spacing based on Market Volatility",
