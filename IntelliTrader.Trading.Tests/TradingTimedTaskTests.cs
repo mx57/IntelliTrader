@@ -276,11 +276,9 @@ namespace IntelliTrader.Trading.Tests
             _account.Setup(a => a.GetTradingPairs(It.IsAny<bool>())).Returns(new List<ITradingPair> { tradingPair.Object });
             _tradingService.Setup(s => s.GetPrice(pair, It.IsAny<TradePriceType?>(), It.IsAny<bool>())).Returns(10000m);
 
-            _signalsService.Setup(s => s.GetGlobalRating()).Returns((double?)null);
-            _signalsService.Setup(s => s.GetSignalsByPair(pair)).Returns(new List<ISignal>());
-
-            string outMsg = "";
-            _tradingService.Setup(s => s.CanBuy(It.IsAny<BuyOptions>(), out outMsg)).Returns(true);
+            var signal = new Mock<ISignal>();
+            signal.Setup(s => s.Volatility).Returns(8.0);
+            _signalsService.Setup(s => s.GetSignalsByPair(pair)).Returns(new List<ISignal> { signal.Object });
 
             var task = new TradingTimedTask(
                 _loggingService.Object,
