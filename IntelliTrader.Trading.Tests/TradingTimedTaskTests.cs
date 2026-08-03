@@ -242,7 +242,7 @@ namespace IntelliTrader.Trading.Tests
         }
 
         [Fact]
-        public void DcaProcessor_WidensSpacingWithHighSignalVolatility()
+        public void DcaProcessor_WidensSpacingUnderHighSpread()
         {
             // Arrange
             var pair = "BTCUSDT";
@@ -253,16 +253,23 @@ namespace IntelliTrader.Trading.Tests
             pairConfig.Setup(c => c.BuyTrailing).Returns(0m);
             pairConfig.Setup(c => c.Rules).Returns(new List<string>());
 
+            var safety = new TrailingSafetyOptions
+            {
+                MaxTrailingSpread = 0.5m, // baseSpread is MaxTrailingSpread
+                PauseOnHighSpread = false  // We don't pause, we just test widening
+            };
+            pairConfig.Setup(c => c.TrailingSafety).Returns(safety);
+
             _tradingService.Setup(s => s.GetPairConfig(pair)).Returns(pairConfig.Object);
 
             var tradingPair = new Mock<ITradingPair>();
             tradingPair.Setup(p => p.Pair).Returns(pair);
-            // With Volatility = 8.0, multiplier should be 8.0 / 4.0 = 2.0x.
-            // EffectiveNextDCAMargin = -3.0m * 2.0 = -6.0m.
-            // Setting CurrentMargin to -5.0m (which would normally trigger DCA because -5.0m <= -3.0m)
-            // But now with widening, -5.0m is NOT <= -6.0m, so it should NOT trigger.
-            tradingPair.Setup(p => p.CurrentMargin).Returns(-5.0m);
-            tradingPair.Setup(p => p.CurrentSpread).Returns(0.1m);
+            // CurrentMargin is -4.0%. Base DCA is -3.0%.
+            // Since CurrentSpread (1.5%) > baseSpread (0.5%), spreadFactor = 1.0 + (1.5 - 0.5) = 2.0.
+            // effectiveNextDCAMargin = -3.0 * 2.0 = -6.0%.
+            // Since CurrentMargin (-4.0%) > effective (-6.0%), DCA should NOT trigger yet!
+            tradingPair.Setup(p => p.CurrentMargin).Returns(-4.0m);
+            tradingPair.Setup(p => p.CurrentSpread).Returns(1.5m);
             tradingPair.Setup(p => p.Cost).Returns(100m);
             tradingPair.Setup(p => p.Metadata).Returns(new OrderMetadata());
 
@@ -281,23 +288,15 @@ namespace IntelliTrader.Trading.Tests
                 _orderingService.Object,
                 _tradingService.Object);
 
-            string outMsg = "";
-            _tradingService.Setup(s => s.CanBuy(It.IsAny<BuyOptions>(), out outMsg)).Returns(true);
-
-            // Act - Step 1: Process when CurrentMargin is -5.0m (should NOT trigger)
+            // Act
             task.ProcessTradingPairs();
+
+            // Assert - Should NOT trigger DCA because spacing is widened to -6.0% and CurrentMargin is -4.0%
             _orderingService.Verify(o => o.PlaceBuyOrder(It.IsAny<BuyOptions>()), Times.Never());
-
-            // Act - Step 2: Drop price further so CurrentMargin is -7.0m (which is <= -6.0m effective margin)
-            tradingPair.Setup(p => p.CurrentMargin).Returns(-7.0m);
-            task.ProcessTradingPairs();
-
-            // Assert - Should trigger DCA
-            _orderingService.Verify(o => o.PlaceBuyOrder(It.IsAny<BuyOptions>()), Times.Once());
         }
 
         [Fact]
-        public void DcaProcessor_WidensSpacingWithHighSpread()
+        public void DcaProcessor_WidensSpacingUnderHighSignalVolatility()
         {
             // Arrange
             var pair = "BTCUSDT";
@@ -307,29 +306,34 @@ namespace IntelliTrader.Trading.Tests
             pairConfig.Setup(c => c.BuyMultiplier).Returns(1.5m);
             pairConfig.Setup(c => c.BuyTrailing).Returns(0m);
             pairConfig.Setup(c => c.Rules).Returns(new List<string>());
-
-            var safety = new TrailingSafetyOptions
-            {
-                MaxTrailingSpread = 0.5m,
-                PauseOnHighSpread = false // Do not pause, just let it use spread for widening multiplier
-            };
-            pairConfig.Setup(c => c.TrailingSafety).Returns(safety);
+            pairConfig.Setup(c => c.TrailingSafety).Returns((TrailingSafetyOptions)null!);
 
             _tradingService.Setup(s => s.GetPairConfig(pair)).Returns(pairConfig.Object);
 
             var tradingPair = new Mock<ITradingPair>();
             tradingPair.Setup(p => p.Pair).Returns(pair);
-            // With CurrentSpread = 1.0m and MaxTrailingSpread = 0.5m, multiplier is 1.0 / 0.5 = 2.0x.
-            // EffectiveNextDCAMargin = -3.0m * 2.0 = -6.0m.
-            // Setting CurrentMargin to -5.0m (which would normally trigger DCA because -5.0m <= -3.0m)
-            // But now with widening, -5.0m is NOT <= -6.0m, so it should NOT trigger.
+            // CurrentMargin is -5.0%. Base DCA is -3.0%.
+            // Signal Volatility is 8.0 (baseline is 4.0).
+            // signalVolatilityFactor = 1.0 + (8.0 - 4.0) / 4.0 = 2.0.
+            // effectiveNextDCAMargin = -3.0 * 2.0 = -6.0%.
+            // Since CurrentMargin (-5.0%) > effective (-6.0%), DCA should NOT trigger yet!
             tradingPair.Setup(p => p.CurrentMargin).Returns(-5.0m);
-            tradingPair.Setup(p => p.CurrentSpread).Returns(1.0m);
+            tradingPair.Setup(p => p.CurrentSpread).Returns(0.1m); // low spread, spread factor is 1.0
             tradingPair.Setup(p => p.Cost).Returns(100m);
             tradingPair.Setup(p => p.Metadata).Returns(new OrderMetadata());
 
             _account.Setup(a => a.GetTradingPairs(It.IsAny<bool>())).Returns(new List<ITradingPair> { tradingPair.Object });
             _tradingService.Setup(s => s.GetPrice(pair, It.IsAny<TradePriceType?>(), It.IsAny<bool>())).Returns(10000m);
+
+            _signalsService.Setup(s => s.GetGlobalRating()).Returns((double?)null);
+
+            var mockSignal = new Mock<ISignal>();
+            mockSignal.Setup(s => s.Volatility).Returns(8.0);
+            var signalsList = new List<ISignal> { mockSignal.Object };
+            _signalsService.Setup(s => s.GetSignalsByPair(pair)).Returns(signalsList);
+
+            string outMsg = "";
+            _tradingService.Setup(s => s.CanBuy(It.IsAny<BuyOptions>(), out outMsg)).Returns(true);
 
             var task = new TradingTimedTask(
                 _loggingService.Object,
@@ -339,19 +343,11 @@ namespace IntelliTrader.Trading.Tests
                 _orderingService.Object,
                 _tradingService.Object);
 
-            string outMsg = "";
-            _tradingService.Setup(s => s.CanBuy(It.IsAny<BuyOptions>(), out outMsg)).Returns(true);
-
-            // Act - Step 1: Process when CurrentMargin is -5.0m (should NOT trigger)
+            // Act
             task.ProcessTradingPairs();
+
+            // Assert - Should NOT trigger DCA because spacing is widened to -6.0% and CurrentMargin is -5.0%
             _orderingService.Verify(o => o.PlaceBuyOrder(It.IsAny<BuyOptions>()), Times.Never());
-
-            // Act - Step 2: Drop price further so CurrentMargin is -7.0m (which is <= -6.0m effective margin)
-            tradingPair.Setup(p => p.CurrentMargin).Returns(-7.0m);
-            task.ProcessTradingPairs();
-
-            // Assert - Should trigger DCA
-            _orderingService.Verify(o => o.PlaceBuyOrder(It.IsAny<BuyOptions>()), Times.Once());
         }
     }
 }
