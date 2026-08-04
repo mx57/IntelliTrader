@@ -205,7 +205,7 @@
     },
     {
       "id": "multi-agent-backtesting-orchestrator",
-      "status": "todo",
+      "status": "done",
       "area": "agents",
       "risk": "medium",
       "title": "Multi-agent strategy backtesting with isolation",
@@ -365,6 +365,21 @@
       "acceptance": [
         "The backtesting service can export runs to an HTML file",
         "Exported report contains interactive visualizations and performance metrics"
+      ]
+    },
+    {
+      "id": "web-dashboard-dca-visualization",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Visualize DCA levels dynamically on the Web Dashboard",
+      "description": "Add a dynamic visual breakdown of the current DCA levels and trigger margin offsets in the pair details panel of the Web Dashboard.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Web Dashboard displays a list of active and upcoming DCA levels with calculated price points"
       ]
     }
   ]
