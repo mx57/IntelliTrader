@@ -691,6 +691,48 @@ namespace IntelliTrader.Web.Controllers
 
             var tradingPairs = from tradingPair in tradingService.Account.GetTradingPairs()
                                let pairConfig = tradingService.GetPairConfig(tradingPair.Pair)
+                               let configDcaLevels = tradingService.Config.DCALevels ?? new List<DCALevel>()
+                               let maxLevelToShow = Math.Max(configDcaLevels.Count, tradingPair.DCALevel + 1)
+                               let dcaLevelsList = Enumerable.Range(0, maxLevelToShow).Select(i =>
+                               {
+                                   int levelNum = i + 1;
+                                   DCALevel levelObj = null;
+                                   if (i < configDcaLevels.Count)
+                                   {
+                                       levelObj = configDcaLevels[i];
+                                   }
+                                   else if (tradingService.Config.RepeatLastDCALevel && configDcaLevels.Count > 0)
+                                   {
+                                       levelObj = configDcaLevels[configDcaLevels.Count - 1];
+                                   }
+
+                                   if (levelObj != null)
+                                   {
+                                       decimal margin = levelObj.Margin;
+                                       decimal totalCost = tradingPair.Cost + tradingPair.Fees + (tradingPair.Metadata?.AdditionalCosts ?? 0);
+                                       decimal triggerPrice = tradingPair.Amount > 0 ? (totalCost * (1m + margin / 100m)) / tradingPair.Amount : 0m;
+
+                                       string status = "Upcoming";
+                                       if (levelNum <= tradingPair.DCALevel)
+                                       {
+                                           status = "Completed";
+                                       }
+                                       else if (levelNum == tradingPair.DCALevel + 1)
+                                       {
+                                           status = "Next";
+                                       }
+
+                                       return new
+                                       {
+                                           Level = levelNum,
+                                           Margin = margin.ToString("0.00"),
+                                           TriggerPrice = triggerPrice.ToString("0.00000000"),
+                                           Status = status,
+                                           BuyMultiplier = levelObj.BuyMultiplier?.ToString("0.00") ?? "N/A"
+                                       };
+                                   }
+                                   return null;
+                               }).Where(x => x != null).ToList()
                                select new
                                {
                                    Name = tradingPair.Pair,
@@ -715,7 +757,8 @@ namespace IntelliTrader.Web.Controllers
                                    IsTrailingSell = tradingService.GetTrailingSells().Contains(tradingPair.Pair),
                                    IsTrailingBuy = tradingService.GetTrailingBuys().Contains(tradingPair.Pair),
                                    LastBuyMargin = tradingPair.Metadata.LastBuyMargin?.ToString("0.00") ?? "N/A",
-                                   Config = pairConfig
+                                   Config = pairConfig,
+                                   DcaLevels = dcaLevelsList
                                };
 
             return Json(tradingPairs);

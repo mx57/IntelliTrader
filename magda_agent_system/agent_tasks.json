@@ -369,17 +369,64 @@
     },
     {
       "id": "web-dashboard-dca-visualization",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Visualize DCA levels dynamically on the Web Dashboard",
       "description": "Add a dynamic visual breakdown of the current DCA levels and trigger margin offsets in the pair details panel of the Web Dashboard.",
       "allowed_paths": [
         "IntelliTrader.Web/Views/**",
-        "magda_agent_system/agent_tasks.json"
+        "magda_agent_system/agent_tasks.json",
+        "IntelliTrader.Web/Controllers/**",
+        "IntelliTrader.Web/Static/**"
       ],
       "acceptance": [
         "Web Dashboard displays a list of active and upcoming DCA levels with calculated price points"
+      ]
+    },
+    {
+      "id": "trading-trailing-dca-safety",
+      "status": "todo",
+      "area": "trading",
+      "risk": "low",
+      "title": "Implement extra safety boundaries for high-volatility DCA buys",
+      "description": "Implement a threshold check so that if CurrentSpread is extremely high, we automatically widen DCA intervals even further to protect funds.",
+      "allowed_paths": [
+        "IntelliTrader.Trading/Processors/DcaProcessor.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "DcaProcessor checks spread safety limits and postpones or scales DCA margins during extremely high spreads"
+      ]
+    },
+    {
+      "id": "web-dashboard-tradingview-integration",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Integrate inline mini TradingView widget on details panel",
+      "description": "Add a small interactive iframe chart from TradingView directly into the pair details row.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Web Dashboard displays an interactive TradingView widget for the active pair in the details panel"
+      ]
+    },
+    {
+      "id": "web-dashboard-dark-theme-toggle",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Improve UI/UX with smooth light/dark theme switch toggle",
+      "description": "Implement a settings toggle to switch themes dynamically on the Web Dashboard.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Web Dashboard supports seamless dynamic toggling between light and dark visual themes"
       ]
     }
   ]
