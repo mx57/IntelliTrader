@@ -273,6 +273,33 @@ function format(data) {
     details.find("#lastBuyMargin").text(data.LastBuyMargin);
     details.find("#boughtPrice").text(data.BoughtPrice);
     details.find("#boughtRating").text(data.BoughtRating);
+
+    var dcaBody = details.find("#dcaLevelsBody");
+    if (data.DcaLevels && data.DcaLevels.length > 0) {
+        data.DcaLevels.forEach(function (lvl) {
+            var badgeClass = "badge-secondary";
+            var rowStyle = "";
+            if (lvl.Status === "Completed") {
+                badgeClass = "badge-success";
+                rowStyle = "text-decoration: line-through; opacity: 0.6;";
+            } else if (lvl.Status === "Next") {
+                badgeClass = "badge-warning";
+                rowStyle = "font-weight: bold; background-color: rgba(224, 175, 104, 0.05);";
+            }
+
+            var rowHtml = '<tr style="' + rowStyle + '">' +
+                '<td style="padding: 4px 8px; border-color: #2b2b36;">' + lvl.Level + '</td>' +
+                '<td style="padding: 4px 8px; border-color: #2b2b36;">' + lvl.Margin + '%</td>' +
+                '<td style="padding: 4px 8px; border-color: #2b2b36; font-family: monospace;">' + lvl.TriggerPrice + '</td>' +
+                '<td style="padding: 4px 8px; border-color: #2b2b36;">' + lvl.BuyMultiplier + 'x</td>' +
+                '<td style="padding: 4px 8px; border-color: #2b2b36;"><span class="badge ' + badgeClass + '">' + lvl.Status + '</span></td>' +
+                '</tr>';
+            dcaBody.append(rowHtml);
+        });
+    } else {
+        dcaBody.append('<tr><td colspan="5" class="text-center text-muted" style="padding: 4px 8px; border-color: #2b2b36;">No DCA levels configured</td></tr>');
+    }
+
     return details.html();
 }
 
