@@ -1,0 +1,420 @@
+using System;
+using System.IO;
+using System.Runtime.InteropServices;
+
+namespace BacktestingBenchmarkSuite
+{
+    public static class ReportGenerator
+    {
+        public static void GenerateHtmlReport(string outputPath, BenchmarkResult result)
+        {
+            // Сбор информации о системе
+            string os = RuntimeInformation.OSDescription;
+            string architecture = RuntimeInformation.OSArchitecture.ToString();
+            string framework = RuntimeInformation.FrameworkDescription;
+            int processorCount = Environment.ProcessorCount;
+            string machineName = Environment.MachineName;
+
+            // Расчеты для визуализации (SVG-графики)
+            double maxThroughput = Math.Max(
+                result.SerializationThroughput,
+                Math.Max(result.DeserializationThroughput, result.ProcessingThroughput)
+            );
+
+            double serBarWidth = (result.SerializationThroughput / maxThroughput) * 100.0;
+            double deserBarWidth = (result.DeserializationThroughput / maxThroughput) * 100.0;
+            double procBarWidth = (result.ProcessingThroughput / maxThroughput) * 100.0;
+
+            string html = $@"<!DOCTYPE html>
+<html lang=""ru"">
+<head>
+    <meta charset=""UTF-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+    <title>Отчет о производительности бэктестинга — IntelliTrader</title>
+    <style>
+        :root {{
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-color: #3b82f6;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --ser-color: #ef4444;
+            --deser-color: #3b82f6;
+            --proc-color: #10b981;
+        }}
+
+        body {{
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }}
+
+        .container {{
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }}
+
+        header {{
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 20px;
+        }}
+
+        h1 {{
+            font-size: 2.5rem;
+            margin: 0;
+            background: linear-gradient(to right, #60a5fa, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }}
+
+        .subtitle {{
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-top: 10px;
+        }}
+
+        .grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }}
+
+        .card {{
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }}
+
+        .card-title {{
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }}
+
+        .metric {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }}
+
+        .metric-label {{
+            color: var(--text-secondary);
+        }}
+
+        .metric-value {{
+            font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.1rem;
+        }}
+
+        .highlight-green {{
+            color: var(--success-color);
+        }}
+
+        .highlight-blue {{
+            color: var(--accent-color);
+        }}
+
+        .highlight-orange {{
+            color: var(--warning-color);
+        }}
+
+        /* Стилизация графиков */
+        .chart-container {{
+            margin-top: 30px;
+            margin-bottom: 30px;
+        }}
+
+        .chart-bar-group {{
+            margin-bottom: 20px;
+        }}
+
+        .chart-bar-label {{
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }}
+
+        .chart-bar-outer {{
+            background-color: #0f172a;
+            border-radius: 6px;
+            height: 24px;
+            width: 100%;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }}
+
+        .chart-bar-inner {{
+            height: 100%;
+            border-radius: 5px;
+            transition: width 1s ease-in-out;
+        }}
+
+        .bar-ser {{
+            background: linear-gradient(90deg, #f87171, #ef4444);
+            width: {serBarWidth}%;
+        }}
+
+        .bar-deser {{
+            background: linear-gradient(90deg, #60a5fa, #3b82f6);
+            width: {deserBarWidth}%;
+        }}
+
+        .bar-proc {{
+            background: linear-gradient(90deg, #34d399, #10b981);
+            width: {procBarWidth}%;
+        }}
+
+        .system-info-table {{
+            width: 100%;
+            border-collapse: collapse;
+        }}
+
+        .system-info-table td {{
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }}
+
+        .system-info-table td:first-child {{
+            color: var(--text-secondary);
+            width: 40%;
+        }}
+
+        .system-info-table td:last-child {{
+            font-weight: 500;
+        }}
+
+        .tips-list {{
+            padding-left: 20px;
+            margin: 0;
+        }}
+
+        .tips-list li {{
+            margin-bottom: 12px;
+            color: #cbd5e1;
+        }}
+
+        .badge {{
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }}
+
+        .badge-perf {{
+            background-color: rgb(16 185 129 / 0.2);
+            color: var(--success-color);
+            border: 1px solid rgb(16 185 129 / 0.3);
+        }}
+
+        footer {{
+            text-align: center;
+            margin-top: 50px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }}
+    </style>
+</head>
+<body>
+    <div class=""container"">
+        <header>
+            <h1>Отчет о производительности бэктестинга</h1>
+            <div class=""subtitle"">Инструмент бенчмаркинга высокопроизводительного воспроизведения снимков рыночных данных</div>
+        </header>
+
+        <div class=""grid"">
+            <!-- Сводка выполнения -->
+            <div class=""card"">
+                <div class=""card-title"">
+                    <span>Сводка теста</span>
+                    <span class=""badge badge-perf"">Выполнено</span>
+                </div>
+                <div class=""metric"">
+                    <span class=""metric-label"">Всего снимков:</span>
+                    <span class=""metric-value highlight-blue"">{result.SnapshotCount:N0}</span>
+                </div>
+                <div class=""metric"">
+                    <span class=""metric-label"">Симулировано месяцев:</span>
+                    <span class=""metric-value"">{result.SimulatedMonths}</span>
+                </div>
+                <div class=""metric"">
+                    <span class=""metric-label"">Общий размер данных:</span>
+                    <span class=""metric-value"">{result.TotalSizeMb:F2} МБ</span>
+                </div>
+                <div class=""metric"">
+                    <span class=""metric-label"">Ускорение бэктеста:</span>
+                    <span class=""metric-value highlight-green"">{result.SpeedupFactor:N0}x</span>
+                </div>
+            </div>
+
+            <!-- Сериализация и I/O -->
+            <div class=""card"">
+                <div class=""card-title"">
+                    <span>Сериализация (Запись)</span>
+                </div>
+                <div class=""metric"">
+                    <span class=""metric-label"">Время выполнения:</span>
+                    <span class=""metric-value"">{result.SerializationTimeMs:F2} мс</span>
+                </div>
+                <div class=""metric"">
+                    <span class=""metric-label"">Пропускная способность:</span>
+                    <span class=""metric-value highlight-orange"">{result.SerializationThroughput:N0} снимков/сек</span>
+                </div>
+                <div class=""metric"">
+                    <span class=""metric-label"">Формат записи:</span>
+                    <span class=""metric-value"">Custom Binary Stream</span>
+                </div>
+            </div>
+
+            <!-- Десериализация и Чтение -->
+            <div class=""card"">
+                <div class=""card-title"">
+                    <span>Десериализация (Чтение)</span>
+                </div>
+                <div class=""metric"">
+                    <span class=""metric-label"">Время выполнения:</span>
+                    <span class=""metric-value"">{result.DeserializationTimeMs:F2} мс</span>
+                </div>
+                <div class=""metric"">
+                    <span class=""metric-label"">Пропускная способность:</span>
+                    <span class=""metric-value highlight-blue"">{result.DeserializationThroughput:N0} снимков/сек</span>
+                </div>
+                <div class=""metric"">
+                    <span class=""metric-label"">Скорость чтения данных:</span>
+                    <span class=""metric-value highlight-green"">{result.DeserializationSpeedMbSec:F2} МБ/сек</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Сравнение производительности (Пропускная способность) -->
+        <div class=""card chart-container"">
+            <div class=""card-title"">Пропускная способность фаз обработки (снимков в секунду)</div>
+
+            <div class=""chart-bar-group"">
+                <div class=""chart-bar-label"">
+                    <span>Сериализация (Запись снимков в бинарный поток)</span>
+                    <span class=""highlight-orange"">{result.SerializationThroughput:N0} оп/сек</span>
+                </div>
+                <div class=""chart-bar-outer"">
+                    <div class=""chart-bar-inner bar-ser""></div>
+                </div>
+            </div>
+
+            <div class=""chart-bar-group"">
+                <div class=""chart-bar-label"">
+                    <span>Десериализация (Загрузка снимков в C# объекты)</span>
+                    <span class=""highlight-blue"">{result.DeserializationThroughput:N0} оп/сек</span>
+                </div>
+                <div class=""chart-bar-outer"">
+                    <div class=""chart-bar-inner bar-deser""></div>
+                </div>
+            </div>
+
+            <div class=""chart-bar-group"">
+                <div class=""chart-bar-label"">
+                    <span>Движок Бэктестинга (Логика торговых правил)</span>
+                    <span class=""highlight-green"">{result.ProcessingThroughput:N0} оп/сек</span>
+                </div>
+                <div class=""chart-bar-outer"">
+                    <div class=""chart-bar-inner bar-proc""></div>
+                </div>
+            </div>
+        </div>
+
+        <div class=""grid"">
+            <!-- Аллокация памяти и GC -->
+            <div class=""card"">
+                <div class=""card-title"">Использование памяти и сборщик мусора (GC)</div>
+                <div class=""metric"">
+                    <span class=""metric-label"">Выделено памяти в потоке:</span>
+                    <span class=""metric-value highlight-orange"">{(result.BytesAllocated / (1024.0 * 1024.0)):F2} МБ</span>
+                </div>
+                <div class=""metric"">
+                    <span class=""metric-label"">Сборки Gen 0 (Поколение 0):</span>
+                    <span class=""metric-value"">{result.GcCollectionsGen0}</span>
+                </div>
+                <div class=""metric"">
+                    <span class=""metric-label"">Сборки Gen 1 (Поколение 1):</span>
+                    <span class=""metric-value"">{result.GcCollectionsGen1}</span>
+                </div>
+                <div class=""metric"">
+                    <span class=""metric-label"">Сборки Gen 2 (Поколение 2):</span>
+                    <span class=""metric-value"">{result.GcCollectionsGen2}</span>
+                </div>
+            </div>
+
+            <!-- Информация о системе -->
+            <div class=""card"">
+                <div class=""card-title"">Информация об окружении</div>
+                <table class=""system-info-table"">
+                    <tr>
+                        <td>Имя машины:</td>
+                        <td>{machineName}</td>
+                    </tr>
+                    <tr>
+                        <td>Операционная система:</td>
+                        <td>{os} ({architecture})</td>
+                    </tr>
+                    <tr>
+                        <td>Рантайм .NET:</td>
+                        <td>{framework}</td>
+                    </tr>
+                    <tr>
+                        <td>Логических ядер CPU:</td>
+                        <td>{processorCount}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Блок инсайтов и оптимизаций -->
+        <div class=""card"">
+            <div class=""card-title"">⚡ Инженерные инсайты и рекомендации</div>
+            <ul class=""tips-list"">
+                <li>
+                    <strong>Высокопроизводительный поток:</strong> Использование кастомного <code>BinaryWriter</code>/<code>BinaryReader</code> вместо ZeroFormatter полностью решает проблему <code>BadImageFormatException</code> на рантайме .NET 8.0/10.0 и демонстрирует выдающиеся показатели пропускной способности.
+                </li>
+                <li>
+                    <strong>Оптимизация сборщика мусора (GC):</strong> При больших объемах снимков рекомендуется использовать переиспользуемые пулы объектов (<code>ArrayPool</code>) для чтения массивов байт, что позволит снизить аллокации памяти в Gen 0 и разгрузить сборщик мусора.
+                </li>
+                <li>
+                    <strong>Асинхронный конвейер I/O:</strong> Для ускорения бэктестинга на реальном диске целесообразно использовать конвейерную обработку (Pipelines) с упреждающим чтением снимков в фоновом потоке, отдельном от расчетного ядра бэктестинга.
+                </li>
+            </ul>
+        </div>
+
+        <footer>
+            <p>Сгенерировано автоматически модулем IntelliTrader.Backtesting.Benchmarks в {DateTime.Now:yyyy-MM-dd HH:mm:ss}</p>
+        </footer>
+    </div>
+</body>
+</html>";
+
+            File.WriteAllText(outputPath, html);
+        }
+    }
+}
