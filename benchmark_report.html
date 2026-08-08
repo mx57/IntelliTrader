@@ -4,119 +4,330 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Отчет о производительности бэктестинга — IntelliTrader</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --accent-color: #3b82f6;
+            --bg-color: #0b0f19;
+            --card-bg: #151d30;
+            --card-border: #222f4c;
+            --accent-color: #2563eb;
+            --accent-hover: #3b82f6;
             --success-color: #10b981;
+            --success-bg: rgba(16, 185, 129, 0.1);
+            --danger-color: #ef4444;
+            --danger-bg: rgba(239, 68, 68, 0.1);
             --warning-color: #f59e0b;
-            --text-primary: #f8fafc;
+            --warning-bg: rgba(245, 158, 11, 0.1);
+            --text-primary: #f1f5f9;
             --text-secondary: #94a3b8;
-            --border-color: #334155;
-            --ser-color: #ef4444;
-            --deser-color: #3b82f6;
-            --proc-color: #10b981;
+            --text-muted: #64748b;
+            --border-color: #1e293b;
         }
 
         body {
             background-color: var(--bg-color);
             color: var(--text-primary);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             margin: 0;
             padding: 0;
-            line-height: 1.6;
+            line-height: 1.5;
         }
 
         .container {
-            max-width: 1100px;
-            margin: 40px auto;
-            padding: 0 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
         }
 
         header {
-            text-align: center;
-            margin-bottom: 40px;
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 24px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            gap: 20px;
         }
 
-        h1 {
-            font-size: 2.5rem;
+        .header-title h1 {
+            font-size: 2rem;
+            font-weight: 800;
             margin: 0;
-            background: linear-gradient(to right, #60a5fa, #34d399);
+            background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        .subtitle {
+        .header-title p {
             color: var(--text-secondary);
-            font-size: 1.1rem;
-            margin-top: 10px;
+            margin: 4px 0 0 0;
+            font-size: 0.95rem;
         }
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .card {
+        .timestamp-badge {
             background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            border: 1px solid var(--card-border);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-family: monospace;
         }
 
-        .card-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-top: 0;
-            margin-bottom: 20px;
+        /* Навигация по вкладкам */
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            padding-bottom: 12px;
         }
 
-        .metric {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            color: #fff;
+            background-color: var(--accent-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Сетка показателей */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
         }
 
         .metric-label {
+            font-size: 0.85rem;
+            font-weight: 600;
             color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .metric-value {
-            font-weight: bold;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-top: 8px;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 1.1rem;
         }
 
-        .highlight-green {
+        .text-success { color: var(--success-color); }
+        .text-danger { color: var(--danger-color); }
+        .text-warning { color: var(--warning-color); }
+        .text-info { color: #3b82f6; }
+
+        /* Графики */
+        .chart-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .chart-header {
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        /* Интерактивная таблица */
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .search-input {
+            background-color: var(--bg-color);
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            width: 300px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-select {
+            background-color: var(--bg-color);
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .data-table-wrapper {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            background-color: var(--card-bg);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        .data-table th {
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 14px 18px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--card-border);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+
+        .data-table td {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--card-border);
+            vertical-align: middle;
+        }
+
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.01);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-buy {
+            background-color: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .badge-sell-tp {
+            background-color: var(--success-bg);
             color: var(--success-color);
+            border: 1px solid rgba(16, 185, 129, 0.2);
         }
 
-        .highlight-blue {
-            color: var(--accent-color);
+        .badge-sell-sl {
+            background-color: var(--danger-bg);
+            color: var(--danger-color);
+            border: 1px solid rgba(239, 68, 68, 0.2);
         }
 
-        .highlight-orange {
+        .badge-dca {
+            background-color: var(--warning-bg);
             color: var(--warning-color);
+            border: 1px solid rgba(245, 158, 11, 0.2);
         }
 
-        /* Стилизация графиков */
-        .chart-container {
-            margin-top: 30px;
-            margin-bottom: 30px;
+        /* Пагинация */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
         }
 
+        .pagination-info {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .pagination-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .page-btn {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            background-color: var(--border-color);
+            border-color: var(--text-secondary);
+        }
+
+        .page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Стилизация графиков производительности */
         .chart-bar-group {
             margin-bottom: 20px;
         }
@@ -129,12 +340,12 @@
         }
 
         .chart-bar-outer {
-            background-color: #0f172a;
+            background-color: #0c101d;
             border-radius: 6px;
             height: 24px;
             width: 100%;
             overflow: hidden;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--card-border);
         }
 
         .chart-bar-inner {
@@ -145,12 +356,12 @@
 
         .bar-ser {
             background: linear-gradient(90deg, #f87171, #ef4444);
-            width: 1.8067138676382513%;
+            width: 17.870743118267868%;
         }
 
         .bar-deser {
             background: linear-gradient(90deg, #60a5fa, #3b82f6);
-            width: 2.91094475062054%;
+            width: 20.07210069656605%;
         }
 
         .bar-proc {
@@ -158,23 +369,34 @@
             width: 100%;
         }
 
-        .system-info-table {
+        /* Сетки системной информации */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-top: 32px;
+        }
+
+        .info-table {
             width: 100%;
             border-collapse: collapse;
         }
 
-        .system-info-table td {
-            padding: 10px;
-            border-bottom: 1px solid var(--border-color);
+        .info-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--card-border);
+            font-size: 0.9rem;
         }
 
-        .system-info-table td:first-child {
+        .info-table td:first-child {
             color: var(--text-secondary);
+            font-weight: 500;
             width: 40%;
         }
 
-        .system-info-table td:last-child {
-            font-weight: 500;
+        .info-table td:last-child {
+            font-family: monospace;
+            font-weight: 600;
         }
 
         .tips-list {
@@ -185,21 +407,6 @@
         .tips-list li {
             margin-bottom: 12px;
             color: #cbd5e1;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .badge-perf {
-            background-color: rgb(16 185 129 / 0.2);
-            color: var(--success-color);
-            border: 1px solid rgb(16 185 129 / 0.3);
         }
 
         footer {
@@ -215,174 +422,473 @@
 <body>
     <div class="container">
         <header>
-            <h1>Отчет о производительности бэктестинга</h1>
-            <div class="subtitle">Инструмент бенчмаркинга высокопроизводительного воспроизведения снимков рыночных данных</div>
+            <div class="header-title">
+                <h1>Отчет о бэктестинге IntelliTrader</h1>
+                <p>Результаты симуляции торговых стратегий и замеры производительности</p>
+            </div>
+            <div class="timestamp-badge">
+                Сгенерировано: 2026-08-08 20:30:31
+            </div>
         </header>
 
-        <div class="grid">
-            <!-- Сводка выполнения -->
-            <div class="card">
-                <div class="card-title">
-                    <span>Сводка теста</span>
-                    <span class="badge badge-perf">Выполнено</span>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('backtest')">📊 Результаты Торговли</button>
+            <button class="tab-btn" onclick="switchTab('performance')">⚡ Производительность & Лимиты</button>
+            <button class="tab-btn" onclick="switchTab('trades')">📜 Журнал Сделок</button>
+        </div>
+
+        <!-- ВКЛАДКА БЭКТЕСТИНГА -->
+        <div id="tab-backtest" class="tab-content active">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Начальный Баланс</div>
+                    <div class="metric-value" style="color: var(--text-primary);">10,000.00 USDT</div>
                 </div>
-                <div class="metric">
-                    <span class="metric-label">Всего снимков:</span>
-                    <span class="metric-value highlight-blue">5,000</span>
+                <div class="metric-card">
+                    <div class="metric-label">Конечный Баланс</div>
+                    <div class="metric-value" style="color: #38bdf8;">8,926.90 USDT</div>
                 </div>
-                <div class="metric">
-                    <span class="metric-label">Симулировано месяцев:</span>
-                    <span class="metric-value">3</span>
+                <div class="metric-card">
+                    <div class="metric-label">Общая Доходность</div>
+                    <div class="metric-value text-danger">
+                        -10.73%
+                    </div>
                 </div>
-                <div class="metric">
-                    <span class="metric-label">Общий размер данных:</span>
-                    <span class="metric-value">5.41 МБ</span>
+                <div class="metric-card">
+                    <div class="metric-label">Макс. Просадка</div>
+                    <div class="metric-value text-danger">14.71%</div>
                 </div>
-                <div class="metric">
-                    <span class="metric-label">Ускорение бэктеста:</span>
-                    <span class="metric-value highlight-green">1,009,781x</span>
+                <div class="metric-card">
+                    <div class="metric-label">Всего Сделок / Win Rate</div>
+                    <div class="metric-value text-info" style="font-size: 1.5rem;">
+                        416 / 88.1%
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Profit Factor</div>
+                    <div class="metric-value text-warning">0.78</div>
                 </div>
             </div>
 
-            <!-- Сериализация и I/O -->
-            <div class="card">
-                <div class="card-title">
-                    <span>Сериализация (Запись)</span>
+            <!-- График баланса/эквити -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">Динамика портфеля (Equity Curve)</h3>
                 </div>
-                <div class="metric">
-                    <span class="metric-label">Время выполнения:</span>
-                    <span class="metric-value">391.52 мс</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Пропускная способность:</span>
-                    <span class="metric-value highlight-orange">12,771 снимков/сек</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Формат записи:</span>
-                    <span class="metric-value">Custom Binary Stream</span>
+                <div style="height: 350px; position: relative;">
+                    <canvas id="equityChart"></canvas>
                 </div>
             </div>
 
-            <!-- Десериализация и Чтение -->
-            <div class="card">
-                <div class="card-title">
-                    <span>Десериализация (Чтение)</span>
+            <!-- Разделение по парам -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">Показатели по торговым парам</h3>
                 </div>
-                <div class="metric">
-                    <span class="metric-label">Время выполнения:</span>
-                    <span class="metric-value">243.00 мс</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Пропускная способность:</span>
-                    <span class="metric-value highlight-blue">20,576 снимков/сек</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Скорость чтения данных:</span>
-                    <span class="metric-value highlight-green">22.27 МБ/сек</span>
+                <div class="data-table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Пара</th>
+                                <th>Всего сделок</th>
+                                <th>Прибыльные сделки</th>
+                                <th>Win Rate %</th>
+                                <th>Чистый Профит (USDT)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pairsTableBody">
+                            <!-- Заполняется динамически посредством JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
-        <!-- Сравнение производительности (Пропускная способность) -->
-        <div class="card chart-container">
-            <div class="card-title">Пропускная способность фаз обработки (снимков в секунду)</div>
-
-            <div class="chart-bar-group">
-                <div class="chart-bar-label">
-                    <span>Сериализация (Запись снимков в бинарный поток)</span>
-                    <span class="highlight-orange">12,771 оп/сек</span>
+        <!-- ВКЛАДКА ПРОИЗВОДИТЕЛЬНОСТИ (Оригинальные бенчмарки) -->
+        <div id="tab-performance" class="tab-content">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Снимков обработано</div>
+                    <div class="metric-value text-info">500</div>
                 </div>
-                <div class="chart-bar-outer">
-                    <div class="chart-bar-inner bar-ser"></div>
+                <div class="metric-card">
+                    <div class="metric-label">Период симуляции</div>
+                    <div class="metric-value">1 мес.</div>
                 </div>
-            </div>
-
-            <div class="chart-bar-group">
-                <div class="chart-bar-label">
-                    <span>Десериализация (Загрузка снимков в C# объекты)</span>
-                    <span class="highlight-blue">20,576 оп/сек</span>
+                <div class="metric-card">
+                    <div class="metric-label">Размер датасета</div>
+                    <div class="metric-value">0.54 МБ</div>
                 </div>
-                <div class="chart-bar-outer">
-                    <div class="chart-bar-inner bar-deser"></div>
+                <div class="metric-card">
+                    <div class="metric-label">Ускорение Бэктеста</div>
+                    <div class="metric-value text-success">543,596x</div>
                 </div>
             </div>
 
-            <div class="chart-bar-group">
-                <div class="chart-bar-label">
-                    <span>Движок Бэктестинга (Логика торговых правил)</span>
-                    <span class="highlight-green">706,847 оп/сек</span>
+            <!-- Сравнение пропускной способности -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">Пропускная способность фаз обработки (снимков в секунду)</h3>
                 </div>
-                <div class="chart-bar-outer">
-                    <div class="chart-bar-inner bar-proc"></div>
+
+                <div class="chart-bar-group">
+                    <div class="chart-bar-label">
+                        <span>Сериализация (Запись снимков в бинарный поток)</span>
+                        <span class="text-danger">68,001 оп/сек</span>
+                    </div>
+                    <div class="chart-bar-outer">
+                        <div class="chart-bar-inner bar-ser"></div>
+                    </div>
+                </div>
+
+                <div class="chart-bar-group">
+                    <div class="chart-bar-label">
+                        <span>Десериализация (Загрузка снимков в C# объекты)</span>
+                        <span class="text-info">76,378 оп/сек</span>
+                    </div>
+                    <div class="chart-bar-outer">
+                        <div class="chart-bar-inner bar-deser"></div>
+                    </div>
+                </div>
+
+                <div class="chart-bar-group">
+                    <div class="chart-bar-label">
+                        <span>Движок Бэктестинга (Логика торговых правил)</span>
+                        <span class="text-success">380,518 оп/сек</span>
+                    </div>
+                    <div class="chart-bar-outer">
+                        <div class="chart-bar-inner bar-proc"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <!-- Память -->
+                <div class="chart-card" style="margin-bottom: 0;">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Использование памяти и GC</h3>
+                    </div>
+                    <table class="info-table">
+                        <tr>
+                            <td>Выделено в потоке:</td>
+                            <td>5.41 МБ</td>
+                        </tr>
+                        <tr>
+                            <td>Сборщик Gen 0:</td>
+                            <td>0</td>
+                        </tr>
+                        <tr>
+                            <td>Сборщик Gen 1:</td>
+                            <td>0</td>
+                        </tr>
+                        <tr>
+                            <td>Сборщик Gen 2:</td>
+                            <td>0</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- Система -->
+                <div class="chart-card" style="margin-bottom: 0;">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Информация об окружении</h3>
+                    </div>
+                    <table class="info-table">
+                        <tr>
+                            <td>Имя хоста:</td>
+                            <td>devbox</td>
+                        </tr>
+                        <tr>
+                            <td>Операционная система:</td>
+                            <td>Ubuntu 24.04.4 LTS (X64)</td>
+                        </tr>
+                        <tr>
+                            <td>Рантайм .NET:</td>
+                            <td>.NET 8.0.24</td>
+                        </tr>
+                        <tr>
+                            <td>Процессор (ядер):</td>
+                            <td>4 Cores</td>
+                        </tr>
+                    </table>
                 </div>
             </div>
         </div>
 
-        <div class="grid">
-            <!-- Аллокация памяти и GC -->
-            <div class="card">
-                <div class="card-title">Использование памяти и сборщик мусора (GC)</div>
-                <div class="metric">
-                    <span class="metric-label">Выделено памяти в потоке:</span>
-                    <span class="metric-value highlight-orange">53.18 МБ</span>
+        <!-- ВКЛАДКА ЖУРНАЛА СДЕЛОК -->
+        <div id="tab-trades" class="tab-content">
+            <div class="chart-card">
+                <div class="table-controls">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Поиск по паре или типу...">
+
+                    <div class="filter-group">
+                        <select id="typeFilter" class="filter-select">
+                            <option value="ALL">Все типы</option>
+                            <option value="BUY">Покупки (BUY)</option>
+                            <option value="SELL">Продажи (SELL)</option>
+                            <option value="DCA">Усреднения (DCA)</option>
+                        </select>
+                        <select id="outcomeFilter" class="filter-select">
+                            <option value="ALL">Все исходы</option>
+                            <option value="WIN">Прибыльные</option>
+                            <option value="LOSS">Убыточные</option>
+                        </select>
+                        <select id="pageSizeSelect" class="filter-select">
+                            <option value="10">10 строк</option>
+                            <option value="25">25 строк</option>
+                            <option value="50">50 строк</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="metric">
-                    <span class="metric-label">Сборки Gen 0 (Поколение 0):</span>
-                    <span class="metric-value">2</span>
+
+                <div class="data-table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Время</th>
+                                <th>Торговая Пара</th>
+                                <th>Тип Ордера</th>
+                                <th>Цена (USDT)</th>
+                                <th>Количество</th>
+                                <th>Стоимость (USDT)</th>
+                                <th>Прибыль (%)</th>
+                                <th>Баланс (USDT)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tradesTableBody">
+                            <!-- Заполняется динамически посредством JS -->
+                        </tbody>
+                    </table>
                 </div>
-                <div class="metric">
-                    <span class="metric-label">Сборки Gen 1 (Поколение 1):</span>
-                    <span class="metric-value">1</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Сборки Gen 2 (Поколение 2):</span>
-                    <span class="metric-value">0</span>
+
+                <div class="pagination">
+                    <div class="pagination-info" id="paginationInfo">
+                        Записи 0-0 из 0
+                    </div>
+                    <div class="pagination-buttons">
+                        <button class="page-btn" id="btnPrev" disabled>◀ Назад</button>
+                        <button class="page-btn" id="btnNext" disabled>Вперед ▶</button>
+                    </div>
                 </div>
             </div>
-
-            <!-- Информация о системе -->
-            <div class="card">
-                <div class="card-title">Информация об окружении</div>
-                <table class="system-info-table">
-                    <tr>
-                        <td>Имя машины:</td>
-                        <td>devbox</td>
-                    </tr>
-                    <tr>
-                        <td>Операционная система:</td>
-                        <td>Ubuntu 24.04.4 LTS (X64)</td>
-                    </tr>
-                    <tr>
-                        <td>Рантайм .NET:</td>
-                        <td>.NET 8.0.24</td>
-                    </tr>
-                    <tr>
-                        <td>Логических ядер CPU:</td>
-                        <td>4</td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-
-        <!-- Блок инсайтов и оптимизаций -->
-        <div class="card">
-            <div class="card-title">⚡ Инженерные инсайты и рекомендации</div>
-            <ul class="tips-list">
-                <li>
-                    <strong>Высокопроизводительный поток:</strong> Использование кастомного <code>BinaryWriter</code>/<code>BinaryReader</code> вместо ZeroFormatter полностью решает проблему <code>BadImageFormatException</code> на рантайме .NET 8.0/10.0 и демонстрирует выдающиеся показатели пропускной способности.
-                </li>
-                <li>
-                    <strong>Оптимизация сборщика мусора (GC):</strong> При больших объемах снимков рекомендуется использовать переиспользуемые пулы объектов (<code>ArrayPool</code>) для чтения массивов байт, что позволит снизить аллокации памяти в Gen 0 и разгрузить сборщик мусора.
-                </li>
-                <li>
-                    <strong>Асинхронный конвейер I/O:</strong> Для ускорения бэктестинга на реальном диске целесообразно использовать конвейерную обработку (Pipelines) с упреждающим чтением снимков в фоновом потоке, отдельном от расчетного ядра бэктестинга.
-                </li>
-            </ul>
         </div>
 
         <footer>
-            <p>Сгенерировано автоматически модулем IntelliTrader.Backtesting.Benchmarks в 2026-08-07 20:21:39</p>
+            <p>Разработано в рамках пакета IntelliTrader.Backtesting.Benchmarks. Сборка Bolt ⚡.</p>
         </footer>
     </div>
+
+    <script>
+        // Инициализация переданных данных из C#
+        const trades = [{"pair":"ETH_USDT","type":"BUY (Initial Entry)","price":3531.41717106169890500,"amount":0.2829600558632334051123351887,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:30:31","balance":9000},{"pair":"DOT_USDT","type":"BUY (Initial Entry)","price":6.58347693951496705,"amount":151.78149922609420248460005816,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:30:31","balance":8000},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":64518.651921180939426065846464,"amount":0.0154877693542129713262582305,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:30:41","balance":7000},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.4478705727740989966889665860,"amount":2231.1133187667829589912034388,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:30:41","balance":6000},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.5418979900280295850225376250,"amount":1843.9817426676817106553377689,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:30:51","balance":5000},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":142.28919738021452446491972036,"amount":7.0226694534644051247032727023,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:30:51","balance":4000},{"pair":"ETH_USDT","type":"BUY (DCA Level 1)","price":3394.2428627571235666325987877,"amount":0.2943955516454456316206370405,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:31:11","balance":3000},{"pair":"DOT_USDT","type":"SELL (Take Profit)","price":6.7276548327559974568571670612,"amount":151.78149922609420248460005816,"cost":1020.3676866387898117336670734,"profitPct":2.0367686638789811733667073400,"profitUsdt":20.3676866387898117336670734,"timestamp":"2026-07-08 20:31:11","balance":4020.3676866387898117336670734},{"pair":"ETH_USDT","type":"BUY (DCA Level 2)","price":3347.5626837042790673892241768,"amount":0.2985007584366635037654500395,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:31:21","balance":3020.3676866387898117336670734},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":79.95988385236247739272297478,"amount":12.496891589350106042467075058,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:31:31","balance":2020.3676866387898117336670734},{"pair":"ADA_USDT","type":"BUY (DCA Level 1)","price":0.4321602271856195132642594062,"amount":2312.2211095349286807200346653,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:31:31","balance":1020.3676866387898117336670734},{"pair":"DOT_USDT","type":"BUY (Initial Entry)","price":6.9073737167149304051891461153,"amount":144.66424446992743733640675756,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:31:31","balance":20.3676866387898117336670734},{"pair":"XRP_USDT","type":"SELL (Take Profit)","price":0.5500390925360063301836721379,"amount":1843.9817426676817106553377689,"cost":1013.5013478566027712923501147,"profitPct":1.3501347856602771292350114700,"profitUsdt":13.5013478566027712923501147,"timestamp":"2026-07-08 20:32:01","balance":1033.8690344953925830260171881},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":144.60021715607713615507008541,"amount":7.0226694534644051247032727023,"cost":1014.7179183403127923789695594,"profitPct":1.4717918340312792378969559400,"profitUsdt":14.7179183403127923789695594,"timestamp":"2026-07-08 20:32:01","balance":2048.5869528357053754049867475},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":65949.541675407534566655659325,"amount":0.0154877693542129713262582305,"cost":1020.6452320169044146858700187,"profitPct":2.0645232016904414685870018700,"profitUsdt":20.6452320169044146858700187,"timestamp":"2026-07-08 20:32:21","balance":3069.2321848526097900908567662},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":66594.191412985399564124854734,"amount":0.0150050624355978480848274324,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:32:31","balance":2069.2321848526097900908567662},{"pair":"ETH_USDT","type":"SELL (Take Profit)","price":3514.6900005574798501973625780,"amount":0.8758563659453425404984222687,"cost":3076.0548386042237181590061898,"profitPct":2.5351612868074572719668729900,"profitUsdt":76.0548386042237181590061898,"timestamp":"2026-07-08 20:32:51","balance":5145.2870234568335082498629560},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.4469091283853214858498369576,"amount":4543.3344283017116397112381041,"cost":2028.9347860933543368049071069,"profitPct":1.4467393046677168402453553400,"profitUsdt":28.9347860933543368049071069,"timestamp":"2026-07-08 20:32:51","balance":7174.2218095501878450547700629},{"pair":"ETH_USDT","type":"BUY (Initial Entry)","price":3541.5264899571654473864042196,"amount":0.2821523438646045167428121569,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:33:01","balance":6174.2218095501878450547700629},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.5430180894736805697105512738,"amount":1840.1781070839122375306518059,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:33:11","balance":5174.2218095501878450547700629},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.4432490376753911515738199598,"amount":2254.3760167885359352530063946,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:33:11","balance":4174.2218095501878450547700629},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":149.49740682468710257634588876,"amount":6.6840624277302839825575017961,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:33:11","balance":3174.2218095501878450547700629},{"pair":"DOT_USDT","type":"BUY (DCA Level 1)","price":6.6393858594330209306280872495,"amount":150.50337804667557990404752347,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:33:21","balance":2174.2218095501878450547700629},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":152.29152445816818309430230272,"amount":6.6840624277302839825575017961,"cost":1017.1626121500900896984029608,"profitPct":1.7162612150090089698402960800,"profitUsdt":17.1626121500900896984029608,"timestamp":"2026-07-08 20:33:31","balance":3191.3844217002779347531730237},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":81.87975941160662067016960971,"amount":12.496891589350106042467075058,"cost":1022.4750448713702776314933425,"profitPct":2.2475044871370277631493342500,"profitUsdt":22.4750448713702776314933425,"timestamp":"2026-07-08 20:33:41","balance":4213.8594665716482123846663662},{"pair":"XRP_USDT","type":"BUY (DCA Level 1)","price":0.5195647785235679927327982107,"amount":1923.2443023554049329359847126,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:33:41","balance":3213.8594665716482123846663662},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":81.35201926393020254540284963,"amount":12.28303868842069071564293611,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:34:01","balance":2213.8594665716482123846663662},{"pair":"XRP_USDT","type":"BUY (DCA Level 2)","price":0.5135146518927774949651220517,"amount":1945.9035809724951266010037588,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:34:01","balance":1213.8594665716482123846663662},{"pair":"ETH_USDT","type":"SELL (Take Profit)","price":3622.9394441562069861837239380,"amount":0.2821523438646045167428121569,"cost":1021.4541902063151154980202780,"profitPct":2.145419020631511549802027800,"profitUsdt":21.4541902063151154980202780,"timestamp":"2026-07-08 20:34:11","balance":2235.3136567779633278826866442},{"pair":"XRP_USDT","type":"BUY (DCA Level 3)","price":0.5058091962704157612151831624,"amount":1975.5473158020260050408084981,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:34:11","balance":1235.3136567779633278826866442},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":153.85886812831678148109049342,"amount":6.494588268819417911616540351,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:34:11","balance":235.3136567779633278826866442},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.4538373043045759766433547375,"amount":2254.3760167885359352530063946,"cost":1022.3525943974355164990693882,"profitPct":2.2352594397435516499069388200,"profitUsdt":22.3525943974355164990693882,"timestamp":"2026-07-08 20:34:31","balance":1257.6662511753988443817560324},{"pair":"BTC_USDT","type":"BUY (DCA Level 1)","price":63952.941363179297445130989739,"amount":0.0156247700058924108981671228,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:34:41","balance":257.6662511753988443817560324},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":82.60277887553211543865938211,"amount":12.28303868842069071564293611,"cost":1013.8521688526959174292690087,"profitPct":1.3852168852695917429269008700,"profitUsdt":13.8521688526959174292690087,"timestamp":"2026-07-08 20:34:41","balance":1271.5184200280947618110250411},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":157.19045948655452398170477632,"amount":6.494588268819417911616540351,"cost":1020.1216486660972099874970726,"profitPct":2.0121648666097209987497072600,"profitUsdt":20.1216486660972099874970726,"timestamp":"2026-07-08 20:34:41","balance":2291.6400686941919717985221137},{"pair":"BTC_USDT","type":"BUY (DCA Level 2)","price":63214.659391670600940148078155,"amount":0.0158072511916700274622493576,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:34:51","balance":1291.6400686941919717985221137},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":81.16898953951979314013052813,"amount":12.310735980192069049474213257,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:34:51","balance":291.6400686941919717985221137},{"pair":"BTC_USDT","type":"SELL (Stop Loss)","price":59182.525809419625834916459348,"amount":0.0464370836331602864452439128,"cost":2746.2027027082110760145534709,"profitPct":-8.459909909726297466181550970,"profitUsdt":-253.7972972917889239854465291,"timestamp":"2026-07-08 20:36:41","balance":3037.8427714024030478130755846},{"pair":"ETH_USDT","type":"BUY (Initial Entry)","price":3825.7170095906758635132273705,"amount":0.2611928685511719397604402437,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:36:51","balance":2037.8427714024030478130755846},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":82.82554839132956710987683385,"amount":12.310735980192069049474213257,"cost":1018.8787260662850360244316583,"profitPct":1.8878726066285036024431658300,"profitUsdt":18.8787260662850360244316583,"timestamp":"2026-07-08 20:36:51","balance":3056.7214974686880838375072429},{"pair":"DOT_USDT","type":"BUY (DCA Level 2)","price":6.5326204550277726246370270252,"amount":152.96311899322671007876458902,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:36:51","balance":2056.7214974686880838375072429},{"pair":"DOT_USDT","type":"BUY (DCA Level 3)","price":6.4414888379708711645320104968,"amount":155.12718024281681975180442952,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:37:01","balance":1056.7214974686880838375072429},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":61358.846292430464446363996234,"amount":0.0162853453149635328193068712,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:37:11","balance":56.7214974686880838375072429},{"pair":"ETH_USDT","type":"SELL (Take Profit)","price":3900.1460767790904037983064877,"amount":0.2611928685511719397604402437,"cost":1017.9263238063580060591448608,"profitPct":1.7926323806358006059144860800,"profitUsdt":17.9263238063580060591448608,"timestamp":"2026-07-08 20:38:01","balance":1074.6478212750460898966521037},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.4650640288226451699593719598,"amount":2148.6288727375853627775642628,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:38:01","balance":74.6478212750460898966521037},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.4723713092117855611636662683,"amount":2148.6288727375853627775642628,"cost":1014.1894206500772107225183508,"profitPct":1.4189420650077210722518350800,"profitUsdt":14.1894206500772107225183508,"timestamp":"2026-07-08 20:39:01","balance":1088.8372419251233006191704545},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":80.11118067029948802687026210,"amount":12.473290140516716952628035137,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:39:11","balance":88.8372419251233006191704545},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":62687.996660342660423951399238,"amount":0.0162853453149635328193068712,"cost":1020.1300009624232160257836154,"profitPct":2.0130000962423216025783615400,"profitUsdt":20.1300009624232160257836154,"timestamp":"2026-07-08 20:39:31","balance":1108.9672428875465166449540699},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.4572488681336709716867221418,"amount":2185.3525938261738797900243647,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:39:31","balance":108.9672428875465166449540699},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.4670203224789841027121882498,"amount":2185.3525938261738797900243647,"cost":1019.8386200441598505646362179,"profitPct":1.9838620044159850564636217900,"profitUsdt":19.8386200441598505646362179,"timestamp":"2026-07-08 20:39:51","balance":1128.8058629317063672095902878},{"pair":"ETH_USDT","type":"BUY (Initial Entry)","price":3911.1257712853691649563034310,"amount":0.2554890991581695389866292676,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:40:01","balance":128.8058629317063672095902878},{"pair":"ETH_USDT","type":"SELL (Take Profit)","price":3988.3438388762782989022003705,"amount":0.2554890991581695389866292676,"cost":1018.2141407466403693589687502,"profitPct":1.8214140746640369358968750200,"profitUsdt":18.2141407466403693589687502,"timestamp":"2026-07-08 20:40:11","balance":1147.0200036783467365685590380},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":155.79215658849820617368216751,"amount":6.4139942721209652971779893722,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:40:11","balance":147.0200036783467365685590380},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":158.80452633735322632904853527,"amount":6.4139942721209652971779893722,"cost":1017.8073938229305701093170321,"profitPct":1.7807393822930570109317032100,"profitUsdt":17.8073938229305701093170321,"timestamp":"2026-07-08 20:40:31","balance":1164.8273975012773066778760701},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.4860830079911825039729681537,"amount":2055.7188454901231452896285046,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:40:41","balance":164.8273975012773066778760701},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":81.83654283526469437137789384,"amount":12.473290140516716952628035137,"cost":1020.0053646739202748058579620,"profitPct":2.000536467392027480585796200,"profitUsdt":20.0053646739202748058579620,"timestamp":"2026-07-08 20:41:01","balance":1184.8327621751975814837340321},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":63598.508669731017681719317769,"amount":0.0157118464080523573835447285,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:41:11","balance":184.8327621751975814837340321},{"pair":"XRP_USDT","type":"SELL (Stop Loss)","price":0.4770019959194083083711173054,"amount":7684.8733062138383021084487754,"cost":3662.9506305226942958756440331,"profitPct":-8.426234236932642603108899170,"profitUsdt":-337.0493694773057041243559669,"timestamp":"2026-07-08 20:41:11","balance":3847.7833926978918773593780652},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":64773.269754458393437855433089,"amount":0.0157118464080523573835447285,"cost":1016.9443849800964647176124977,"profitPct":1.6944384980096464717612497700,"profitUsdt":16.9443849800964647176124977,"timestamp":"2026-07-08 20:41:21","balance":4864.7277776779883420769905629},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.4856698081835527146117149470,"amount":2057.4678169460066518553722223,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:41:21","balance":3864.7277776779883420769905629},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.4937951045841506836892350279,"amount":2055.7188454901231452896285046,"cost":1014.3425743776765549230743088,"profitPct":1.4342574377676554923074308800,"profitUsdt":14.3425743776765549230743088,"timestamp":"2026-07-08 20:41:21","balance":4879.0703520556648970000648717},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":152.26378239223582284087710591,"amount":6.5626243109205290422284544115,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:41:21","balance":3879.0703520556648970000648717},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.4913252128959037260018125012,"amount":2033.7853091445349310705900523,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:41:31","balance":2879.0703520556648970000648717},{"pair":"ETH_USDT","type":"BUY (Initial Entry)","price":3985.7117697241570840689985172,"amount":0.2507080435646143167508120549,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:41:51","balance":1879.0703520556648970000648717},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.4988529562564422866695253860,"amount":2033.7853091445349310705900523,"cost":1013.7988939972803816540709293,"profitPct":1.3798893997280381654070929300,"profitUsdt":13.7988939972803816540709293,"timestamp":"2026-07-08 20:41:51","balance":2892.8692460529452786541358010},{"pair":"SOL_USDT","type":"BUY (DCA Level 1)","price":147.31859214763610937416569934,"amount":6.7829184723581685232158647775,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:42:01","balance":1892.8692460529452786541358010},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":65352.880710156344541124702582,"amount":0.0152900681521864238157311518,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:42:11","balance":892.8692460529452786541358010},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":66666.203321096356375220320321,"amount":0.0152900681521864238157311518,"cost":1018.5662941329098861921713795,"profitPct":1.8566294132909886192171379500,"profitUsdt":18.5662941329098861921713795,"timestamp":"2026-07-08 20:42:31","balance":1911.4355401858551648463071805},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.5060161828228127569259377173,"amount":1974.7392157019187614014688325,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:42:31","balance":911.4355401858551648463071805},{"pair":"ETH_USDT","type":"SELL (Take Profit)","price":4058.5524196394271274200036115,"amount":0.2507080435646143167508120549,"cost":1016.7486030296081679120244526,"profitPct":1.6748603029608167912024452600,"profitUsdt":16.7486030296081679120244526,"timestamp":"2026-07-08 20:43:01","balance":1928.1841432154633327583316331},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.5150213365755808064665895610,"amount":1974.7392157019187614014688325,"cost":1016.2700556363221063189141502,"profitPct":1.6270055636322106318914150200,"profitUsdt":16.2700556363221063189141502,"timestamp":"2026-07-08 20:43:01","balance":2944.4541988517854390772457833},{"pair":"SOL_USDT","type":"BUY (DCA Level 2)","price":143.94640649284109337974451462,"amount":6.9418196976643236939035991765,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:43:01","balance":1944.4541988517854390772457833},{"pair":"DOT_USDT","type":"SELL (Stop Loss)","price":6.0928308829208685775173617114,"amount":603.25792175264654707102329957,"cost":3672.7918346491698222218078519,"profitPct":-8.180204133770754444454803700,"profitUsdt":-327.2081653508301777781921481,"timestamp":"2026-07-08 20:43:01","balance":5617.2460335009552612990536352},{"pair":"XRP_USDT","type":"BUY (DCA Level 1)","price":0.4702139507442660403552668836,"amount":2125.0964553866657417891434835,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:43:21","balance":4617.2460335009552612990536352},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":66188.835088715384370248401682,"amount":0.0150969570420852346651860549,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:43:41","balance":3617.2460335009552612990536352},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":84.31720412853547231094700679,"amount":11.851080812365596591502091314,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:43:51","balance":2617.2460335009552612990536352},{"pair":"XRP_USDT","type":"BUY (DCA Level 2)","price":0.4620712666369790461586505882,"amount":2162.5452005979182026180575479,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:43:51","balance":1617.2460335009552612990536352},{"pair":"DOT_USDT","type":"BUY (Initial Entry)","price":6.0688925955926371776723002573,"amount":164.65112609270384053185801375,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:43:51","balance":617.2460335009552612990536352},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":86.30034798647303571934020625,"amount":11.851080812365596591502091314,"cost":1021.9853338243723188314836250,"profitPct":2.198533382437231883148362500,"profitUsdt":21.9853338243723188314836250,"timestamp":"2026-07-08 20:44:11","balance":1639.2313673253275801305372602},{"pair":"SOL_USDT","type":"BUY (DCA Level 3)","price":142.53620166077315296243227521,"amount":7.0104997071421175640109482206,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:44:11","balance":639.2313673253275801305372602},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":67381.235707620009627722688640,"amount":0.0150969570420852346651860549,"cost":1016.4886822048685552438614431,"profitPct":1.6488682204868555243861443100,"profitUsdt":16.4886822048685552438614431,"timestamp":"2026-07-08 20:44:41","balance":1655.7200495301961353743987033},{"pair":"XRP_USDT","type":"BUY (DCA Level 3)","price":0.4553333336458509134554429574,"amount":2194.546118552340609583427982,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:44:41","balance":655.7200495301961353743987033},{"pair":"SOL_USDT","type":"SELL (Stop Loss)","price":133.79990145014787409739450160,"amount":27.297862188085138823358866587,"cost":3649.7119321125854533177177558,"profitPct":-8.757201697185363667057056100,"profitUsdt":-350.2880678874145466822822442,"timestamp":"2026-07-08 20:45:31","balance":4305.4319816427815886921164591},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":131.90594346895644129271657193,"amount":7.5754736573729117916368574588,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:45:41","balance":3305.4319816427815886921164591},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.5340133014905532351828151181,"amount":1871.2080714298028821194361902,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:46:01","balance":2305.4319816427815886921164591},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":85.28498548370408483797690162,"amount":11.716599285708182572738093234,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:46:11","balance":1305.4319816427815886921164591},{"pair":"DOT_USDT","type":"BUY (DCA Level 1)","price":5.8800497441544460460642483795,"amount":169.93903852486755211162618798,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:46:11","balance":305.4319816427815886921164591},{"pair":"DOT_USDT","type":"SELL (Take Profit)","price":6.1046003058955662088101202408,"amount":334.59016461757139264348420173,"cost":2041.0073168581186214895590606,"profitPct":2.0503658429059310744779530300,"profitUsdt":41.0073168581186214895590606,"timestamp":"2026-07-08 20:48:01","balance":2346.4392985009002101816755197},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":67382.632760717633955863039467,"amount":0.0148294888320620414901405012,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:48:11","balance":1346.4392985009002101816755197},{"pair":"ADA_USDT","type":"BUY (DCA Level 1)","price":0.4968505742796987207760768528,"amount":2011.1680487612335323492338879,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:48:11","balance":346.4392985009002101816755197},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":68703.990656746517467626248611,"amount":0.0148294888320620414901405012,"cost":1018.0809283656955862068500010,"profitPct":1.808092836569558620685000100,"profitUsdt":18.0809283656955862068500010,"timestamp":"2026-07-08 20:48:21","balance":1364.5202268665957963885255207},{"pair":"XRP_USDT","type":"SELL (Take Profit)","price":0.4754895289184629570143419989,"amount":8539.655591482931205846001236,"cost":4057.4714267093970027324874658,"profitPct":1.4367856677349250683121866400,"profitUsdt":57.4714267093970027324874658,"timestamp":"2026-07-08 20:48:21","balance":5421.9916535759927991210129865},{"pair":"ADA_USDT","type":"BUY (DCA Level 2)","price":0.4956715187970386161689958449,"amount":2015.9520208567004873442915762,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:48:21","balance":4421.9916535759927991210129865},{"pair":"SOL_USDT","type":"BUY (DCA Level 1)","price":124.34298669256256570115512149,"amount":8.036239329449603787123561594,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:48:21","balance":3421.9916535759927991210129865},{"pair":"ETH_USDT","type":"BUY (Initial Entry)","price":4119.9321740150638161319365510,"amount":0.2425404006168831691064002068,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:48:31","balance":2421.9916535759927991210129865},{"pair":"ADA_USDT","type":"BUY (DCA Level 3)","price":0.4885091423131913634448239844,"amount":2045.5093128213435755484764857,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:48:31","balance":1421.9916535759927991210129865},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.4843181207727109073877196996,"amount":2063.2100207312811520438173329,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:48:41","balance":421.9916535759927991210129865},{"pair":"XRP_USDT","type":"SELL (Take Profit)","price":0.4979354447762639581060754972,"amount":2063.2100207312811520438173329,"cost":1026.5748902901705057820805173,"profitPct":2.6574890290170505782080517300,"profitUsdt":26.5748902901705057820805173,"timestamp":"2026-07-08 20:49:11","balance":1448.5665438661633049030935038},{"pair":"ETH_USDT","type":"BUY (DCA Level 1)","price":3923.7446559630860026761787388,"amount":0.2546674382802652979605974975,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:49:21","balance":448.5665438661633049030935038},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":132.05855892202741495840381056,"amount":15.611712986822515578760419053,"cost":2060.1140741045737162429595933,"profitPct":3.0057037052286858121479796600,"profitUsdt":60.1140741045737162429595933,"timestamp":"2026-07-08 20:49:31","balance":2508.6806179707370211460530971},{"pair":"ETH_USDT","type":"BUY (DCA Level 2)","price":3899.1195397584723843033266864,"amount":0.2562758052967767395544060102,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:49:41","balance":1508.6806179707370211460530971},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":133.50610309662182682422027765,"amount":7.4846765565227896579406086259,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:49:41","balance":508.6806179707370211460530971},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":86.72384826324308838850305101,"amount":11.716599285708182572738093234,"cost":1015.3464971810175450903571051,"profitPct":1.5346497181017545090357105100,"profitUsdt":15.3464971810175450903571051,"timestamp":"2026-07-08 20:49:51","balance":1524.0271151517545662364102022},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":63120.340581937284318338135992,"amount":0.0158308714875018993587571712,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:50:11","balance":524.0271151517545662364102022},{"pair":"ETH_USDT","type":"SELL (Take Profit)","price":4041.2683961800856890400813871,"amount":0.7534836441939252066214037145,"cost":3042.7458660907708211114793511,"profitPct":1.424862203025694037049311700,"profitUsdt":42.7458660907708211114793511,"timestamp":"2026-07-08 20:51:01","balance":3566.7729812425253873478895533},{"pair":"SOL_USDT","type":"BUY (DCA Level 1)","price":125.35466423496325286227790182,"amount":7.971382685266644681523054795,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:51:01","balance":2566.7729812425253873478895533},{"pair":"BTC_USDT","type":"BUY (DCA Level 1)","price":60911.719314260889632571994926,"amount":0.0164048890960470998750266527,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:51:11","balance":1566.7729812425253873478895533},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":85.05958313868027636160873630,"amount":11.747647509285732059296483323,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:51:11","balance":566.7729812425253873478895533},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":86.68945179057601841555714888,"amount":11.747647509285732059296483323,"cost":1017.6333245670992285630670193,"profitPct":1.7633324567099228563067019300,"profitUsdt":17.6333245670992285630670193,"timestamp":"2026-07-08 20:52:11","balance":1584.4063058096246159109565726},{"pair":"SOL_USDT","type":"BUY (DCA Level 2)","price":118.89274566218903125936082105,"amount":8.404633894478116585885429593,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:52:11","balance":584.4063058096246159109565726},{"pair":"BTC_USDT","type":"SELL (Stop Loss)","price":56395.960541166738893063960666,"amount":0.0322357605835489992337838239,"cost":1816.6032068729142039781136159,"profitPct":-9.169839656354289801094319200,"profitUsdt":-183.3967931270857960218863841,"timestamp":"2026-07-08 20:53:11","balance":2401.0095126825388198890701885},{"pair":"SOL_USDT","type":"BUY (DCA Level 3)","price":119.98704531228116714375153353,"amount":8.327982386759570087838365094,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:53:11","balance":1401.0095126825388198890701885},{"pair":"DOT_USDT","type":"BUY (Initial Entry)","price":5.8066881201819706784106599411,"amount":172.08604617957084036256029174,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:53:11","balance":401.0095126825388198890701885},{"pair":"SOL_USDT","type":"SELL (Stop Loss)","price":114.13465891030933306719528446,"amount":32.188675523027121013187458108,"cost":3671.0881189691268367509999477,"profitPct":-8.222797025771829081225001310,"profitUsdt":-328.9118810308731632490000523,"timestamp":"2026-07-08 20:54:51","balance":4072.0976316516656566400701362},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":115.51945646023241514755329642,"amount":8.650058012902717526261001253,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:55:11","balance":3072.0976316516656566400701362},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":86.27112958495024784290607696,"amount":11.582669715898982601727254655,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:55:21","balance":2072.0976316516656566400701362},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.5252949441453803284518145053,"amount":1902.264644152844047230703007,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:55:31","balance":1072.0976316516656566400701362},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":53762.649540613968121907686578,"amount":0.0185863235636319532072761812,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:55:41","balance":72.0976316516656566400701362},{"pair":"DOT_USDT","type":"SELL (Take Profit)","price":5.9241034420560069895588445190,"amount":172.08604617957084036256029174,"cost":1018.6909468483279334261283035,"profitPct":1.8690946848327933426128303500,"profitUsdt":18.6909468483279334261283035,"timestamp":"2026-07-08 20:55:41","balance":1090.7885784999935900661984397},{"pair":"ETH_USDT","type":"BUY (Initial Entry)","price":3847.8939814998707369689849152,"amount":0.2596875082328807577086907681,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:55:51","balance":90.7885784999935900661984397},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":55194.456915294816575496614479,"amount":0.0185863235636319532072761812,"cost":1025.0926386202526989865429497,"profitPct":2.5092638620252698986542949700,"profitUsdt":25.0926386202526989865429497,"timestamp":"2026-07-08 20:56:01","balance":1115.8812171202462890527413894},{"pair":"SOL_USDT","type":"BUY (DCA Level 1)","price":111.17101210373141337275413998,"amount":8.988404270958872992968133957,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:56:01","balance":115.8812171202462890527413894},{"pair":"ETH_USDT","type":"SELL (Take Profit)","price":3940.9088469760989811783949326,"amount":0.2596875082328807577086907681,"cost":1022.6372450451552145894869181,"profitPct":2.2637245045155214589486918100,"profitUsdt":22.6372450451552145894869181,"timestamp":"2026-07-08 20:56:21","balance":1138.5184621654015036422283075},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.5135027222418278706834948714,"amount":7943.837453869080477361438140,"cost":4076.1227709901572806221476776,"profitPct":1.9030692747539320155536919400,"profitUsdt":76.1227709901572806221476776,"timestamp":"2026-07-08 20:56:21","balance":5214.6412331555587842643759851},{"pair":"SOL_USDT","type":"BUY (DCA Level 2)","price":107.50625637398122549954973374,"amount":9.294807890286090461637167254,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:56:21","balance":4214.6412331555587842643759851},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.5196322264110799582043795130,"amount":1922.9946666346583223893045117,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:56:31","balance":3214.6412331555587842643759851},{"pair":"SOL_USDT","type":"BUY (DCA Level 3)","price":107.09800474402587925809858859,"amount":9.330239180349809228488255464,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:56:31","balance":2214.6412331555587842643759851},{"pair":"ETH_USDT","type":"BUY (Initial Entry)","price":3928.2758588887537209962654327,"amount":0.2543736834924499954179538597,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:56:41","balance":1214.6412331555587842643759851},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":55572.892550441478827094997566,"amount":0.0179808887776179254918472232,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:56:51","balance":214.6412331555587842643759851},{"pair":"ETH_USDT","type":"SELL (Take Profit)","price":4021.2009275450682611729756127,"amount":0.2543736834924499954179538597,"cost":1022.1205262338933687698974702,"profitPct":2.2120526233893368769897470200,"profitUsdt":22.1205262338933687698974702,"timestamp":"2026-07-08 20:57:01","balance":1236.7617593894521530342734553},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.5345308215163794067630438406,"amount":1922.9946666346583223893045117,"cost":1027.1289939886441852375748369,"profitPct":2.7128993988644185237574836900,"profitUsdt":27.1289939886441852375748369,"timestamp":"2026-07-08 20:57:21","balance":2263.8907533780963382718482922},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":57121.983505997441611318092126,"amount":0.0179808887776179254918472232,"cost":1026.3337041541319405830350481,"profitPct":2.6333704154131940583035048100,"profitUsdt":26.3337041541319405830350481,"timestamp":"2026-07-08 20:57:31","balance":3290.2244575322282788548833403},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":87.72061291971437196733527490,"amount":11.582669715898982601727254655,"cost":1015.2768575602287329483755321,"profitPct":1.5276857560228732948375532100,"profitUsdt":15.2768575602287329483755321,"timestamp":"2026-07-08 20:57:31","balance":4305.5013150924570118032588724},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.5313590507552319018852194567,"amount":1880.5551511350841895102832079,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:57:31","balance":3305.5013150924570118032588724},{"pair":"SOL_USDT","type":"SELL (Stop Loss)","price":101.39177653705681226552789688,"amount":36.263509354497490209354557928,"cost":3674.0640206929883462151262854,"profitPct":-8.148399482675291344621842860,"profitUsdt":-325.9359793070116537848737146,"timestamp":"2026-07-08 20:57:51","balance":6979.5653357854453580183851578},{"pair":"DOT_USDT","type":"BUY (Initial Entry)","price":5.8786784187820609506881919115,"amount":169.97868037949653187266530094,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:57:51","balance":5979.5653357854453580183851578},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":86.17869423158043922638251096,"amount":11.59509329898644322632499962,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:58:01","balance":4979.5653357854453580183851578},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.5457910531053045323255444891,"amount":1880.5551511350841895102832079,"cost":1025.6203837283522586948383446,"profitPct":2.5620383728352258694838344600,"profitUsdt":25.6203837283522586948383446,"timestamp":"2026-07-08 20:58:01","balance":6005.1857195137976167132235024},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":56717.087472064279791894833092,"amount":0.0176181472733799251030711427,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:58:11","balance":5005.1857195137976167132235024},{"pair":"DOT_USDT","type":"SELL (Take Profit)","price":6.0038100488699537119290317041,"amount":169.97868037949653187266530094,"cost":1019.7543195740582586968142683,"profitPct":1.9754319574058258696814268300,"profitUsdt":19.7543195740582586968142683,"timestamp":"2026-07-08 20:58:11","balance":6024.9400390878558754100377707},{"pair":"ETH_USDT","type":"BUY (Initial Entry)","price":4021.3175956714019747471687995,"amount":0.2484882072173572072645216396,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:58:21","balance":5024.9400390878558754100377707},{"pair":"XRP_USDT","type":"BUY (DCA Level 1)","price":0.5007081818646510197761723785,"amount":1995.6734005798857898996860825,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:58:31","balance":4024.9400390878558754100377707},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":97.30916868713246895138792733,"amount":10.268816530668135443036347087,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:58:31","balance":3024.9400390878558754100377707},{"pair":"DOT_USDT","type":"BUY (Initial Entry)","price":6.1421999731848681352195380951,"amount":162.68600898089394408803516652,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:58:31","balance":2024.9400390878558754100377707},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":99.01824406778863504352501013,"amount":10.268816530668135443036347087,"cost":1016.0375813848991944691624999,"profitPct":1.6037581384899194469162499900,"profitUsdt":16.0375813848991944691624999,"timestamp":"2026-07-08 20:58:41","balance":3040.9776204727550698792002706},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":87.84123212194699043281142600,"amount":11.59509329898644322632499962,"cost":1017.7633864904363307055753428,"profitPct":1.7763386490436330705575342800,"profitUsdt":17.7633864904363307055753428,"timestamp":"2026-07-08 20:58:51","balance":4058.7410069631914005847756134},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":100.91974839868553519800793146,"amount":9.901431740123274856596046796,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:58:51","balance":3058.7410069631914005847756134},{"pair":"DOT_USDT","type":"SELL (Take Profit)","price":6.2596895815515998893873171100,"amount":162.68600898089394408803516652,"cost":1017.6001425453004005567710095,"profitPct":1.7600142545300400556771009500,"profitUsdt":17.6001425453004005567710095,"timestamp":"2026-07-08 20:58:51","balance":4076.3411495084918011415466229},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.5472301801468288915300889040,"amount":1826.0140545097282106370179899,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:59:01","balance":3076.3411495084918011415466229},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":103.12810177521815286812062187,"amount":9.901431740123274856596046796,"cost":1020.3500233206466098403016382,"profitPct":2.0350023320646609840301638200,"profitUsdt":20.3500233206466098403016382,"timestamp":"2026-07-08 20:59:11","balance":4096.6911728291384109818482611},{"pair":"XRP_USDT","type":"SELL (Take Profit)","price":0.5225162966365561445965433797,"amount":3897.9380447327298371303890895,"cost":2035.2085995387453545587363449,"profitPct":1.7604299769372677279368172400,"profitUsdt":35.2085995387453545587363449,"timestamp":"2026-07-08 20:59:21","balance":6131.8997723678837655405846060},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":103.47139230952311847536130166,"amount":9.657258665379269102406614238,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:59:21","balance":5131.8997723678837655405846060},{"pair":"DOT_USDT","type":"BUY (Initial Entry)","price":6.1961854824452272701102850577,"amount":161.26857448522694705661253751,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:59:21","balance":4131.8997723678837655405846060},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.5288465618414497406175949464,"amount":1889.4894513837816016987112347,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:59:31","balance":3131.8997723678837655405846060},{"pair":"SOL_USDT","type":"BUY (DCA Level 1)","price":99.57819787568153757281186171,"amount":10.034827113938276705182638832,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 20:59:51","balance":2131.8997723678837655405846060},{"pair":"BTC_USDT","type":"BUY (DCA Level 1)","price":54839.110039277414889251348100,"amount":0.0182214846171702492763520934,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:00:11","balance":1131.8997723678837655405846060},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":91.74441791350623033074186332,"amount":10.891670825597930848530163871,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:00:11","balance":131.8997723678837655405846060},{"pair":"XRP_USDT","type":"SELL (Take Profit)","price":0.5423214951638390184350998495,"amount":1889.4894513837816016987112347,"cost":1023.9422113124762882794000108,"profitPct":2.3942211312476288279400010800,"profitUsdt":23.9422113124762882794000108,"timestamp":"2026-07-08 21:01:11","balance":1155.8419836803600538199846168},{"pair":"ADA_USDT","type":"BUY (DCA Level 1)","price":0.5297759808111411437904150412,"amount":1886.1746024613010494947484734,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:01:11","balance":155.8419836803600538199846168},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":56836.474902253726535043153543,"amount":0.0358396318905501743794232361,"cost":2035.4705896994273122575951182,"profitPct":1.7735294849713656128797559100,"profitUsdt":35.4705896994273122575951182,"timestamp":"2026-07-08 21:01:31","balance":2191.3125733797873660775797350},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.5321463215743569170223264106,"amount":1877.773009956575614723843961,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:01:31","balance":1191.3125733797873660775797350},{"pair":"SOL_USDT","type":"BUY (DCA Level 2)","price":95.89899497262265300444416677,"amount":10.419817228379368854612218025,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:01:31","balance":191.3125733797873660775797350},{"pair":"DOT_USDT","type":"SELL (Take Profit)","price":6.3447338663039466587024180486,"amount":161.26857448522694705661253751,"cost":1022.4387814673997370753245703,"profitPct":2.2438781467399737075324570300,"profitUsdt":22.4387814673997370753245703,"timestamp":"2026-07-08 21:02:21","balance":1213.7513548471871031529043053},{"pair":"LTC_USDT","type":"BUY (DCA Level 1)","price":88.99046916606861327381254139,"amount":11.228730552428713330332853361,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:02:31","balance":213.7513548471871031529043053},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":101.20443040467564973046896127,"amount":30.111903007696914662201471095,"cost":3045.1723988005846710757983601,"profitPct":1.50574662668615570252661200,"profitUsdt":45.1723988005846710757983601,"timestamp":"2026-07-08 21:02:41","balance":3258.9237536477717742287026654},{"pair":"DOT_USDT","type":"BUY (Initial Entry)","price":6.2446883940061884378460321376,"amount":160.01599070325201417682806297,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:02:41","balance":2258.9237536477717742287026654},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":59143.377514165086716100167774,"amount":0.0168953827461185394476250245,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:03:01","balance":1258.9237536477717742287026654},{"pair":"XRP_USDT","type":"SELL (Take Profit)","price":0.5411557787489094650447751295,"amount":1877.773009956575614723843961,"cost":1015.4055897300968525612834257,"profitPct":1.5405589730096852561283425700,"profitUsdt":15.4055897300968525612834257,"timestamp":"2026-07-08 21:03:21","balance":2274.3293433778686267899860911},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":100.50986368625353356749264865,"amount":9.941810319425045263834454619,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:03:21","balance":1274.3293433778686267899860911},{"pair":"DOT_USDT","type":"BUY (DCA Level 1)","price":6.0373815162560034667068276071,"amount":165.51049446013322634650685681,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:03:21","balance":274.3293433778686267899860911},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":60429.745750697841093081527473,"amount":0.0168953827461185394476250245,"cost":1020.2179459458889277219991319,"profitPct":2.0217945945888927721999131900,"profitUsdt":20.2179459458889277219991319,"timestamp":"2026-07-08 21:03:41","balance":1294.5472893237575545119852230},{"pair":"ETH_USDT","type":"BUY (DCA Level 1)","price":3896.9952444568152278683130900,"amount":0.2564155040787792896457751166,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:03:41","balance":294.5472893237575545119852230},{"pair":"ETH_USDT","type":"SELL (Stop Loss)","price":3636.6209642375630827978667895,"amount":0.5049037112961364969102967562,"cost":1834.7663138548144189818198896,"profitPct":-8.261684307259279050909005520,"profitUsdt":-165.2336861451855810181801104,"timestamp":"2026-07-08 21:07:31","balance":2129.3136031785719734938051126},{"pair":"DOT_USDT","type":"BUY (DCA Level 2)","price":5.9157357155474970804247185212,"amount":168.91390150743408118622002704,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:07:31","balance":1129.3136031785719734938051126},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":56787.742867066261669199276543,"amount":0.0175962267480701284806721585,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:07:41","balance":129.3136031785719734938051126},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":103.03336628303804651484340814,"amount":9.941810319425045263834454619,"cost":1023.5699305196898137389982904,"profitPct":2.3569930519689813738998290400,"profitUsdt":23.5699305196898137389982904,"timestamp":"2026-07-08 21:07:51","balance":1152.8835336982617872328034030},{"pair":"DOT_USDT","type":"BUY (DCA Level 3)","price":5.7921117244921617566130022928,"amount":172.51911695256738254714308651,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:07:51","balance":152.8835336982617872328034030},{"pair":"DOT_USDT","type":"SELL (Take Profit)","price":6.1166624157748923844426558202,"amount":666.95950362338670425669803333,"cost":4076.5064540605548233203113288,"profitPct":1.9126613515138705830077832200,"profitUsdt":76.5064540605548233203113288,"timestamp":"2026-07-08 21:08:31","balance":4229.3899877588166105531147318},{"pair":"ETH_USDT","type":"BUY (Initial Entry)","price":3746.2205178521974120559397065,"amount":0.2667354992153252087549897749,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:08:41","balance":3229.3899877588166105531147318},{"pair":"ADA_USDT","type":"BUY (DCA Level 2)","price":0.5209945054137541445970572974,"amount":1917.9664845149056185030398446,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:08:41","balance":2229.3899877588166105531147318},{"pair":"BTC_USDT","type":"BUY (DCA Level 1)","price":55002.312837581154989290464550,"amount":0.0181674178493317367201522835,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:08:51","balance":1229.3899877588166105531147318},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.5659176421110100610938239503,"amount":1765.7162909298164743722918766,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:08:51","balance":229.3899877588166105531147318},{"pair":"XRP_USDT","type":"SELL (Take Profit)","price":0.5771537057535765380067407739,"amount":1765.7162909298164743722918766,"cost":1018.3253833441391398929187499,"profitPct":1.8325383344139139892918749900,"profitUsdt":18.3253833441391398929187499,"timestamp":"2026-07-08 21:09:01","balance":1247.7153711029557504460334817},{"pair":"ADA_USDT","type":"BUY (DCA Level 3)","price":0.5143773449658221586779347840,"amount":1942.6399894544252163855929339,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:09:01","balance":247.7153711029557504460334817},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":92.87054810803163539511237786,"amount":22.120401378026644178863017232,"cost":2052.7930499967324954015668585,"profitPct":2.6396524998366247700783429200,"profitUsdt":52.7930499967324954015668585,"timestamp":"2026-07-08 21:09:11","balance":2300.5084210996882458476003402},{"pair":"DOT_USDT","type":"BUY (Initial Entry)","price":6.4143320623416549054124551599,"amount":155.78395229435748044596523541,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:09:21","balance":1300.5084210996882458476003402},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":94.12805199939404348535963811,"amount":10.615857640466550270218439948,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:09:31","balance":300.5084210996882458476003402},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.5363274103397130529299888414,"amount":7572.7951309403600950203992418,"cost":4058.4514784092237237142178887,"profitPct":1.4612869602305930928554472200,"profitUsdt":58.4514784092237237142178887,"timestamp":"2026-07-08 21:09:41","balance":4358.9598995089119695618182289},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.5385819990329203513252441693,"amount":1855.3349384016856493598039073,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:10:01","balance":3358.9598995089119695618182289},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":98.92422221231489856172039507,"amount":10.101166101214037790114264203,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:10:01","balance":2358.9598995089119695618182289},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.5839310314075264991598055842,"amount":1711.2466134765522649725865863,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:10:11","balance":1358.9598995089119695618182289},{"pair":"XRP_USDT","type":"SELL (Take Profit)","price":0.5956048246254451859628860410,"amount":1711.2466134765522649725865863,"cost":1018.4623190562559546277749999,"profitPct":1.8462319056255954627774999900,"profitUsdt":18.4623190562559546277749999,"timestamp":"2026-07-08 21:10:21","balance":2377.4222185651679241895932288},{"pair":"ETH_USDT","type":"BUY (DCA Level 1)","price":3632.9841085481180528900373069,"amount":0.2750493726765403382821261933,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:10:31","balance":1377.4222185651679241895932288},{"pair":"DOT_USDT","type":"BUY (DCA Level 1)","price":6.2038846274926113238108984659,"amount":161.06843695509875639204026119,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:10:31","balance":377.4222185651679241895932288},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":97.11372812067087995902573420,"amount":10.615857640466550270218439948,"cost":1030.1723035295172276058889627,"profitPct":3.0172303529517227605888962700,"profitUsdt":30.1723035295172276058889627,"timestamp":"2026-07-08 21:10:51","balance":1407.5945220946851517954821915},{"pair":"ETH_USDT","type":"BUY (DCA Level 2)","price":3486.3757710570678252600396756,"amount":0.2866156907971591871875712843,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:11:01","balance":407.5945220946851517954821915},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":101.01989763606643258803280551,"amount":10.101166101214037790114264203,"cost":1019.6534514753841997202141413,"profitPct":1.9653451475384199720214141300,"profitUsdt":19.6534514753841997202141413,"timestamp":"2026-07-08 21:11:11","balance":1427.2479735700693515156963328},{"pair":"ETH_USDT","type":"BUY (DCA Level 3)","price":3400.7809000536044685133828152,"amount":0.2938295730795975188820761725,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:11:21","balance":427.2479735700693515156963328},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":57166.874203087538057347479234,"amount":0.0357636445974018652008244420,"cost":2042.9623999147959857784078258,"profitPct":2.1481199957397992889203912900,"profitUsdt":42.9623999147959857784078258,"timestamp":"2026-07-08 21:11:31","balance":2470.2103734848653372941041586},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":101.13720436087926822960090380,"amount":9.880142587632355082419721401,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:11:31","balance":1470.2103734848653372941041586},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.5867248262825830909948115245,"amount":1703.0982076063255660275764328,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:11:31","balance":470.2103734848653372941041586},{"pair":"DOT_USDT","type":"SELL (Take Profit)","price":6.4221133818770435129419399499,"amount":316.85238924945623683800549660,"cost":2033.3358226018377930390583071,"profitPct":1.6667911300918896519529153600,"profitUsdt":33.3358226018377930390583071,"timestamp":"2026-07-08 21:11:51","balance":2503.5461960867031303331624657},{"pair":"ADA_USDT","type":"BUY (DCA Level 1)","price":0.5031657677904528057037441596,"amount":1985.9260386253963713084504077,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:12:01","balance":1503.5461960867031303331624657},{"pair":"ADA_USDT","type":"BUY (DCA Level 2)","price":0.4947264879944877235242099801,"amount":2019.8029097870613955591386291,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:12:11","balance":503.5461960867031303331624657},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":103.92679045401922967615949724,"amount":9.880142587632355082419721401,"cost":1026.0413997294285662655884680,"profitPct":2.604139972942856626558846800,"profitUsdt":26.0413997294285662655884680,"timestamp":"2026-07-08 21:12:51","balance":1529.5875958161316965987509337},{"pair":"ADA_USDT","type":"BUY (DCA Level 3)","price":0.4845791507517524627323308696,"amount":2062.0986240324460534190499796,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:12:51","balance":529.5875958161316965987509337},{"pair":"ETH_USDT","type":"SELL (Take Profit)","price":3636.7795003824331404796604930,"amount":1.1222301357686222531067634250,"cost":4078.2425748103641083940194684,"profitPct":1.9560643702591027098504867100,"profitUsdt":78.2425748103641083940194684,"timestamp":"2026-07-08 21:13:11","balance":4607.8301706264958049927704021},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":106.02562727232773137362885959,"amount":9.424608235831680769506223725,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:13:11","balance":3607.8301706264958049927704021},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":57720.528892559107844138497921,"amount":0.0173118649321457572433460009,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:13:21","balance":2607.8301706264958049927704021},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":58796.096133526616685312681822,"amount":0.0173118649321457572433460009,"cost":1017.1066722449693791386687476,"profitPct":1.7106672244969379138668747600,"profitUsdt":17.1066722449693791386687476,"timestamp":"2026-07-08 21:13:31","balance":3624.9368428714651841314391497},{"pair":"ETH_USDT","type":"BUY (Initial Entry)","price":3710.8791906835814048294127172,"amount":0.2692758100314033838143233139,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:13:41","balance":2624.9368428714651841314391497},{"pair":"XRP_USDT","type":"BUY (DCA Level 1)","price":0.5676126748366617722173711116,"amount":1760.4434225989539588045646631,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:13:41","balance":1624.9368428714651841314391497},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":91.62028744235176436396199045,"amount":10.906427254211970119588619227,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:13:51","balance":624.9368428714651841314391497},{"pair":"ETH_USDT","type":"SELL (Take Profit)","price":3795.9866532462787060721218064,"amount":0.2692758100314033838143233139,"cost":1021.4007553855966881488470844,"profitPct":2.1400755385596688148847084400,"profitUsdt":21.4007553855966881488470844,"timestamp":"2026-07-08 21:14:01","balance":1646.3375982570618722802862341},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":107.63105133791464846259471968,"amount":9.424608235831680769506223725,"cost":1013.6197075008799395977606242,"profitPct":1.3619707500879939597760624200,"profitUsdt":13.6197075008799395977606242,"timestamp":"2026-07-08 21:14:01","balance":2659.9573057579418118780468583},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":93.29904160189893826014803964,"amount":10.906427254211970119588619227,"cost":1016.7960407112179021444499999,"profitPct":1.6796040711217902144449999900,"profitUsdt":16.7960407112179021444499999,"timestamp":"2026-07-08 21:14:01","balance":3676.7533464691597140224968582},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":60166.913660566148915670696205,"amount":0.0166079650626140729085272518,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:14:11","balance":2676.7533464691597140224968582},{"pair":"DOT_USDT","type":"BUY (Initial Entry)","price":6.0322746572710019410724647781,"amount":165.65061386844414735371792976,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:14:11","balance":1676.7533464691597140224968582},{"pair":"ETH_USDT","type":"BUY (Initial Entry)","price":3816.1925143869685791299001155,"amount":0.2618447565820769561398545103,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:14:21","balance":676.7533464691597140224968582},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":61306.754562422892966978293440,"amount":0.0166079650626140729085272518,"cost":1017.4168025465690900598911165,"profitPct":1.7416802546569090059891116500,"profitUsdt":17.4168025465690900598911165,"timestamp":"2026-07-08 21:14:41","balance":1694.1701490157288040823879747},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":93.02198314128242936995767361,"amount":10.742084464941283936032770714,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:14:41","balance":694.1701490157288040823879747},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.5151773396685897617509540356,"amount":7923.162510846589469646442924,"cost":4078.7724087617750481871585940,"profitPct":1.9693102190443762046789648500,"profitUsdt":78.7724087617750481871585940,"timestamp":"2026-07-08 21:15:01","balance":4772.9425577775038522695465687},{"pair":"DOT_USDT","type":"BUY (DCA Level 1)","price":5.7538669779043487631945161712,"amount":173.66581532685049675593073814,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:15:01","balance":3772.9425577775038522695465687},{"pair":"XRP_USDT","type":"BUY (DCA Level 2)","price":0.5515685841824304568053845526,"amount":1811.6514041153214171732550701,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:15:11","balance":2772.9425577775038522695465687},{"pair":"DOT_USDT","type":"BUY (DCA Level 2)","price":5.7148882507730834514131960665,"amount":174.85031310364224820409362659,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:15:11","balance":1772.9425577775038522695465687},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":63168.980434400281701917938606,"amount":0.0158186817822348908854340546,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:15:21","balance":772.9425577775038522695465687},{"pair":"XRP_USDT","type":"SELL (Take Profit)","price":0.5781662039784104731977055656,"amount":5275.1930343206009420053961660,"cost":3047.6508781575647732531652737,"profitPct":1.5883626052521591084388424600,"profitUsdt":47.6508781575647732531652737,"timestamp":"2026-07-08 21:16:11","balance":3820.5934359350686255227118424},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.5093064529795098928512307441,"amount":1961.9818169478430261577665344,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:16:11","balance":2820.5934359350686255227118424},{"pair":"SOL_USDT","type":"BUY (DCA Level 1)","price":90.01907711671578343851112394,"amount":11.100424843329655756306711821,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:16:11","balance":1820.5934359350686255227118424},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":100.24007742139355649728829910,"amount":9.968567719668748812161454247,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:16:31","balance":820.5934359350686255227118424},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.5177955891001388852159362006,"amount":1961.9818169478430261577665344,"cost":1015.1436015622365320465181348,"profitPct":1.5143601562236532046518134800,"profitUsdt":15.1436015622365320465181348,"timestamp":"2026-07-08 21:16:31","balance":1835.7370374973051575692299772},{"pair":"SOL_USDT","type":"BUY (DCA Level 2)","price":88.77987190482260682303524766,"amount":11.25536654379560771263208647,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:16:31","balance":835.7370374973051575692299772},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":64650.570369594447415216648339,"amount":0.0158186817822348908854340546,"cost":1021.9197846168110728820452475,"profitPct":2.1919784616811072882045247500,"profitUsdt":21.9197846168110728820452475,"timestamp":"2026-07-08 21:16:41","balance":1857.6568221141162304512752247},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.5214258502936707685781694345,"amount":1916.3798638621680388340344149,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:16:41","balance":857.6568221141162304512752247},{"pair":"ETH_USDT","type":"SELL (Take Profit)","price":3881.8640620385323336044827897,"amount":0.2618447565820769561398545103,"cost":1015.6834160963850848867035070,"profitPct":1.568341609638508488670350700,"profitUsdt":15.6834160963850848867035070,"timestamp":"2026-07-08 21:17:01","balance":1873.3402382105013153379787317},{"pair":"SOL_USDT","type":"BUY (DCA Level 3)","price":86.41871448087264973736164153,"amount":11.562888964532878202818165326,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:17:01","balance":873.3402382105013153379787317},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":102.55761079084759829064543171,"amount":9.968567719668748812161454247,"cost":1021.5857239697427133312812261,"profitPct":2.1585723969742713331281226100,"profitUsdt":21.5857239697427133312812261,"timestamp":"2026-07-08 21:18:31","balance":1894.9259621802440286692599578},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.5728423172442967641395704875,"amount":1744.3718278477942944996431591,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:18:31","balance":894.9259621802440286692599578},{"pair":"SOL_USDT","type":"SELL (Stop Loss)","price":81.75693125480963118608959063,"amount":44.660764816599425607789734331,"cost":3648.5885835887664505329875650,"profitPct":-8.785285410280838736675310880,"profitUsdt":-351.4114164112335494670124350,"timestamp":"2026-07-08 21:19:21","balance":4543.5145457690104792022475228},{"pair":"DOT_USDT","type":"BUY (DCA Level 3)","price":5.4931813107592694243733115467,"amount":181.90733993119978024558552807,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:19:21","balance":3543.5145457690104792022475228},{"pair":"ETH_USDT","type":"BUY (Initial Entry)","price":3669.3183439583009531075959417,"amount":0.2723257854269609608166855775,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:19:31","balance":2543.5145457690104792022475228},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":57905.010320604432889946886285,"amount":0.0172567105068701674414511298,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:19:41","balance":1543.5145457690104792022475228},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":102.72232785626700005292985973,"amount":9.727680640164120121360807804,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:19:41","balance":543.5145457690104792022475228},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.5331541757859286838650776356,"amount":1916.3798638621680388340344149,"cost":1020.9596323650767803326729687,"profitPct":2.0959632365076780332672968700,"profitUsdt":20.9596323650767803326729687,"timestamp":"2026-07-08 21:19:51","balance":1564.4741781340872595349204915},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":83.99538196059254846834079188,"amount":11.896487362469644451804729018,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:19:51","balance":564.4741781340872595349204915},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":85.57315230993151728919422700,"amount":11.896487362469644451804729018,"cost":1017.2564100780240159531423508,"profitPct":1.7256410078024015953142350800,"profitUsdt":17.2564100780240159531423508,"timestamp":"2026-07-08 21:20:41","balance":1581.7305882121112754880628423},{"pair":"LTC_USDT","type":"BUY (DCA Level 1)","price":99.40189903815024628427511592,"amount":10.052624845894441979681936007,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:21:41","balance":581.7305882121112754880628423},{"pair":"DOT_USDT","type":"SELL (Take Profit)","price":5.8507415812839566633555301114,"amount":696.07408223013667255932782256,"cost":4069.4951643755102687577028543,"profitPct":1.7373791093877567189425713600,"profitUsdt":69.4951643755102687577028543,"timestamp":"2026-07-08 21:22:21","balance":4651.2257525876215442457656966},{"pair":"ETH_USDT","type":"BUY (DCA Level 1)","price":3481.4406629798996032844098379,"amount":0.2870219821999503243316699491,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:22:31","balance":3651.2257525876215442457656966},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.5422305376257972128095624324,"amount":1842.8508367959163515524130804,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:22:31","balance":2651.2257525876215442457656966},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":92.20438796521165123656468841,"amount":10.837336726067885724627724013,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:22:31","balance":1651.2257525876215442457656966},{"pair":"ETH_USDT","type":"BUY (DCA Level 2)","price":3429.4722617153036154337452658,"amount":0.2913713608811081770484373623,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:22:41","balance":651.2257525876215442457656966},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.5553261497823096897455442388,"amount":1842.8508367959163515524130804,"cost":1022.6157223761180549702504832,"profitPct":2.2615722376118054970250483200,"profitUsdt":22.6157223761180549702504832,"timestamp":"2026-07-08 21:22:51","balance":1673.8414749637395992160161798},{"pair":"SOL_USDT","type":"BUY (DCA Level 1)","price":89.27833875040791753490348279,"amount":11.192524569633464119180963733,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:22:51","balance":673.8414749637395992160161798},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":92.34270456255259725316831827,"amount":22.029861295701349843808687746,"cost":2032.7712504530746886185757766,"profitPct":1.6385625226537344309287888300,"profitUsdt":32.7712504530746886185757766,"timestamp":"2026-07-08 21:25:31","balance":2706.6127254168142878345919564},{"pair":"ETH_USDT","type":"BUY (DCA Level 3)","price":3287.3433820755053731665472942,"amount":0.3039688538314823109831263313,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:25:41","balance":1706.6127254168142878345919564},{"pair":"LTC_USDT","type":"BUY (DCA Level 2)","price":94.64537521494304739159046745,"amount":10.557832305389115426192590202,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:25:41","balance":706.6127254168142878345919564},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":59583.613007908446228945294868,"amount":0.0172567105068701674414511298,"cost":1027.4459977603865204597757884,"profitPct":2.7445997760386520459775788400,"profitUsdt":27.4459977603865204597757884,"timestamp":"2026-07-08 21:26:01","balance":1734.0587231772008082943677448},{"pair":"LTC_USDT","type":"BUY (DCA Level 3)","price":94.36105899557386790970421263,"amount":10.589643764456598161861049412,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:26:01","balance":734.0587231772008082943677448},{"pair":"ETH_USDT","type":"SELL (Stop Loss)","price":3131.5412349001563977666383270,"amount":1.1546879823395017731799192202,"cost":3613.2410653672085044328438093,"profitPct":-9.668973365819787389178904770,"profitUsdt":-386.7589346327914955671561907,"timestamp":"2026-07-08 21:26:31","balance":4347.2997885444093127272115541},{"pair":"XRP_USDT","type":"BUY (DCA Level 1)","price":0.5439720811898972765555311444,"amount":1836.9508924322313305650457165,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:26:31","balance":3347.2997885444093127272115541},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.5215481620313794253055444614,"amount":1915.9304408398609289721678903,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:26:31","balance":2347.2997885444093127272115541},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":88.99249995849763764103583356,"amount":11.228474314869322805337849151,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:26:31","balance":1347.2997885444093127272115541},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":58264.294877676717413794418667,"amount":0.0171502976582464562025031127,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:26:41","balance":347.2997885444093127272115541},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":59204.829369396871119528279559,"amount":0.0171502976582464562025031127,"cost":1014.6189111559800369202125004,"profitPct":1.4618911155980036920212500400,"profitUsdt":14.6189111559800369202125004,"timestamp":"2026-07-08 21:26:51","balance":1361.9186997003893496474240545},{"pair":"ETH_USDT","type":"BUY (Initial Entry)","price":3078.9955096532886037313970672,"amount":0.3245376606971800700943748381,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:26:51","balance":361.9186997003893496474240545},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":91.20320243350539909343782440,"amount":11.228474314869322805337849151,"cost":1023.3047613464738584784039542,"profitPct":2.3304761346473858478403954200,"profitUsdt":23.3047613464738584784039542,"timestamp":"2026-07-08 21:26:51","balance":1385.2234610468632081258280087},{"pair":"DOT_USDT","type":"BUY (Initial Entry)","price":5.7020572027028913564833607224,"amount":175.2437698321116682665382321,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:27:01","balance":385.2234610468632081258280087},{"pair":"ETH_USDT","type":"SELL (Take Profit)","price":3151.5860646266623254106426126,"amount":0.3245376606971800700943748381,"cost":1022.0412626230939315751920312,"profitPct":2.2041262623093931575192031200,"profitUsdt":22.0412626230939315751920312,"timestamp":"2026-07-08 21:27:11","balance":1407.2647236699571397010200399},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":57869.769790426875458191827500,"amount":0.0172672191995707790060742957,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:27:21","balance":407.2647236699571397010200399},{"pair":"XRP_USDT","type":"SELL (Take Profit)","price":0.5720788475967353515062125450,"amount":3581.3227202800256250646888756,"cost":2047.2623754587850972241521998,"profitPct":2.3631187729392548612076099900,"profitUsdt":47.2623754587850972241521998,"timestamp":"2026-07-08 21:28:41","balance":2454.5270991287422369251722397},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":92.00824772184259090519306938,"amount":10.860439414311113598379808346,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:28:41","balance":1454.5270991287422369251722397},{"pair":"BTC_USDT","type":"BUY (DCA Level 1)","price":52595.911092773581780244484651,"amount":0.0189986251637970391777084081,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:28:51","balance":454.5270991287422369251722397},{"pair":"DOT_USDT","type":"SELL (Take Profit)","price":5.8293056894020674787415126205,"amount":175.2437698321116682665382321,"cost":1020.7833423862089972034089482,"profitPct":2.0783342386208997203408948200,"profitUsdt":20.7833423862089972034089482,"timestamp":"2026-07-08 21:28:51","balance":1475.3104415149512341285811879},{"pair":"BTC_USDT","type":"BUY (DCA Level 2)","price":53299.857537570148174004468082,"amount":0.0187477048938760474024638469,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:29:01","balance":475.3104415149512341285811879},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.5326843626497337832034427331,"amount":1915.9304408398609289721678903,"cost":1019.8207461206847932021893904,"profitPct":1.9820746120684793202189390400,"profitUsdt":19.8207461206847932021893904,"timestamp":"2026-07-08 21:29:01","balance":1495.1311876356360273307705783},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":93.59180721713336924044501394,"amount":10.860439414311113598379808346,"cost":1015.6858158435944113782491495,"profitPct":1.5685815843594411378249149500,"profitUsdt":15.6858158435944113782491495,"timestamp":"2026-07-08 21:29:21","balance":2510.8170034792304387090197278},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.5933096760027572801741841312,"amount":1684.1963656014202585694797184,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:29:31","balance":1510.8170034792304387090197278},{"pair":"DOT_USDT","type":"BUY (Initial Entry)","price":6.2424212224267419093987802676,"amount":160.07410656782649104577548967,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:29:31","balance":510.8170034792304387090197278},{"pair":"XRP_USDT","type":"SELL (Take Profit)","price":0.6033247922185297207238386542,"amount":1684.1963656014202585694797184,"cost":1015.3553342649310339796312500,"profitPct":1.53553342649310339796312500,"profitUsdt":15.3553342649310339796312500,"timestamp":"2026-07-08 21:29:41","balance":1526.1723377441614726886509778},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":95.52753611044388748235638971,"amount":10.460334691818283392853683647,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:29:51","balance":526.1723377441614726886509778},{"pair":"SOL_USDT","type":"SELL (Stop Loss)","price":87.55543677622077340604459958,"amount":10.460334691818283392853683647,"cost":915.1722783880288164122790801,"profitPct":-8.482772161197118358772091990,"profitUsdt":-84.8277216119711835877209199,"timestamp":"2026-07-08 21:32:01","balance":1441.3446161321902891009300579},{"pair":"DOT_USDT","type":"BUY (DCA Level 1)","price":6.0447470225461825322076652758,"amount":165.30882041430636563533790818,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:32:01","balance":441.3446161321902891009300579},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":99.27222105640415471984899054,"amount":40.927781555904275689096383425,"cost":4059.9445341324755717466058464,"profitPct":1.4986133533118892936651461600,"profitUsdt":59.9445341324755717466058464,"timestamp":"2026-07-08 21:33:41","balance":4501.2891502646658608475359043},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.4960652097182486884162382382,"amount":2014.3521061828672643835188359,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:33:41","balance":3501.2891502646658608475359043},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":99.84371367889257570236413007,"amount":10.008141355936423727300388582,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:33:51","balance":2501.2891502646658608475359043},{"pair":"DOT_USDT","type":"BUY (DCA Level 2)","price":5.9228907052660984468923773340,"amount":168.70984958604036422949797957,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:33:51","balance":1501.2891502646658608475359043},{"pair":"BTC_USDT","type":"BUY (DCA Level 3)","price":52642.220621069311410538257313,"amount":0.0189819120130366268141411606,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:34:01","balance":501.2891502646658608475359043},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":54989.122800973932144429441969,"amount":0.0739954612702804924003877113,"cost":4065.8937973762849219134048268,"profitPct":1.6473449344071230478351206700,"profitUsdt":65.8937973762849219134048268,"timestamp":"2026-07-08 21:34:51","balance":4567.1829476409507827609407311},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.6378545839202940774255660872,"amount":1566.5796330231682946350507761,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:34:51","balance":3567.1829476409507827609407311},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.5035800432813933800248292574,"amount":2014.3521061828672643835188359,"cost":1013.6267301749225599225402117,"profitPct":1.3626730174922559922540211700,"profitUsdt":13.6267301749225599225402117,"timestamp":"2026-07-08 21:34:51","balance":4580.8096778158733426834809428},{"pair":"ETH_USDT","type":"BUY (Initial Entry)","price":2892.8356584640345931579291154,"amount":0.3454223184356614063131266966,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:35:01","balance":3580.8096778158733426834809428},{"pair":"XRP_USDT","type":"SELL (Take Profit)","price":0.6495203945272666337218732488,"amount":1566.5796330231682946350507761,"cost":1016.7622772336141597824739734,"profitPct":1.6762277233614159782473973400,"profitUsdt":16.7622772336141597824739734,"timestamp":"2026-07-08 21:35:31","balance":4597.5719550494875024659549162},{"pair":"DOT_USDT","type":"SELL (Take Profit)","price":6.2097552730632234277614198864,"amount":494.09277656817322091061137742,"cost":3065.8940782581552444377397434,"profitPct":2.1964692752718414812579914500,"profitUsdt":65.8940782581552444377397434,"timestamp":"2026-07-08 21:35:31","balance":7663.4660333076427469036946596},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":54834.523543353094223325391076,"amount":0.0182230087074610247406082255,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:35:41","balance":6663.4660333076427469036946596},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.6483076794197463634079512418,"amount":1541.3206286471215332923944304,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:35:41","balance":5663.4660333076427469036946596},{"pair":"DOT_USDT","type":"BUY (Initial Entry)","price":6.1743703337956358190897024289,"amount":161.83836504437862325867999539,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:35:41","balance":4663.4660333076427469036946596},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":88.14503869549174899635428801,"amount":11.336429307746250598723779314,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:35:51","balance":3663.4660333076427469036946596},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":89.67338167276372548062318165,"amount":11.336429307746250598723779314,"cost":1015.8135201557443203409342623,"profitPct":1.5813520155744320340934262300,"profitUsdt":15.8135201557443203409342623,"timestamp":"2026-07-08 21:36:11","balance":4679.2795534633870672446289219},{"pair":"ETH_USDT","type":"BUY (DCA Level 1)","price":2755.7098662123392348592613992,"amount":0.362610742245317168102732517,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:36:21","balance":3679.2795534633870672446289219},{"pair":"XRP_USDT","type":"BUY (DCA Level 1)","price":0.6264229693431230814916560077,"amount":1595.1681992884602734971671748,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:36:21","balance":2679.2795534633870672446289219},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":90.28781080059954842894287642,"amount":11.067385410494021707575093823,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:36:21","balance":1679.2795534633870672446289219},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":55742.390408989593131781695353,"amount":0.0182230087074610247406082255,"cost":1015.0322202483609858411880729,"profitPct":1.5032220248360985841188072900,"profitUsdt":15.0322202483609858411880729,"timestamp":"2026-07-08 21:36:31","balance":2694.3117737117480530858169948},{"pair":"LTC_USDT","type":"BUY (DCA Level 1)","price":96.43362605022110795444558620,"amount":10.362049431591490678435572073,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:36:31","balance":1694.3117737117480530858169948},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":54704.454811517721130453275935,"amount":0.0182663368722507298588505441,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:36:51","balance":694.3117737117480530858169948},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":91.85594285780667234390474483,"amount":11.067385410494021707575093823,"cost":1015.8426680102733532662349345,"profitPct":1.5842668010273353266234934500,"profitUsdt":15.8426680102733532662349345,"timestamp":"2026-07-08 21:37:41","balance":1710.1544417220214063520519293},{"pair":"XRP_USDT","type":"BUY (DCA Level 2)","price":0.6147800765158354932837719526,"amount":1625.3779817704637959035795288,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:37:51","balance":710.1544417220214063520519293},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":56384.009046891623482239113599,"amount":0.0182663368722507298588505441,"cost":1029.1568564809612772360968060,"profitPct":2.915685648096127723609680600,"profitUsdt":29.1568564809612772360968060,"timestamp":"2026-07-08 21:38:11","balance":1739.3112982029826835881487353},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":101.16621167891711920851973357,"amount":20.370190787527914405735960655,"cost":2059.2294518761131720537355896,"profitPct":2.9614725938056586026867794800,"profitUsdt":59.2294518761131720537355896,"timestamp":"2026-07-08 21:38:11","balance":3798.5407500790958556418843249},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":56919.643830927578176165288328,"amount":0.0175554506800524360743603987,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:38:21","balance":2798.5407500790958556418843249},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":100.21375350182510754194109110,"amount":9.971186240237988020185696525,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:38:21","balance":1798.5407500790958556418843249},{"pair":"XRP_USDT","type":"BUY (DCA Level 3)","price":0.6102410198396428267157650414,"amount":1637.4677668547743683911650223,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:38:21","balance":798.5407500790958556418843249},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":102.70455697032494172960482268,"amount":9.971186240237988020185696525,"cost":1023.3182005732884195293437789,"profitPct":2.3318200573288419529343778900,"profitUsdt":23.3182005732884195293437789,"timestamp":"2026-07-08 21:38:41","balance":1821.8589506523842751712281038},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.5101185803874147512612883091,"amount":1958.8582702498493790895386124,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:38:41","balance":821.8589506523842751712281038},{"pair":"DOT_USDT","type":"SELL (Take Profit)","price":6.3433054576053053083883387003,"amount":161.83836504437862325867999539,"cost":1025.8202415977496446110191858,"profitPct":2.5820241597749644611019185800,"profitUsdt":25.8202415977496446110191858,"timestamp":"2026-07-08 21:38:51","balance":1847.6791922501339197822472896},{"pair":"ETH_USDT","type":"BUY (DCA Level 2)","price":2716.8756243722385065430857714,"amount":0.3677937963136927855716883978,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:39:01","balance":847.6791922501339197822472896},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.5205396013847264210572888995,"amount":1958.8582702498493790895386124,"cost":1018.8985556876575242997325378,"profitPct":1.8898555687657524299732537800,"profitUsdt":18.8985556876575242997325378,"timestamp":"2026-07-08 21:39:11","balance":1866.5777479377914440819798274},{"pair":"ETH_USDT","type":"BUY (DCA Level 3)","price":2690.5481873114487104668751943,"amount":0.3713927164406255688398036219,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:39:21","balance":866.5777479377914440819798274},{"pair":"XRP_USDT","type":"SELL (Stop Loss)","price":0.5692830878037957544175650142,"amount":6399.3345765608199710843061563,"cost":3640.3006729234137955771423665,"profitPct":-8.992483176914655110571440840,"profitUsdt":-359.6993270765862044228576335,"timestamp":"2026-07-08 21:40:01","balance":4506.8784208612052396591221939},{"pair":"BTC_USDT","type":"BUY (DCA Level 1)","price":54626.697363393321743088076262,"amount":0.0182923377804205627062969751,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:40:11","balance":3506.8784208612052396591221939},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":100.27711215366339868650791046,"amount":9.964886089547151457216670725,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:40:11","balance":2506.8784208612052396591221939},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.5757857918499741405055819901,"amount":1735.4544244474220052326595261,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:40:11","balance":1506.8784208612052396591221939},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.5340233608969004982324388712,"amount":1871.1728234542851503066312859,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:40:21","balance":506.8784208612052396591221939},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.5439687672795664131951157766,"amount":1871.1728234542851503066312859,"cost":1017.0961794608471588634000001,"profitPct":1.7096179460847158863400000100,"profitUsdt":17.0961794608471588634000001,"timestamp":"2026-07-08 21:40:31","balance":1523.9746003220523985225221940},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":92.38810503501883159877083739,"amount":10.815786292199020655583188573,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:40:31","balance":523.9746003220523985225221940},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":94.16409899705895167625053805,"amount":10.815786292199020655583188573,"cost":1017.6949270712995122517479266,"profitPct":1.7694927071299512251747926600,"profitUsdt":17.6949270712995122517479266,"timestamp":"2026-07-08 21:41:01","balance":1541.6695273933519107742701206},{"pair":"BTC_USDT","type":"BUY (DCA Level 2)","price":52604.596142068693647166265619,"amount":0.0189954884797772378384628512,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:41:11","balance":541.6695273933519107742701206},{"pair":"ETH_USDT","type":"SELL (Stop Loss)","price":2519.2928374767888604698113479,"amount":1.4472195734352969288273512333,"cost":3643.2354281825483891253934569,"profitPct":-8.919114295436290271865163580,"profitUsdt":-356.7645718174516108746065431,"timestamp":"2026-07-08 21:41:11","balance":4184.9049555759002998996635775},{"pair":"XRP_USDT","type":"BUY (DCA Level 1)","price":0.5583741199031595804636840073,"amount":1789.570763367941880104466094,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:41:21","balance":3184.9049555759002998996635775},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":102.10350717867707679974550060,"amount":9.964886089547151457216670725,"cost":1016.6867310149928400726410046,"profitPct":1.6686731014992840072641004600,"profitUsdt":16.6867310149928400726410046,"timestamp":"2026-07-08 21:41:41","balance":4201.5916865908931399723045821},{"pair":"XRP_USDT","type":"BUY (DCA Level 2)","price":0.5404122257399666619775037382,"amount":1849.0514322316886592763420133,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:41:41","balance":3201.5916865908931399723045821},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":100.34951778485814223333396577,"amount":9.957696081233965010101248801,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:41:51","balance":2201.5916865908931399723045821},{"pair":"XRP_USDT","type":"BUY (DCA Level 3)","price":0.5307399077865263734537862826,"amount":1882.7489422595243103147023688,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:41:51","balance":1201.5916865908931399723045821},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":95.02278522155968494545272424,"amount":10.515898872781941287325893999,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:41:51","balance":201.5916865908931399723045821},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":101.90792523930707399419321119,"amount":9.957696081233965010101248801,"cost":1014.0070716912803276805973681,"profitPct":1.4007071691280327680597368100,"profitUsdt":14.0070716912803276805973681,"timestamp":"2026-07-08 21:42:11","balance":1215.5987582821734676529019502},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.5042527777760167390342691765,"amount":1981.6450082975156381487307707,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:42:21","balance":215.5987582821734676529019502},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":96.71523698428889166780646448,"amount":10.515898872781941287325893999,"cost":1016.2848658452339331172476136,"profitPct":1.6284865845233933117247613600,"profitUsdt":16.2848658452339331172476136,"timestamp":"2026-07-08 21:42:31","balance":1231.8836241274074007701495638},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":100.38440156511448460257925555,"amount":9.954235761935932533790909109,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:42:41","balance":231.8836241274074007701495638},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":101.99362651400430756848178093,"amount":9.954235761935932533790909109,"cost":1014.5071530818371700507500000,"profitPct":1.4507153081837170050750000,"profitUsdt":14.5071530818371700507500000,"timestamp":"2026-07-08 21:42:51","balance":1246.3907772092445708208995638},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":97.49054621038427443691490304,"amount":10.249711780705606303905118976,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:42:51","balance":246.3907772092445708208995638},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.5158923150159035168260466608,"amount":1981.6450082975156381487307707,"cost":1021.5486942971619400389274748,"profitPct":2.1548694297161940038927474800,"profitUsdt":21.5486942971619400389274748,"timestamp":"2026-07-08 21:43:11","balance":1267.9394715064065108598270386},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":103.45468692795147612707209953,"amount":9.658818074582774433707817627,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:43:21","balance":267.9394715064065108598270386},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":105.58666614328680380773418569,"amount":9.658818074582774433707817627,"cost":1019.0775175801808772046209020,"profitPct":1.907751758018087720462090200,"profitUsdt":19.0775175801808772046209020,"timestamp":"2026-07-08 21:43:41","balance":1287.0169890865873880644479406},{"pair":"BTC_USDT","type":"BUY (DCA Level 3)","price":52828.977969837251341978854941,"amount":0.0189148084706564380975725002,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:43:51","balance":287.0169890865873880644479406},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":99.75459875626316766753638416,"amount":10.249711780705606303905118976,"cost":1021.6890441370926885888968265,"profitPct":2.1689044137092688588896826500,"profitUsdt":21.6890441370926885888968265,"timestamp":"2026-07-08 21:43:51","balance":1308.7060332236800766533447671},{"pair":"ETH_USDT","type":"BUY (Initial Entry)","price":2398.5370149647257235116567928,"amount":0.4166081214363479606600255033,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:44:01","balance":308.7060332236800766533447671},{"pair":"XRP_USDT","type":"SELL (Stop Loss)","price":0.5044390245095966406099121967,"amount":7256.8255623065768549281700022,"cost":3657.8805381804700694653809078,"profitPct":-8.552986545488248263365477300,"profitUsdt":-342.1194618195299305346190922,"timestamp":"2026-07-08 21:44:11","balance":3966.5865714041501461187256749},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.5049159218352051527845632945,"amount":1979.0423648516593702279916432,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:44:21","balance":2966.5865714041501461187256749},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.5266888537203031271026720947,"amount":1897.2302013641043455381490207,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:44:21","balance":1966.5865714041501461187256749},{"pair":"DOT_USDT","type":"BUY (Initial Entry)","price":6.6271932210050386829176280058,"amount":150.78027253420868170828100676,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:44:31","balance":966.5865714041501461187256749},{"pair":"XRP_USDT","type":"SELL (Take Profit)","price":0.5179741509124717178815149281,"amount":1979.0423648516593702279916432,"cost":1024.3239689624329385562688398,"profitPct":2.4323968962432938556268839800,"profitUsdt":24.3239689624329385562688398,"timestamp":"2026-07-08 21:44:41","balance":1990.9105403665830846749945147},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":107.15566593475343147020223026,"amount":9.325218515355394356071425601,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:44:51","balance":990.9105403665830846749945147},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":108.93428806670245955310430416,"amount":9.325218515355394356071425601,"cost":1015.0741630066444580107251267,"profitPct":1.5074163006644458010725126700,"profitUsdt":15.0741630066444580107251267,"timestamp":"2026-07-08 21:45:11","balance":2005.9847033732275426857196414},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":99.78219241130618369579118031,"amount":10.014311931341933009254011451,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:45:11","balance":1005.9847033732275426857196414},{"pair":"DOT_USDT","type":"BUY (DCA Level 1)","price":6.3551860072517776479368369444,"amount":157.23379282050525283192789294,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:45:11","balance":5.9847033732275426857196414},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":101.83436182314685116151885770,"amount":10.014311931341933009254011451,"cost":1019.0362138276613551205282800,"profitPct":1.90362138276613551205282800,"profitUsdt":19.0362138276613551205282800,"timestamp":"2026-07-08 21:45:41","balance":1025.0209172008888978062479214},{"pair":"DOT_USDT","type":"BUY (DCA Level 2)","price":6.2675534331595207717742923960,"amount":159.43222673033847083697968965,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:45:41","balance":25.0209172008888978062479214},{"pair":"ETH_USDT","type":"SELL (Take Profit)","price":2467.6955465453777105485641480,"amount":0.4166081214363479606600255033,"cost":1027.2909594186694346654529292,"profitPct":2.7290959418669434665452929200,"profitUsdt":27.2909594186694346654529292,"timestamp":"2026-07-08 21:46:01","balance":1052.3118766195583324717008506},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":107.86727190455889300875397775,"amount":9.263699566668727299205169626,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:46:11","balance":52.3118766195583324717008506},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":109.99266386282479103195878035,"amount":9.263699566668727299205169626,"cost":1018.1747883183669055062255038,"profitPct":1.8174788318366905506225503800,"profitUsdt":18.1747883183669055062255038,"timestamp":"2026-07-08 21:46:31","balance":1070.4866649379252379779263544},{"pair":"ETH_USDT","type":"BUY (Initial Entry)","price":2436.3076554807510808643810406,"amount":0.4101493494682715910636112521,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:46:41","balance":70.4866649379252379779263544},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":55333.272071116743572395534391,"amount":0.0737580854109066747166927252,"cost":4078.2152503307508710386251665,"profitPct":1.9553812582687717759656291600,"profitUsdt":78.2152503307508710386251665,"timestamp":"2026-07-08 21:47:21","balance":4148.7019152686761090165515209},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":110.58791340627299046680563487,"amount":9.035797576982933904778789333,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:47:21","balance":3148.7019152686761090165515209},{"pair":"DOT_USDT","type":"SELL (Take Profit)","price":6.6154948864149569977309360612,"amount":467.44629208505240537718858935,"cost":3090.0692635460748523477774340,"profitPct":3.0023087848691617449259144700,"profitUsdt":90.0692635460748523477774340,"timestamp":"2026-07-08 21:47:21","balance":6238.7711788147509613643289549},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":54803.100438752864069273960650,"amount":0.0182334574504000379860216224,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:47:31","balance":5238.7711788147509613643289549},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":108.51270876643754288874332997,"amount":9.20859880247559723956367371,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:47:31","balance":4238.7711788147509613643289549},{"pair":"ETH_USDT","type":"BUY (DCA Level 1)","price":2349.4327841265534545242728047,"amount":0.4253154236849088183449048489,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:47:41","balance":3238.7711788147509613643289549},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.5410995244743263308883748607,"amount":1897.2302013641043455381490207,"cost":1025.8204170066149168814316787,"profitPct":2.5820417006614916881431678700,"profitUsdt":25.8204170066149168814316787,"timestamp":"2026-07-08 21:47:51","balance":4264.5915958213658782457606336},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":110.25512189015767361894413713,"amount":9.20859880247559723956367371,"cost":1014.5337120169535802768584266,"profitPct":1.4533712016953580276858426600,"profitUsdt":14.5337120169535802768584266,"timestamp":"2026-07-08 21:47:51","balance":5279.1253078383194585226190602},{"pair":"BTC_USDT","type":"BUY (DCA Level 1)","price":53132.551659474356678575889483,"amount":0.0188067384078253326718140097,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:48:01","balance":4279.1253078383194585226190602},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.5021997624440533963393320148,"amount":1989.7460626762433690994077832,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:48:01","balance":3279.1253078383194585226190602},{"pair":"ETH_USDT","type":"SELL (Take Profit)","price":2442.3759555660442243638424424,"amount":0.8354647731531804094085161010,"cost":2038.9886843665135476893066631,"profitPct":1.9494342183256773844653331600,"profitUsdt":38.9886843665135476893066631,"timestamp":"2026-07-08 21:48:11","balance":5318.1139922048330062119257233},{"pair":"DOT_USDT","type":"BUY (Initial Entry)","price":6.8830066093098969437708254426,"amount":145.17638246176065567212299464,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:48:11","balance":4318.1139922048330062119257233},{"pair":"BTC_USDT","type":"BUY (DCA Level 2)","price":52369.887858837937615876522360,"amount":0.0190806213428117291433166172,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:48:21","balance":3318.1139922048330062119257233},{"pair":"ETH_USDT","type":"BUY (Initial Entry)","price":2394.3708618844330141208175382,"amount":0.4173330104817446271317264667,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:48:21","balance":2318.1139922048330062119257233},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.5269628772557545938193536907,"amount":1896.2436314371097155279607708,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:48:21","balance":1318.1139922048330062119257233},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":104.97339859421639264808188852,"amount":9.519078293946506664826160347,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:48:21","balance":318.1139922048330062119257233},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.5392897175352965690752947607,"amount":1896.2436314371097155279607708,"cost":1021.8577238565420438903189098,"profitPct":2.1857723856542043890318909800,"profitUsdt":21.8577238565420438903189098,"timestamp":"2026-07-08 21:48:41","balance":1339.9717160613750501022446331},{"pair":"DOT_USDT","type":"SELL (Take Profit)","price":7.0524927045075090111731925520,"amount":145.17638246176065567212299464,"cost":1023.0874866447251362516999200,"profitPct":2.30874866447251362516999200,"profitUsdt":23.0874866447251362516999200,"timestamp":"2026-07-08 21:48:41","balance":2363.0592027061001863539445531},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":54434.701454927605598075163361,"amount":0.0561208172010370998011522493,"cost":3052.6287397977116457496669200,"profitPct":1.75429132659038819165556400,"profitUsdt":52.6287397977116457496669200,"timestamp":"2026-07-08 21:48:51","balance":5415.6879425038118321036114731},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":55128.609429692277526402867081,"amount":0.0181257973008440114246018985,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:49:01","balance":4415.6879425038118321036114731},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.5271604044733564485158980338,"amount":1895.5331081784685404185603024,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:49:01","balance":3415.6879425038118321036114731},{"pair":"XRP_USDT","type":"SELL (Take Profit)","price":0.5112519377470942094710035641,"amount":1989.7460626762433690994077832,"cost":1016.4985840202546776375691537,"profitPct":1.6498584020254677637569153700,"profitUsdt":16.4985840202546776375691537,"timestamp":"2026-07-08 21:49:11","balance":4432.1865265240665097411806268},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.5355779650277831899790530061,"amount":1895.5331081784685404185603024,"cost":1014.4443603974722344043874999,"profitPct":1.4444360397472234404387499900,"profitUsdt":14.4443603974722344043874999,"timestamp":"2026-07-08 21:49:11","balance":5446.6308869215387441455681267},{"pair":"LTC_USDT","type":"SELL (Take Profit)","price":112.59917974427970280555976019,"amount":9.035797576982933904778789333,"cost":1016.6603279570006686049878323,"profitPct":1.6660327957000668604987832300,"profitUsdt":16.6603279570006686049878323,"timestamp":"2026-07-08 21:49:21","balance":6463.2912148785394127505559590},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":106.92450251026650482708962926,"amount":9.519078293946506664826160347,"cost":1017.0593439033042700162145796,"profitPct":1.7059343903304270016214579600,"profitUsdt":17.0593439033042700162145796,"timestamp":"2026-07-08 21:49:21","balance":7480.3505587818436827667705386},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.5123959662714542254409287004,"amount":1950.1519640586378252329110716,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:49:31","balance":6480.3505587818436827667705386},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.5345074546318957781414580545,"amount":1869.4781360685844775711943769,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:49:31","balance":5480.3505587818436827667705386},{"pair":"DOT_USDT","type":"BUY (Initial Entry)","price":6.8258945168682009852984066604,"amount":146.39106970238787221327448979,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:49:31","balance":4480.3505587818436827667705386},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":108.51854474969270438630752930,"amount":9.208103576258375966098735874,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:49:41","balance":3480.3505587818436827667705386},{"pair":"ETH_USDT","type":"BUY (DCA Level 1)","price":2291.0441975032613444380510554,"amount":0.4361548332803726056709353253,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:49:51","balance":2480.3505587818436827667705386},{"pair":"LTC_USDT","type":"BUY (Initial Entry)","price":115.01239070960306635661126224,"amount":8.688194322671067591330892121,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:49:51","balance":1480.3505587818436827667705386},{"pair":"XRP_USDT","type":"SELL (Take Profit)","price":0.5226436328615927068492685914,"amount":1950.1519640586378252329110716,"cost":1018.4700812474308109504344495,"profitPct":1.8470081247430810950434449500,"profitUsdt":18.4700812474308109504344495,"timestamp":"2026-07-08 21:50:01","balance":2498.8206400292744937172049881},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":110.69486486545291880260693262,"amount":9.208103576258375966098735874,"cost":1018.5253137052339121328496693,"profitPct":1.8525313705233912132849669300,"profitUsdt":18.5253137052339121328496693,"timestamp":"2026-07-08 21:50:01","balance":3517.3459537345084058500546574},{"pair":"DOT_USDT","type":"BUY (DCA Level 1)","price":6.5998952949299202324156605156,"amount":151.40391708450737646446872656,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:50:01","balance":2517.3459537345084058500546574},{"pair":"ETH_USDT","type":"BUY (DCA Level 2)","price":2236.2207733382515603219883116,"amount":0.4468476511414882043827504117,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:50:21","balance":1517.3459537345084058500546574},{"pair":"ETH_USDT","type":"BUY (DCA Level 3)","price":2196.1168861843886300504101736,"amount":0.4550076575095838324924940312,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:50:31","balance":517.3459537345084058500546574},{"pair":"ADA_USDT","type":"SELL (Take Profit)","price":0.5463881942461641691650667553,"amount":1869.4781360685844775711943769,"cost":1020.6946873619867659754085127,"profitPct":2.0694687361986765975408512700,"profitUsdt":20.6946873619867659754085127,"timestamp":"2026-07-08 21:50:51","balance":1538.0406410964951718254631701},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.5290905969117492421483933860,"amount":1888.6179528279765773823018134,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:51:01","balance":538.0406410964951718254631701},{"pair":"XRP_USDT","type":"SELL (Take Profit)","price":0.5392621541938655779460451115,"amount":1888.6179528279765773823018134,"cost":1017.6963405519546342363562501,"profitPct":1.7696340551954634236356250100,"profitUsdt":17.6963405519546342363562501,"timestamp":"2026-07-08 21:51:11","balance":1555.7369816484498060618194202},{"pair":"DOT_USDT","type":"BUY (DCA Level 2)","price":6.5027461436588177497198530776,"amount":153.66584792402255273797827313,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:51:11","balance":555.7369816484498060618194202},{"pair":"ETH_USDT","type":"SELL (Stop Loss)","price":2078.8419257286685498435696496,"amount":1.7553431524131892696779062349,"cost":3646.3441285728081765187364178,"profitPct":-8.841396785679795587031589560,"profitUsdt":-353.6558714271918234812635822,"timestamp":"2026-07-08 21:51:31","balance":4202.0811102212579825805558380},{"pair":"LTC_USDT","type":"BUY (DCA Level 1)","price":110.61825941845339470825654715,"amount":9.033318778050711246891347364,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:51:41","balance":3202.0811102212579825805558380},{"pair":"ADA_USDT","type":"BUY (Initial Entry)","price":0.5578511858162274905435776148,"amount":1791.2483210695947127063431844,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:51:41","balance":2202.0811102212579825805558380},{"pair":"SOL_USDT","type":"BUY (Initial Entry)","price":111.27327889619384841152355641,"amount":8.98014339032998323041104077,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:51:41","balance":1202.0811102212579825805558380},{"pair":"DOT_USDT","type":"BUY (DCA Level 3)","price":6.4310911803587472500240373191,"amount":155.37798671737360976910777061,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:51:41","balance":202.0811102212579825805558380},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":56373.955039159615287209041988,"amount":0.0181257973008440114246018985,"cost":1021.0565149251359853866181268,"profitPct":2.1056514925135985386618126800,"profitUsdt":21.0565149251359853866181268,"timestamp":"2026-07-08 21:51:51","balance":1223.1376251463939679671739648},{"pair":"SOL_USDT","type":"SELL (Take Profit)","price":113.19911861427389757525679356,"amount":8.98014339032998323041104077,"cost":1015.7819085775401481661499999,"profitPct":1.5781908577540148166149999900,"profitUsdt":15.7819085775401481661499999,"timestamp":"2026-07-08 21:51:51","balance":2238.9195337239341161333239647},{"pair":"BTC_USDT","type":"BUY (Initial Entry)","price":55812.381906611646308353375128,"amount":0.0179037332911539266859312936,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:52:01","balance":1238.9195337239341161333239647},{"pair":"XRP_USDT","type":"BUY (Initial Entry)","price":0.5292786191938423324982833896,"amount":1887.9470353856027254855643437,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:52:01","balance":238.9195337239341161333239647},{"pair":"BTC_USDT","type":"SELL (Take Profit)","price":56750.300030908820908810957468,"amount":0.0179037332911539266859312936,"cost":1015.2802042693962045213749980,"profitPct":1.528020426939620452137499800,"profitUsdt":15.2802042693962045213749980,"timestamp":"2026-07-08 21:52:11","balance":1254.1997379933303206546989627},{"pair":"ADA_USDT","type":"BUY (DCA Level 1)","price":0.5407145820213406011643592257,"amount":1848.0174813568504723358834683,"cost":1000,"profitPct":0,"profitUsdt":0,"timestamp":"2026-07-08 21:52:11","balance":254.1997379933303206546989627},{"pair":"ADA_USDT","type":"SELL (End of Backtest Close)","price":0.5070302909275227890499960327,"amount":3639.2658024264451850422266527,"cost":1843.8340850679400241221606653,"profitPct":-7.8082957466029987938919667400,"profitUsdt":-156.1659149320599758778393347,"timestamp":"2026-07-08 21:53:51","balance":2098.0338230612703447768596280},{"pair":"LTC_USDT","type":"SELL (End of Backtest Close)","price":109.96853252953773331907590136,"amount":17.721513100721778838222239485,"cost":1947.3471832969350235802779984,"profitPct":-2.6326408351532488209861000800,"profitUsdt":-52.6528167030649764197220016,"timestamp":"2026-07-08 21:53:51","balance":4045.3810063582053683571376264},{"pair":"XRP_USDT","type":"SELL (End of Backtest Close)","price":0.5104296944115092513551810566,"amount":1887.9470353856027254855643437,"cost":962.9414801657353012731968119,"profitPct":-3.7058519834264698726803188100,"profitUsdt":-37.0585198342646987268031881,"timestamp":"2026-07-08 21:53:51","balance":5008.3224865239406696303344383},{"pair":"DOT_USDT","type":"SELL (End of Backtest Close)","price":6.4622069596735914037619532237,"amount":606.83882142829141118482926009,"cost":3918.5769166925989720538499020,"profitPct":-2.0355770826850256986537524500,"profitUsdt":-81.4230833074010279461500980,"timestamp":"2026-07-08 21:53:51","balance":8926.899403216539641684184340}];
+        const equityPoints = [{"time":"2026-07-08 20:30:31","balance":10000},{"time":"2026-07-08 20:30:31","balance":9998.500000000000000000000000},{"time":"2026-07-08 20:32:21","balance":3069.2321848526097900908567662},{"time":"2026-07-08 20:33:41","balance":4213.8594665716482123846663662},{"time":"2026-07-08 20:34:41","balance":2291.6400686941919717985221137},{"time":"2026-07-08 20:36:51","balance":3056.7214974686880838375072429},{"time":"2026-07-08 20:38:51","balance":9656.229578836100531273145206},{"time":"2026-07-08 20:39:51","balance":1128.8058629317063672095902878},{"time":"2026-07-08 20:41:51","balance":2892.8692460529452786541358010},{"time":"2026-07-08 20:43:01","balance":1928.1841432154633327583316331},{"time":"2026-07-08 20:47:11","balance":9109.484660294841726098428611},{"time":"2026-07-08 20:49:31","balance":2508.6806179707370211460530971},{"time":"2026-07-08 20:51:01","balance":3566.7729812425253873478895533},{"time":"2026-07-08 20:55:31","balance":8945.750360455191600468909690},{"time":"2026-07-08 20:57:01","balance":1236.7617593894521530342734553},{"time":"2026-07-08 20:57:51","balance":6979.5653357854453580183851578},{"time":"2026-07-08 20:58:11","balance":6024.9400390878558754100377707},{"time":"2026-07-08 20:58:41","balance":3040.9776204727550698792002706},{"time":"2026-07-08 20:59:11","balance":4096.6911728291384109818482611},{"time":"2026-07-08 21:01:31","balance":2191.3125733797873660775797350},{"time":"2026-07-08 21:02:41","balance":3258.9237536477717742287026654},{"time":"2026-07-08 21:03:51","balance":9193.337016250453246729771632},{"time":"2026-07-08 21:09:11","balance":2300.5084210996882458476003402},{"time":"2026-07-08 21:10:51","balance":1407.5945220946851517954821915},{"time":"2026-07-08 21:12:11","balance":9309.851577844346355456075512},{"time":"2026-07-08 21:12:51","balance":1529.5875958161316965987509337},{"time":"2026-07-08 21:13:31","balance":3624.9368428714651841314391497},{"time":"2026-07-08 21:14:01","balance":2659.9573057579418118780468583},{"time":"2026-07-08 21:14:41","balance":1694.1701490157288040823879747},{"time":"2026-07-08 21:17:01","balance":1873.3402382105013153379787317},{"time":"2026-07-08 21:20:31","balance":9516.822664381679510214994095},{"time":"2026-07-08 21:25:31","balance":2706.6127254168142878345919564},{"time":"2026-07-08 21:26:31","balance":4347.2997885444093127272115541},{"time":"2026-07-08 21:26:51","balance":1361.9186997003893496474240545},{"time":"2026-07-08 21:28:51","balance":9262.842762484326518695037299},{"time":"2026-07-08 21:29:41","balance":1526.1723377441614726886509778},{"time":"2026-07-08 21:37:11","balance":9439.337270822896894721300975},{"time":"2026-07-08 21:38:51","balance":1847.6791922501339197822472896},{"time":"2026-07-08 21:41:41","balance":4201.5916865908931399723045821},{"time":"2026-07-08 21:42:11","balance":1215.5987582821734676529019502},{"time":"2026-07-08 21:43:51","balance":1308.7060332236800766533447671},{"time":"2026-07-08 21:45:31","balance":8791.290059837357818036960292},{"time":"2026-07-08 21:46:31","balance":1070.4866649379252379779263544},{"time":"2026-07-08 21:48:51","balance":5415.6879425038118321036114731},{"time":"2026-07-08 21:49:21","balance":6463.2912148785394127505559590},{"time":"2026-07-08 21:51:11","balance":1555.7369816484498060618194202},{"time":"2026-07-08 21:53:51","balance":8926.899403216539641684184340}];
+
+        function switchTab(tabId) {
+            // Переключение кнопок
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.innerText.toLowerCase().includes(tabId === 'backtest' ? 'результаты' : tabId === 'performance' ? 'производительность' : 'журнал'));
+            if (targetBtn) targetBtn.classList.add('active');
+
+            // Переключение контента
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+        }
+
+        // Рендеринг графика Equity
+        document.addEventListener('DOMContentLoaded', () => {
+            const ctx = document.getElementById('equityChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: equityPoints.map(p => p.time),
+                    datasets: [{
+                        label: 'Баланс портфеля (USDT)',
+                        data: equityPoints.map(p => p.balance),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.15,
+                        pointRadius: equityPoints.length > 300 ? 0 : 2,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                            ticks: { color: '#94a3b8', maxTicksLimit: 12 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#151d30',
+                            titleColor: '#f1f5f9',
+                            bodyColor: '#38bdf8',
+                            borderColor: '#222f4c',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Баланс: ' + context.parsed.y.toFixed(2) + ' USDT';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Вычисление и вывод статистики по парам
+            calculatePairsStats();
+
+            // Рендеринг таблицы сделок
+            renderTradesTable();
+        });
+
+        function calculatePairsStats() {
+            const pairsStats = {};
+            trades.forEach(t => {
+                if (!t.type.startsWith('SELL')) return;
+                if (!pairsStats[t.pair]) {
+                    pairsStats[t.pair] = { trades: 0, wins: 0, profit: 0 };
+                }
+                pairsStats[t.pair].trades++;
+                if (t.profitUsdt > 0) pairsStats[t.pair].wins++;
+                pairsStats[t.pair].profit += t.profitUsdt;
+            });
+
+            const pairsTableBody = document.getElementById('pairsTableBody');
+            pairsTableBody.innerHTML = '';
+
+            const keys = Object.keys(pairsStats);
+            if (keys.length === 0) {
+                pairsTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">Нет закрытых сделок для расчета</td></tr>';
+                return;
+            }
+
+            keys.forEach(p => {
+                const stat = pairsStats[p];
+                const winRate = stat.trades > 0 ? (stat.wins / stat.trades * 100).toFixed(1) : '0.0';
+                const profitClass = stat.profit >= 0 ? 'text-success' : 'text-danger';
+                const sign = stat.profit >= 0 ? '+' : '';
+                pairsTableBody.innerHTML += `
+                    <tr>
+                        <td><strong>${p}</strong></td>
+                        <td>${stat.trades}</td>
+                        <td>${stat.wins}</td>
+                        <td>${winRate}%</td>
+                        <td class="${profitClass}"><strong>${sign}${stat.profit.toFixed(2)} USDT</strong></td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Логика пагинации и поиска журнала сделок
+        let currentPage = 1;
+        let rowsPerPage = 10;
+        let filteredTrades = [...trades];
+
+        function renderTradesTable() {
+            const start = (currentPage - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            const paginatedTrades = filteredTrades.slice(start, end);
+
+            const tbody = document.getElementById('tradesTableBody');
+            tbody.innerHTML = '';
+
+            if (paginatedTrades.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">Сделки не найдены</td></tr>';
+                document.getElementById('btnPrev').disabled = true;
+                document.getElementById('btnNext').disabled = true;
+                document.getElementById('paginationInfo').innerText = 'Записи 0-0 из 0';
+                return;
+            }
+
+            paginatedTrades.forEach((t, index) => {
+                let badgeClass = 'badge-buy';
+                if (t.type.includes('Take Profit')) badgeClass = 'badge-sell-tp';
+                else if (t.type.includes('Stop Loss')) badgeClass = 'badge-sell-sl';
+                else if (t.type.includes('DCA')) badgeClass = 'badge-dca';
+
+                const profitClass = t.profitUsdt > 0 ? 'text-success' : (t.profitUsdt < 0 ? 'text-danger' : '');
+                const profitText = t.profitUsdt !== 0
+                    ? `${t.profitUsdt > 0 ? '+' : ''}${t.profitUsdt.toFixed(2)} USDT (${t.profitPct.toFixed(2)}%)`
+                    : '—';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-family: monospace; color: var(--text-secondary);">${t.timestamp}</td>
+                        <td><strong>${t.pair}</strong></td>
+                        <td><span class="badge ${badgeClass}">${t.type}</span></td>
+                        <td style="font-family: monospace;">${t.price.toFixed(4)}</td>
+                        <td style="font-family: monospace;">${t.amount.toFixed(6)}</td>
+                        <td style="font-family: monospace;">${t.cost.toFixed(2)}</td>
+                        <td class="${profitClass}" style="font-family: monospace; font-weight: 600;">${profitText}</td>
+                        <td style="font-family: monospace; font-weight: 600;">${t.balance.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('paginationInfo').innerText = `Записи ${start + 1}-${Math.min(end, filteredTrades.length)} из ${filteredTrades.length}`;
+            document.getElementById('btnPrev').disabled = currentPage === 1;
+            document.getElementById('btnNext').disabled = end >= filteredTrades.length;
+        }
+
+        function filterTrades() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const typeFilter = document.getElementById('typeFilter').value;
+            const outcomeFilter = document.getElementById('outcomeFilter').value;
+
+            filteredTrades = trades.filter(t => {
+                const matchesSearch = t.pair.toLowerCase().includes(query) || t.type.toLowerCase().includes(query);
+
+                let matchesType = true;
+                if (typeFilter === 'BUY') matchesType = t.type.startsWith('BUY');
+                else if (typeFilter === 'SELL') matchesType = t.type.startsWith('SELL');
+                else if (typeFilter === 'DCA') matchesType = t.type.includes('DCA');
+
+                let matchesOutcome = true;
+                if (outcomeFilter === 'WIN') matchesOutcome = t.type.startsWith('SELL') && t.profitUsdt > 0;
+                else if (outcomeFilter === 'LOSS') matchesOutcome = t.type.startsWith('SELL') && t.profitUsdt <= 0;
+
+                return matchesSearch && matchesType && matchesOutcome;
+            });
+
+            currentPage = 1;
+            renderTradesTable();
+        }
+
+        // Слушатели событий управления таблицей
+        document.getElementById('searchInput').addEventListener('input', filterTrades);
+        document.getElementById('typeFilter').addEventListener('change', filterTrades);
+        document.getElementById('outcomeFilter').addEventListener('change', filterTrades);
+        document.getElementById('pageSizeSelect').addEventListener('change', (e) => {
+            rowsPerPage = parseInt(e.target.value);
+            currentPage = 1;
+            renderTradesTable();
+        });
+
+        document.getElementById('btnPrev').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTradesTable();
+            }
+        });
+
+        document.getElementById('btnNext').addEventListener('click', () => {
+            if ((currentPage * rowsPerPage) < filteredTrades.length) {
+                currentPage++;
+                renderTradesTable();
+            }
+        });
+    </script>
 </body>
 </html>
