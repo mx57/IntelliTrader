@@ -361,3 +361,10 @@ magda_agent_system/memory_db/
 magda_agent_system/procedural_memory_db/
 magda_agent_system/episodic_memory_db/
 magda_agent_system/habits_db/
+
+# Temporal database and virtual env folders (root)
+venv/
+memory_db/
+procedural_memory_db/
+episodic_memory_db/
+habits_db/

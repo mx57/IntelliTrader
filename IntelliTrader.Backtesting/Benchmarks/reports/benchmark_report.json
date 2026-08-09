@@ -1,0 +1,66 @@
+﻿{
+  "Metadata": {
+    "GeneratedAt": "2026-08-06T20:45:39.3499559Z",
+    "OS": "Unix 6.8.0.0",
+    "ProcessorCount": 4,
+    "Runtime": "8.0.24",
+    "SnapshotCount": 500
+  },
+  "Statistics": {
+    "AverageDurationMs": 26.9137,
+    "MedianDurationMs": 19.8019,
+    "MinDurationMs": 19.3159,
+    "MaxDurationMs": 51.0058,
+    "StdDevDurationMs": 12.211911592048152,
+    "AverageMemoryAllocatedBytes": 4814825,
+    "ThroughputFilesPerSec": 18577.898988247623,
+    "ThroughputMBPerSec": 26.611332207057885
+  },
+  "Runs": [
+    {
+      "RunNumber": 1,
+      "DurationMs": 51.0058,
+      "MemoryAllocatedBytes": 4820200,
+      "GCGen0Count": 0,
+      "GCGen1Count": 0,
+      "GCGen2Count": 0,
+      "BytesProcessed": 751000
+    },
+    {
+      "RunNumber": 2,
+      "DurationMs": 24.7626,
+      "MemoryAllocatedBytes": 4820928,
+      "GCGen0Count": 0,
+      "GCGen1Count": 0,
+      "GCGen2Count": 0,
+      "BytesProcessed": 751000
+    },
+    {
+      "RunNumber": 3,
+      "DurationMs": 19.8019,
+      "MemoryAllocatedBytes": 4811000,
+      "GCGen0Count": 0,
+      "GCGen1Count": 0,
+      "GCGen2Count": 0,
+      "BytesProcessed": 751000
+    },
+    {
+      "RunNumber": 4,
+      "DurationMs": 19.6823,
+      "MemoryAllocatedBytes": 4811000,
+      "GCGen0Count": 0,
+      "GCGen1Count": 0,
+      "GCGen2Count": 0,
+      "BytesProcessed": 751000
+    },
+    {
+      "RunNumber": 5,
+      "DurationMs": 19.3159,
+      "MemoryAllocatedBytes": 4811000,
+      "GCGen0Count": 0,
+      "GCGen1Count": 0,
+      "GCGen2Count": 0,
+      "BytesProcessed": 751000
+    }
+  ]
+}
