@@ -1,0 +1,242 @@
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Collections.Generic;
+using System.Linq;
+using IntelliTrader.Backtesting;
+
+namespace BacktestingBenchmarkSuite
+{
+    public class BenchmarkResult
+    {
+        public int SnapshotCount { get; set; }
+        public int SimulatedMonths { get; set; }
+
+        // Сериализация
+        public double SerializationTimeMs { get; set; }
+        public double SerializationThroughput { get; set; } // снимков/сек
+        public double TotalSizeMb { get; set; }
+
+        // Десериализация
+        public double DeserializationTimeMs { get; set; }
+        public double DeserializationThroughput { get; set; } // снимков/сек
+        public double DeserializationSpeedMbSec { get; set; } // МБ/сек
+
+        // Цикл симуляции бэктеста
+        public double ProcessingTimeMs { get; set; }
+        public double ProcessingThroughput { get; set; } // снимков/сек
+        public double SpeedupFactor { get; set; } // во сколько раз быстрее реального времени
+
+        // Память
+        public long BytesAllocated { get; set; }
+        public int GcCollectionsGen0 { get; set; }
+        public int GcCollectionsGen1 { get; set; }
+        public int GcCollectionsGen2 { get; set; }
+    }
+
+    public class BenchmarkRunner
+    {
+        private static readonly string[] TradingPairs = { "BTC_USDT", "ETH_USDT", "LTC_USDT", "XRP_USDT", "ADA_USDT", "SOL_USDT", "DOT_USDT" };
+
+        /// <summary>
+        /// Генерирует реалистичный набор снимков для бэктеста, симулирующий multi-month историю.
+        /// </summary>
+        public static (List<List<SignalData>> Signals, List<List<TickerData>> Tickers) GenerateDataset(int snapshotCount, int months)
+        {
+            var random = new Random(42); // Детерминированный seed для воспроизводимости
+            var signalDataset = new List<List<SignalData>>(snapshotCount);
+            var tickerDataset = new List<List<TickerData>>(snapshotCount);
+
+            // Базовые цены для симуляции
+            var basePrices = new Dictionary<string, decimal>
+            {
+                { "BTC_USDT", 65000m },
+                { "ETH_USDT", 3500m },
+                { "LTC_USDT", 85m },
+                { "XRP_USDT", 0.55m },
+                { "ADA_USDT", 0.45m },
+                { "SOL_USDT", 140m },
+                { "DOT_USDT", 6.5m }
+            };
+
+            for (int i = 0; i < snapshotCount; i++)
+            {
+                var signals = new List<SignalData>();
+                var tickers = new List<TickerData>();
+
+                foreach (var pair in TradingPairs)
+                {
+                    // Симулируем легкий дрейф цены
+                    decimal changePercent = (decimal)(random.NextDouble() * 0.04 - 0.02); // -2% до +2%
+                    decimal basePrice = basePrices[pair];
+                    decimal currentPrice = basePrice * (1m + changePercent);
+                    basePrices[pair] = currentPrice; // обновляем базу
+
+                    // Добавляем сигнал
+                    signals.Add(new SignalData
+                    {
+                        Name = "StrategyAlpha",
+                        Pair = pair,
+                        Volume = random.Next(100, 10000),
+                        VolumeChange = random.NextDouble() * 20.0 - 10.0,
+                        Price = currentPrice,
+                        PriceChange = currentPrice * changePercent,
+                        Rating = random.NextDouble() * 10.0,
+                        RatingChange = random.NextDouble() * 2.0 - 1.0,
+                        Volatility = random.NextDouble() * 5.0 + 0.5
+                    });
+
+                    // Добавляем тикер
+                    decimal spread = currentPrice * 0.001m; // 0.1% спред
+                    tickers.Add(new TickerData
+                    {
+                        Pair = pair,
+                        BidPrice = currentPrice - spread / 2,
+                        AskPrice = currentPrice + spread / 2,
+                        LastPrice = currentPrice
+                    });
+                }
+
+                signalDataset.Add(signals);
+                tickerDataset.Add(tickers);
+            }
+
+            return (signalDataset, tickerDataset);
+        }
+
+        /// <summary>
+        /// Запускает полный цикл бенчмаркинга.
+        /// </summary>
+        public static BenchmarkResult Run(int snapshotCount, int months)
+        {
+            // Подготовка окружения для чистых замеров памяти
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            long startAllocatedBytes = GC.GetAllocatedBytesForCurrentThread();
+            int startGen0 = GC.CollectionCount(0);
+            int startGen1 = GC.CollectionCount(1);
+            int startGen2 = GC.CollectionCount(2);
+
+            // 1. Генерация датасета
+            var (signals, tickers) = GenerateDataset(snapshotCount, months);
+
+            // 2. Бенчмарк сериализации (в оперативную память через MemoryStream для чистоты CPU-замеров)
+            var stopwatch = Stopwatch.StartNew();
+            var memoryStreams = new List<byte[]>(snapshotCount * 2);
+            long totalBytesSerialized = 0;
+
+            for (int i = 0; i < snapshotCount; i++)
+            {
+                using (var ms = new MemoryStream())
+                using (var writer = new BinaryWriter(ms))
+                {
+                    SnapshotSerializer.SerializeSignals(writer, signals[i]);
+                    byte[] bytes = ms.ToArray();
+                    memoryStreams.Add(bytes);
+                    totalBytesSerialized += bytes.Length;
+                }
+
+                using (var ms = new MemoryStream())
+                using (var writer = new BinaryWriter(ms))
+                {
+                    SnapshotSerializer.SerializeTickers(writer, tickers[i]);
+                    byte[] bytes = ms.ToArray();
+                    memoryStreams.Add(bytes);
+                    totalBytesSerialized += bytes.Length;
+                }
+            }
+            stopwatch.Stop();
+            double serializationTimeMs = stopwatch.Elapsed.TotalMilliseconds;
+            double totalSizeMb = totalBytesSerialized / (1024.0 * 1024.0);
+
+            // 3. Бенчмарк десериализации
+            stopwatch.Restart();
+            var deserializedSignals = new List<List<SignalData>>(snapshotCount);
+            var deserializedTickers = new List<List<TickerData>>(snapshotCount);
+
+            for (int i = 0; i < snapshotCount * 2; i += 2)
+            {
+                byte[] signalBytes = memoryStreams[i];
+                using (var ms = new MemoryStream(signalBytes))
+                using (var reader = new BinaryReader(ms))
+                {
+                    deserializedSignals.Add(SnapshotSerializer.DeserializeSignals(reader));
+                }
+
+                byte[] tickerBytes = memoryStreams[i + 1];
+                using (var ms = new MemoryStream(tickerBytes))
+                using (var reader = new BinaryReader(ms))
+                {
+                    deserializedTickers.Add(SnapshotSerializer.DeserializeTickers(reader));
+                }
+            }
+            stopwatch.Stop();
+            double deserializationTimeMs = stopwatch.Elapsed.TotalMilliseconds;
+
+            // 4. Симуляция работы движка бэктестинга (эмуляция обработки снимков торговыми правилами)
+            stopwatch.Restart();
+            int processedSnapshots = 0;
+            double dummyStateHash = 0;
+
+            for (int i = 0; i < snapshotCount; i++)
+            {
+                var currentSigs = deserializedSignals[i];
+                var currentTicks = deserializedTickers[i];
+
+                // Имитация прохода по торговым парам и вычисления DCA / Трейлинга
+                foreach (var sig in currentSigs)
+                {
+                    var tick = currentTicks.FirstOrDefault(t => t.Pair == sig.Pair);
+                    if (tick != null)
+                    {
+                        // Тяжелая математическая операция для имитации логики индикаторов/правил
+                        double volatilityFactor = sig.Volatility ?? 1.0;
+                        double priceSpread = (double)(tick.AskPrice - tick.BidPrice);
+                        dummyStateHash += (double)tick.LastPrice * volatilityFactor + priceSpread;
+                        processedSnapshots++;
+                    }
+                }
+            }
+            stopwatch.Stop();
+            double processingTimeMs = stopwatch.Elapsed.TotalMilliseconds;
+
+            // Сбор метрик памяти
+            long endAllocatedBytes = GC.GetAllocatedBytesForCurrentThread();
+            int endGen0 = GC.CollectionCount(0);
+            int endGen1 = GC.CollectionCount(1);
+            int endGen2 = GC.CollectionCount(2);
+
+            // Имитируем реальное время воспроизведения бэктеста.
+            // Предположим, 1 снимок берется каждые 10 секунд.
+            double simulatedIntervalSeconds = 10;
+            double simulatedTotalSeconds = snapshotCount * simulatedIntervalSeconds;
+            double actualTotalSeconds = processingTimeMs / 1000.0;
+            double speedupFactor = actualTotalSeconds > 0 ? (simulatedTotalSeconds / actualTotalSeconds) : 0;
+
+            return new BenchmarkResult
+            {
+                SnapshotCount = snapshotCount,
+                SimulatedMonths = months,
+
+                SerializationTimeMs = serializationTimeMs,
+                SerializationThroughput = (snapshotCount / (serializationTimeMs / 1000.0)),
+                TotalSizeMb = totalSizeMb,
+
+                DeserializationTimeMs = deserializationTimeMs,
+                DeserializationThroughput = (snapshotCount / (deserializationTimeMs / 1000.0)),
+                DeserializationSpeedMbSec = (totalSizeMb / (deserializationTimeMs / 1000.0)),
+
+                ProcessingTimeMs = processingTimeMs,
+                ProcessingThroughput = (processedSnapshots / (processingTimeMs / 1000.0)),
+                SpeedupFactor = speedupFactor,
+
+                BytesAllocated = endAllocatedBytes - startAllocatedBytes,
+                GcCollectionsGen0 = endGen0 - startGen0,
+                GcCollectionsGen1 = endGen1 - startGen1,
+                GcCollectionsGen2 = endGen2 - startGen2
+            };
+        }
+    }
+}
