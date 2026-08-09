@@ -256,7 +256,7 @@
     },
     {
       "id": "trading-performance-benchmark",
-      "status": "todo",
+      "status": "done",
       "area": "trading",
       "risk": "low",
       "title": "Implement backtesting performance benchmark suite",
