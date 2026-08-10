@@ -634,7 +634,13 @@
                         const buyTrailingData = adjustments.map(item => item.new_BuyTrailing);
                         const sellMarginData = adjustments.map(item => item.new_SellMargin);
 
-                        new Chart(ctx, {
+                        const isLightThemeNow = document.documentElement.classList.contains("light-theme");
+                        const initialGridColor = isLightThemeNow ? '#dee2e6' : '#2b2b3f';
+                        const initialTickColor = isLightThemeNow ? '#2c3e50' : '#a9b1d6';
+                        const initialBuyColor = isLightThemeNow ? '#d9534f' : '#f7768e';
+                        const initialSellColor = isLightThemeNow ? '#5cb85c' : '#9ece6a';
+
+                        window.parameterDriftChart = new Chart(ctx, {
                             type: 'line',
                             data: {
                                 labels: labels,
@@ -642,8 +648,8 @@
                                     {
                                         label: 'BuyTrailing (%)',
                                         data: buyTrailingData,
-                                        borderColor: '#f7768e',
-                                        backgroundColor: 'rgba(247, 118, 142, 0.1)',
+                                        borderColor: initialBuyColor,
+                                        backgroundColor: isLightThemeNow ? 'rgba(217, 83, 79, 0.1)' : 'rgba(247, 118, 142, 0.1)',
                                         borderWidth: 2,
                                         tension: 0.3,
                                         yAxisID: 'yBuy'
@@ -651,8 +657,8 @@
                                     {
                                         label: 'SellMargin (%)',
                                         data: sellMarginData,
-                                        borderColor: '#9ece6a',
-                                        backgroundColor: 'rgba(158, 206, 106, 0.1)',
+                                        borderColor: initialSellColor,
+                                        backgroundColor: isLightThemeNow ? 'rgba(92, 184, 92, 0.1)' : 'rgba(158, 206, 106, 0.1)',
                                         borderWidth: 2,
                                         tension: 0.3,
                                         yAxisID: 'ySell'
@@ -665,10 +671,10 @@
                                 scales: {
                                     x: {
                                         grid: {
-                                            color: '#2b2b3f'
+                                            color: initialGridColor
                                         },
                                         ticks: {
-                                            color: '#a9b1d6'
+                                            color: initialTickColor
                                         }
                                     },
                                     yBuy: {
@@ -678,13 +684,13 @@
                                         title: {
                                             display: true,
                                             text: 'BuyTrailing %',
-                                            color: '#f7768e'
+                                            color: initialBuyColor
                                         },
                                         grid: {
-                                            color: '#2b2b3f'
+                                            color: initialGridColor
                                         },
                                         ticks: {
-                                            color: '#f7768e'
+                                            color: initialBuyColor
                                         }
                                     },
                                     ySell: {
@@ -694,20 +700,20 @@
                                         title: {
                                             display: true,
                                             text: 'SellMargin %',
-                                            color: '#9ece6a'
+                                            color: initialSellColor
                                         },
                                         grid: {
                                             drawOnChartArea: false
                                         },
                                         ticks: {
-                                            color: '#9ece6a'
+                                            color: initialSellColor
                                         }
                                     }
                                 },
                                 plugins: {
                                     legend: {
                                         labels: {
-                                            color: '#a9b1d6'
+                                            color: initialTickColor
                                         }
                                     }
                                 }
@@ -718,6 +724,37 @@
                 .catch(err => {
                     console.error('Error fetching parameter drift:', err);
                 });
+
+            document.addEventListener("themeChanged", function (e) {
+                const theme = e.detail.theme;
+                const isLight = (theme === "light");
+                const gridColor = isLight ? '#dee2e6' : '#2b2b3f';
+                const tickColor = isLight ? '#2c3e50' : '#a9b1d6';
+                const buyColor = isLight ? '#d9534f' : '#f7768e';
+                const sellColor = isLight ? '#5cb85c' : '#9ece6a';
+
+                if (window.parameterDriftChart) {
+                    window.parameterDriftChart.options.scales.x.grid.color = gridColor;
+                    window.parameterDriftChart.options.scales.x.ticks.color = tickColor;
+                    window.parameterDriftChart.options.scales.yBuy.grid.color = gridColor;
+                    window.parameterDriftChart.options.scales.yBuy.ticks.color = buyColor;
+                    window.parameterDriftChart.options.scales.yBuy.title.color = buyColor;
+                    window.parameterDriftChart.options.scales.ySell.ticks.color = sellColor;
+                    window.parameterDriftChart.options.scales.ySell.title.color = sellColor;
+                    window.parameterDriftChart.options.plugins.legend.labels.color = tickColor;
+
+                    if (window.parameterDriftChart.data.datasets[0]) {
+                        window.parameterDriftChart.data.datasets[0].borderColor = buyColor;
+                        window.parameterDriftChart.data.datasets[0].backgroundColor = isLight ? 'rgba(217, 83, 79, 0.1)' : 'rgba(247, 118, 142, 0.1)';
+                    }
+                    if (window.parameterDriftChart.data.datasets[1]) {
+                        window.parameterDriftChart.data.datasets[1].borderColor = sellColor;
+                        window.parameterDriftChart.data.datasets[1].backgroundColor = isLight ? 'rgba(92, 184, 92, 0.1)' : 'rgba(158, 206, 106, 0.1)';
+                    }
+
+                    window.parameterDriftChart.update();
+                }
+            });
         });
     </script>
 </div>

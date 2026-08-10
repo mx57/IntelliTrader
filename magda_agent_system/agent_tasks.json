@@ -416,7 +416,7 @@
     },
     {
       "id": "web-dashboard-dark-theme-toggle",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Improve UI/UX with smooth light/dark theme switch toggle",
