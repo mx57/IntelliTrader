@@ -24,6 +24,16 @@
         <button type="submit" class="btn btn-primary settings-btn" onclick="return confirm('Save settings?');" @if (Model.ReadOnlyMode) { <text>disabled</text> }>Save</button>
     </div>
     }
+
+    <!-- Настройки темы оформления -->
+    <div class="settings" style="margin-top: 15px; margin-bottom: 15px;">
+        <label for="themeSelect" style="font-weight: bold; margin-right: 10px;">Тема оформления:</label>
+        <select id="themeSelect" class="form-control form-control-sm" style="display: inline-block; width: auto; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border);">
+            <option value="dark">Темная тема (Dark)</option>
+            <option value="light">Светлая тема (Light)</option>
+        </select>
+    </div>
+
     <button class="btn btn-info settings-btn" onclick="logout();" @if (Model.ReadOnlyMode) { <text>disabled</text> }>Log Out</button>
     <button class="btn btn-info settings-btn" onclick="refreshAccount();" @if (Model.ReadOnlyMode) { <text>disabled</text> }>Refresh Account</button>
     <button class="btn btn-info settings-btn" onclick="restartServices();" @if (Model.ReadOnlyMode) { <text>disabled</text> }>Restart Services</button>

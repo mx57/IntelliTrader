@@ -21,6 +21,19 @@
     <link rel="stylesheet" type="text/css" href="@Url.Content("~/Static/Styles/Vendor/datatables.min.css")">
     <link rel="stylesheet" type="text/css" href="@Url.Content("~/Static/Styles/intellitrader.css")">
 
+    <script>
+        (function() {
+            try {
+                var theme = localStorage.getItem('theme') || 'dark';
+                if (theme === 'light') {
+                    document.documentElement.classList.add('light-theme');
+                }
+            } catch (e) {
+                console.warn("Storage access blocked:", e);
+            }
+        })();
+    </script>
+
     <script type="text/javascript" src="@Url.Content("~/Static/Scripts/Vendor/jquery-3.3.1.min.js")"></script>
     <script type="text/javascript" src="@Url.Content("~/Static/Scripts/Vendor/popper.min.js")"></script>
     <script type="text/javascript" src="@Url.Content("~/Static/Scripts/Vendor/bootstrap.min.js")"></script>
@@ -76,6 +89,9 @@
                     <i class="fas fa-spinner text-info status-icon" id="statusRefreshIcon" title="Getting Status Info..."></i>
                     <i class="fas fa-exclamation-triangle text-warning status-icon" id="statusWarningIcon" title="Connection Error" style="display: none"></i>
                 </div>
+                <button id="navbarThemeToggle" class="btn btn-sm text-light" style="border: none; background: transparent; font-size: 14px; cursor: pointer; padding: 0; margin-left: 15px;" title="Toggle Theme">
+                    <i class="fas fa-sun" id="themeIcon"></i>
+                </button>
             </div>
         }
     </nav>

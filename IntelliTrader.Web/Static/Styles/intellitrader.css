@@ -1,15 +1,107 @@
+:root {
+    --bg-color: #1a1a2e;
+    --text-color: #e0e0e0;
+    --input-bg: #2e3740;
+    --input-border: #4a4a6a;
+    --card-bg: #1e1e2e;
+    --card-border: #3b3b4f;
+    --nav-bg: #2a2a3e !important;
+    --table-border: #3a3a4a;
+    --table-header-bg: #1e1e2f;
+    --terminal-bg: #12121a;
+    --card-header-bg: #2b2b36;
+    --text-light: #ffffff;
+    --text-muted: #565f89;
+}
+
+html.light-theme {
+    --bg-color: #f3f4f6;
+    --text-color: #1f2937;
+    --input-bg: #ffffff;
+    --input-border: #cbd5e1;
+    --card-bg: #ffffff;
+    --card-border: #e5e7eb;
+    --nav-bg: #1f2937 !important;
+    --table-border: #e5e7eb;
+    --table-header-bg: #f3f4f6;
+    --terminal-bg: #f9fafb;
+    --card-header-bg: #f3f4f6;
+    --text-light: #1f2937;
+    --text-muted: #64748b;
+}
+
 body {
-    background-color: #1a1a2e;
-    color: #e0e0e0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
     padding-top: 100px;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 input[type=search], input[type=text], input[type=password], input[type=search]:focus, input[type=text]:focus, input[type=password]:focus {
-    background-color: #2e3740;
-    color: #e0e0e0;
-    border: 1px solid #4a4a6a;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    border: 1px solid var(--input-border);
     padding: 8px;
     border-radius: 4px;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* General Bootstrap theme overrides for Light mode */
+html.light-theme .navbar-dark {
+    background-color: var(--nav-bg) !important;
+}
+
+html.light-theme .card {
+    background-color: var(--card-bg);
+    border-color: var(--card-border);
+    color: var(--text-color);
+}
+
+html.light-theme .card-header {
+    background-color: var(--card-header-bg);
+    border-bottom-color: var(--card-border);
+    color: var(--text-light);
+}
+
+html.light-theme .card-body {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+html.light-theme table.dataTable td {
+    border-top: 1px solid var(--table-border);
+    color: var(--text-color);
+}
+
+html.light-theme table.dataTable th {
+    color: var(--text-color);
+    background-color: var(--table-header-bg);
+}
+
+html.light-theme .table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+html.light-theme .table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+html.light-theme .modal-content {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border-color: var(--card-border);
+}
+
+html.light-theme .modal-header {
+    border-bottom-color: var(--card-border);
+}
+
+html.light-theme .modal-footer {
+    border-top-color: var(--card-border);
+}
+
+html.light-theme .close {
+    color: var(--text-color);
 }
 
 .page-header {

@@ -12,7 +12,7 @@
 
 <div>
     <!-- Панель мониторинга завершения сделок в реальном времени -->
-    <div class="mb-3" style="background-color: #1a1a26; padding: 15px 20px; border-radius: 4px; border: 1px solid #3b3b4f; color: #a9b1d6; margin-bottom: 20px;">
+    <div class="mb-3" style="background-color: var(--card-header-bg); padding: 15px 20px; border-radius: 4px; border: 1px solid var(--card-border); color: var(--text-color); margin-bottom: 20px;">
         <div class="d-flex justify-content-between align-items-center flex-wrap">
             <div style="margin-bottom: 10px;">
                 <i class="fas fa-bell text-success mr-2" style="color: #9ece6a !important;"></i> <span style="font-size: 14px;">Мониторинг завершения сделок в реальном времени активен.</span>
@@ -21,24 +21,24 @@
                 <button id="soundToggleBtn" class="btn btn-sm btn-outline-success mr-2" style="font-weight: bold; border-color: #9ece6a; color: #9ece6a; background: transparent; transition: all 0.3s;">
                     <i class="fas fa-volume-up mr-1"></i> Звук: Вкл
                 </button>
-                <button id="testSoundBtn" class="btn btn-sm btn-outline-secondary" style="font-weight: bold; border-color: #4a4a6a; color: #a9b1d6; background: transparent; transition: all 0.3s;">
+                <button id="testSoundBtn" class="btn btn-sm btn-outline-secondary" style="font-weight: bold; border-color: #4a4a6a; color: var(--text-color); background: transparent; transition: all 0.3s;">
                     <i class="fas fa-music mr-1"></i> Проверить звук
                 </button>
             </div>
         </div>
 
         <!-- Дополнительные настройки звука -->
-        <div class="row align-items-center mt-2 pt-2" style="border-top: 1px solid #2e2e3f; font-size: 13px;">
+        <div class="row align-items-center mt-2 pt-2" style="border-top: 1px solid var(--card-border); font-size: 13px;">
             <div class="col-md-5 d-flex align-items-center mb-2 mb-md-0">
                 <i class="fas fa-sliders-h mr-2" style="color: #7aa2f7;"></i>
                 <span class="mr-2" style="white-space: nowrap;">Громкость:</span>
-                <input type="range" id="soundVolumeSlider" min="0" max="1" step="0.05" value="0.5" style="flex-grow: 1; height: 4px; background: #24283b; outline: none; transition: background 450ms ease-in-out; -webkit-appearance: none; cursor: pointer;" />
+                <input type="range" id="soundVolumeSlider" min="0" max="1" step="0.05" value="0.5" style="flex-grow: 1; height: 4px; background: var(--bg-color); outline: none; transition: background 450ms ease-in-out; -webkit-appearance: none; cursor: pointer;" />
                 <span id="soundVolumeValue" class="ml-2" style="font-weight: bold; color: #7aa2f7; min-width: 40px; text-align: right;">50%</span>
             </div>
             <div class="col-md-5 d-flex align-items-center mb-2 mb-md-0">
                 <i class="fas fa-music mr-2" style="color: #bb9af3;"></i>
                 <span class="mr-2" style="white-space: nowrap;">Профиль звука:</span>
-                <select id="soundProfileSelect" class="form-control form-control-sm" style="background-color: #1e1e2e; color: #a9b1d6; border: 1px solid #3b3b4f; border-radius: 4px; height: 28px; padding: 2px 8px; font-size: 12px; width: auto;">
+                <select id="soundProfileSelect" class="form-control form-control-sm" style="background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 4px; height: 28px; padding: 2px 8px; font-size: 12px; width: auto;">
                     <option value="chime">Приятный звон (Chime)</option>
                     <option value="beep">Высокий писк (Beep)</option>
                     <option value="arcade">Ретро аркада (Arcade)</option>
@@ -408,12 +408,12 @@
     </table>
 
     <!-- Online RL Parameter Drift Analytics Chart -->
-    <div class="card mt-4" style="background-color: #1e1e2e; border: 1px solid #3b3b4f; color: #a9b1d6; margin-top: 20px;">
-        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #1a1a26; border-bottom: 1px solid #3b3b4f; padding: 10px 15px;">
+    <div class="card mt-4" style="background-color: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-color); margin-top: 20px;">
+        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: var(--card-header-bg); border-bottom: 1px solid var(--card-border); padding: 10px 15px;">
             <span style="font-weight: bold; color: #7aa2f7;"><i class="fas fa-chart-line mr-2"></i>Аналитика дрейфа параметров (Online RL Parameter Drift)</span>
             <span id="chartSourceBadge" class="badge badge-info">Загрузка...</span>
         </div>
-        <div class="card-body" style="background-color: #1a1a26; padding: 20px; border-radius: 0 0 4px 4px;">
+        <div class="card-body" style="background-color: var(--card-header-bg); padding: 20px; border-radius: 0 0 4px 4px;">
             <div style="position: relative; height: 320px; width: 100%;">
                 <canvas id="parameterDriftChart"></canvas>
             </div>
@@ -421,16 +421,16 @@
     </div>
 
     <!-- Real-time Log Monitor Terminal -->
-    <div class="card mt-4" style="background-color: #1e1e2f; color: #a9b7c6; border-radius: 4px; border: 1px solid #2b2b36; margin-top: 20px;">
-        <div class="card-header" style="background-color: #2b2b36; border-bottom: 1px solid #32324d; padding: 10px 15px; display: flex; align-items: center; justify-content: space-between;">
-            <h5 class="mb-0" style="color: #ffffff; font-size: 16px; margin: 0;"><i class="fas fa-terminal mr-2"></i>Live Log Monitor</h5>
+    <div class="card mt-4" style="background-color: var(--card-bg); color: var(--text-color); border-radius: 4px; border: 1px solid var(--card-border); margin-top: 20px;">
+        <div class="card-header" style="background-color: var(--card-header-bg); border-bottom: 1px solid var(--card-border); padding: 10px 15px; display: flex; align-items: center; justify-content: space-between;">
+            <h5 class="mb-0" style="color: var(--text-light); font-size: 16px; margin: 0;"><i class="fas fa-terminal mr-2"></i>Live Log Monitor</h5>
             <div class="btn-group btn-group-sm" role="group">
-                <button type="button" class="btn btn-sm btn-outline-light active" id="logTypeGeneralBtn" style="border-color: #4a4a6a; margin-right: 5px;" onclick="setLogType('general')">General Log</button>
-                <button type="button" class="btn btn-sm btn-outline-light" id="logTypeTradesBtn" style="border-color: #4a4a6a;" onclick="setLogType('trades')">Trades Log</button>
+                <button type="button" class="btn btn-sm btn-outline-light active" id="logTypeGeneralBtn" style="border-color: var(--card-border); margin-right: 5px;" onclick="setLogType('general')">General Log</button>
+                <button type="button" class="btn btn-sm btn-outline-light" id="logTypeTradesBtn" style="border-color: var(--card-border);" onclick="setLogType('trades')">Trades Log</button>
             </div>
         </div>
         <div class="card-body p-0">
-            <div id="logTerminal" style="height: 250px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 13px; padding: 15px; background-color: #12121a; color: #39FF14; line-height: 1.5; white-space: pre-wrap; border-radius: 0 0 4px 4px;">
+            <div id="logTerminal" style="height: 250px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 13px; padding: 15px; background-color: var(--terminal-bg); color: #39FF14; line-height: 1.5; white-space: pre-wrap; border-radius: 0 0 4px 4px;">
                 <div class="text-muted">Initializing log connection...</div>
             </div>
         </div>
@@ -517,18 +517,18 @@
         </div>
     </script>
 
-    <div class="card mt-4" style="background-color: #1e1e2e; border: 1px solid #3b3b4f; color: #a9b1d6; font-family: 'Courier New', Courier, monospace;">
-        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #1a1a26; border-bottom: 1px solid #3b3b4f;">
+    <div class="card mt-4" style="background-color: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-color); font-family: 'Courier New', Courier, monospace;">
+        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: var(--card-header-bg); border-bottom: 1px solid var(--card-border);">
             <span style="font-weight: bold; color: #7aa2f7;"><i class="fas fa-terminal"></i> Live Trade Logs Terminal</span>
             <div class="d-flex align-items-center">
-                <select id="logTypeSelect" class="form-control form-control-sm d-inline-block" style="width: auto; background-color: #24283b; color: #a9b1d6; border: 1px solid #3b3b4f; margin-right: 10px;">
+                <select id="logTypeSelect" class="form-control form-control-sm d-inline-block" style="width: auto; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--card-border); margin-right: 10px;">
                     <option value="trades" selected>Trade Logs</option>
                     <option value="general">General Logs</option>
                 </select>
-                <button id="clearTerminalBtn" class="btn btn-sm btn-outline-secondary" style="border-color: #3b3b4f; color: #a9b1d6;">Clear</button>
+                <button id="clearTerminalBtn" class="btn btn-sm btn-outline-secondary" style="border-color: var(--card-border); color: var(--text-color);">Clear</button>
             </div>
         </div>
-        <div class="card-body" id="tradeLogTerminal" style="height: 250px; overflow-y: auto; font-size: 13px; line-height: 1.5; padding: 10px; background-color: #1a1a26; border-radius: 0 0 4px 4px;">
+        <div class="card-body" id="tradeLogTerminal" style="height: 250px; overflow-y: auto; font-size: 13px; line-height: 1.5; padding: 10px; background-color: var(--terminal-bg); border-radius: 0 0 4px 4px;">
             <div class="text-muted">Initializing live log polling...</div>
         </div>
     </div>
@@ -568,7 +568,7 @@
                                         } else if (line.includes("[INF]") || line.includes("Success") || line.includes("Buy") || line.includes("Sell")) {
                                             div.style.color = "#9ece6a";
                                         } else {
-                                            div.style.color = "#a9b1d6";
+                                            div.style.color = "var(--text-color)";
                                         }
 
                                         div.textContent = line;
@@ -634,7 +634,13 @@
                         const buyTrailingData = adjustments.map(item => item.new_BuyTrailing);
                         const sellMarginData = adjustments.map(item => item.new_SellMargin);
 
-                        new Chart(ctx, {
+                        const isInitialLight = document.documentElement.classList.contains('light-theme');
+                        const initialGridColor = isInitialLight ? '#cbd5e1' : '#2b2b3f';
+                        const initialTextColor = isInitialLight ? '#1f2937' : '#a9b1d6';
+                        const initialBuyColor = isInitialLight ? '#b03040' : '#f7768e';
+                        const initialSellColor = isInitialLight ? '#2e7d32' : '#9ece6a';
+
+                        window.parameterDriftChartInstance = new Chart(ctx, {
                             type: 'line',
                             data: {
                                 labels: labels,
@@ -642,8 +648,8 @@
                                     {
                                         label: 'BuyTrailing (%)',
                                         data: buyTrailingData,
-                                        borderColor: '#f7768e',
-                                        backgroundColor: 'rgba(247, 118, 142, 0.1)',
+                                        borderColor: initialBuyColor,
+                                        backgroundColor: isInitialLight ? 'rgba(176, 48, 64, 0.1)' : 'rgba(247, 118, 142, 0.1)',
                                         borderWidth: 2,
                                         tension: 0.3,
                                         yAxisID: 'yBuy'
@@ -651,8 +657,8 @@
                                     {
                                         label: 'SellMargin (%)',
                                         data: sellMarginData,
-                                        borderColor: '#9ece6a',
-                                        backgroundColor: 'rgba(158, 206, 106, 0.1)',
+                                        borderColor: initialSellColor,
+                                        backgroundColor: isInitialLight ? 'rgba(46, 125, 50, 0.1)' : 'rgba(158, 206, 106, 0.1)',
                                         borderWidth: 2,
                                         tension: 0.3,
                                         yAxisID: 'ySell'
@@ -665,10 +671,10 @@
                                 scales: {
                                     x: {
                                         grid: {
-                                            color: '#2b2b3f'
+                                            color: initialGridColor
                                         },
                                         ticks: {
-                                            color: '#a9b1d6'
+                                            color: initialTextColor
                                         }
                                     },
                                     yBuy: {
@@ -678,13 +684,13 @@
                                         title: {
                                             display: true,
                                             text: 'BuyTrailing %',
-                                            color: '#f7768e'
+                                            color: initialBuyColor
                                         },
                                         grid: {
-                                            color: '#2b2b3f'
+                                            color: initialGridColor
                                         },
                                         ticks: {
-                                            color: '#f7768e'
+                                            color: initialBuyColor
                                         }
                                     },
                                     ySell: {
@@ -694,30 +700,62 @@
                                         title: {
                                             display: true,
                                             text: 'SellMargin %',
-                                            color: '#9ece6a'
+                                            color: initialSellColor
                                         },
                                         grid: {
                                             drawOnChartArea: false
                                         },
                                         ticks: {
-                                            color: '#9ece6a'
+                                            color: initialSellColor
                                         }
                                     }
                                 },
                                 plugins: {
                                     legend: {
                                         labels: {
-                                            color: '#a9b1d6'
+                                            color: initialTextColor
                                         }
                                     }
                                 }
                             }
                         });
+
                     }
                 })
                 .catch(err => {
                     console.error('Error fetching parameter drift:', err);
                 });
+
+            // Listen to the custom themeChanged event to update colors on the fly
+            // This is declared once outside the fetch callback to prevent event listener accumulation/leak
+            document.addEventListener('themeChanged', function (e) {
+                if (window.parameterDriftChartInstance) {
+                    const isLight = e.detail.theme === 'light';
+                    const gridColor = isLight ? '#cbd5e1' : '#2b2b3f';
+                    const textColor = isLight ? '#1f2937' : '#a9b1d6';
+                    const buyColor = isLight ? '#b03040' : '#f7768e';
+                    const sellColor = isLight ? '#2e7d32' : '#9ece6a';
+
+                    window.parameterDriftChartInstance.data.datasets[0].borderColor = buyColor;
+                    window.parameterDriftChartInstance.data.datasets[0].backgroundColor = isLight ? 'rgba(176, 48, 64, 0.1)' : 'rgba(247, 118, 142, 0.1)';
+                    window.parameterDriftChartInstance.data.datasets[1].borderColor = sellColor;
+                    window.parameterDriftChartInstance.data.datasets[1].backgroundColor = isLight ? 'rgba(46, 125, 50, 0.1)' : 'rgba(158, 206, 106, 0.1)';
+
+                    window.parameterDriftChartInstance.options.scales.x.grid.color = gridColor;
+                    window.parameterDriftChartInstance.options.scales.x.ticks.color = textColor;
+
+                    window.parameterDriftChartInstance.options.scales.yBuy.grid.color = gridColor;
+                    window.parameterDriftChartInstance.options.scales.yBuy.ticks.color = buyColor;
+                    window.parameterDriftChartInstance.options.scales.yBuy.title.color = buyColor;
+
+                    window.parameterDriftChartInstance.options.scales.ySell.ticks.color = sellColor;
+                    window.parameterDriftChartInstance.options.scales.ySell.title.color = sellColor;
+
+                    window.parameterDriftChartInstance.options.plugins.legend.labels.color = textColor;
+
+                    window.parameterDriftChartInstance.update();
+                }
+            });
         });
     </script>
 </div>
