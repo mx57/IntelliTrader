@@ -28,6 +28,58 @@
     <button class="btn btn-info settings-btn" onclick="refreshAccount();" @if (Model.ReadOnlyMode) { <text>disabled</text> }>Refresh Account</button>
     <button class="btn btn-info settings-btn" onclick="restartServices();" @if (Model.ReadOnlyMode) { <text>disabled</text> }>Restart Services</button>
 
+    <div class="configs mt-4" style="background-color: var(--card-bg) !important; border: 1px solid var(--border-color) !important; color: var(--text-color) !important; padding: 20px; border-radius: 4px; margin-top: 20px;">
+        <h2>Оформление</h2>
+        <div style="margin-bottom: 15px; display: flex; align-items: center;">
+            <label style="margin-right: 15px; margin-bottom: 0; font-weight: bold;">Тема оформления:</label>
+            <select id="settingsThemeSelect" class="form-control form-control-sm" style="width: auto; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 4px;">
+                <option value="dark">Темная (по умолчанию)</option>
+                <option value="light">Светлая</option>
+            </select>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const select = document.getElementById("settingsThemeSelect");
+            if (select) {
+                const currentTheme = localStorage.getItem("theme") || "dark";
+                select.value = currentTheme;
+                select.addEventListener("change", function() {
+                    const targetTheme = select.value;
+                    if (targetTheme === "light") {
+                        document.documentElement.classList.add("light-theme");
+                    } else {
+                        document.documentElement.classList.remove("light-theme");
+                    }
+                    localStorage.setItem("theme", targetTheme);
+
+                    // Sync the header toggle if it exists
+                    const themeToggleIcon = document.getElementById("themeToggleIcon");
+                    const themeToggleText = document.getElementById("themeToggleText");
+                    if (themeToggleIcon) {
+                        themeToggleIcon.className = targetTheme === "light" ? "fas fa-sun" : "fas fa-moon";
+                        themeToggleIcon.style.color = targetTheme === "light" ? "#f39c12" : "#f1c40f";
+                    }
+                    if (themeToggleText) {
+                        themeToggleText.textContent = targetTheme === "light" ? "Светлая тема" : "Темная тема";
+                    }
+
+                    // Dispatch global event
+                    const event = new CustomEvent("themeChanged", { detail: { theme: targetTheme } });
+                    document.dispatchEvent(event);
+                });
+
+                // Sync the settings select if changed from outside (e.g. navbar toggle)
+                document.addEventListener("themeChanged", function(e) {
+                    if (select && select.value !== e.detail.theme) {
+                        select.value = e.detail.theme;
+                    }
+                });
+            }
+        });
+    </script>
+
     <div class="configs">
         <h2>Advanced</h2>
 

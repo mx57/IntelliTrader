@@ -3,6 +3,16 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+        (function () {
+            var currentTheme = localStorage.getItem("theme") || "dark";
+            if (currentTheme === "light") {
+                document.documentElement.classList.add("light-theme");
+            } else {
+                document.documentElement.classList.remove("light-theme");
+            }
+        })();
+    </script>
     @if (User.Identity.IsAuthenticated)
     {
         <title>@ViewData["Title"] - IntelliTrader (@ViewData["Instance"])</title>
@@ -20,6 +30,137 @@
     <link rel="stylesheet" type="text/css" href="@Url.Content("~/Static/Styles/Vendor/fontawesome-all.min.css")">
     <link rel="stylesheet" type="text/css" href="@Url.Content("~/Static/Styles/Vendor/datatables.min.css")">
     <link rel="stylesheet" type="text/css" href="@Url.Content("~/Static/Styles/intellitrader.css")">
+
+    <style>
+        :root {
+            /* Dark Theme (Default) */
+            --bg-color: #1a1a2e;
+            --text-color: #e0e0e0;
+            --card-bg: #1e1e2e;
+            --card-header-bg: #1a1a26;
+            --border-color: #3b3b4f;
+            --input-bg: #2e3740;
+            --input-color: #e0e0e0;
+            --input-border: #4a4a6a;
+            --navbar-bg: #2a2a3e;
+            --table-td-border: #3a3a4a;
+            --terminal-bg: #12121a;
+            --terminal-text: #39FF14;
+            --link-color: #7aa2f7;
+            --table-striped-bg: rgba(255, 255, 255, 0.05);
+            --table-hover-bg: rgba(255, 255, 255, 0.075);
+            --modal-content-bg: #1e1e2e;
+            --modal-header-bg: #1a1a26;
+            --muted-text: #565f89;
+        }
+
+        html.light-theme {
+            /* Light Theme */
+            --bg-color: #f5f6fa;
+            --text-color: #2c3e50;
+            --card-bg: #ffffff;
+            --card-header-bg: #f1f3f5;
+            --border-color: #dcdde1;
+            --input-bg: #ffffff;
+            --input-color: #2c3e50;
+            --input-border: #ced4da;
+            --navbar-bg: #3f51b5;
+            --table-td-border: #dee2e6;
+            --terminal-bg: #f8f9fa;
+            --terminal-text: #212529;
+            --link-color: #1a73e8;
+            --table-striped-bg: rgba(0, 0, 0, 0.05);
+            --table-hover-bg: rgba(0, 0, 0, 0.075);
+            --modal-content-bg: #ffffff;
+            --modal-header-bg: #f1f3f5;
+            --muted-text: #6c757d;
+        }
+
+        body {
+            background-color: var(--bg-color) !important;
+            color: var(--text-color) !important;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        nav.navbar {
+            background-color: var(--navbar-bg) !important;
+            transition: background-color 0.3s ease;
+        }
+
+        input[type=search], input[type=text], input[type=password],
+        input[type=search]:focus, input[type=text]:focus, input[type=password]:focus {
+            background-color: var(--input-bg) !important;
+            color: var(--input-color) !important;
+            border: 1px solid var(--input-border) !important;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        table.dataTable td {
+            border-top: 1px solid var(--table-td-border) !important;
+            color: var(--text-color) !important;
+            transition: border-color 0.3s ease, color 0.3s ease;
+        }
+
+        table.dataTable th {
+            color: var(--text-color) !important;
+            transition: color 0.3s ease;
+        }
+
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: var(--table-striped-bg) !important;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: var(--table-hover-bg) !important;
+        }
+
+        .card {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        .card-header {
+            background-color: var(--card-header-bg) !important;
+            border-bottom: 1px solid var(--border-color) !important;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .card-body {
+            background-color: var(--card-bg) !important;
+            transition: background-color 0.3s ease;
+        }
+
+        #logTerminal, #tradeLogTerminal, #logTerminal div, #tradeLogTerminal div {
+            background-color: var(--terminal-bg) !important;
+            color: var(--terminal-text) !important;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .modal-content {
+            background-color: var(--modal-content-bg) !important;
+            color: var(--text-color) !important;
+            border-color: var(--border-color) !important;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .modal-header {
+            background-color: var(--modal-header-bg) !important;
+            border-bottom: 1px solid var(--border-color) !important;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        a {
+            color: var(--link-color);
+            transition: color 0.3s ease;
+        }
+
+        .text-muted {
+            color: var(--muted-text) !important;
+            transition: color 0.3s ease;
+        }
+    </style>
 
     <script type="text/javascript" src="@Url.Content("~/Static/Scripts/Vendor/jquery-3.3.1.min.js")"></script>
     <script type="text/javascript" src="@Url.Content("~/Static/Scripts/Vendor/popper.min.js")"></script>
@@ -70,6 +211,9 @@
                             <a class="dropdown-item" href="/Help/ru">Русский</a>
                         </div>
                     </li>
+                    <a class="nav-item nav-link text-light" href="#" id="themeToggleLink" title="Сменить тему" style="cursor: pointer; margin-right: 15px;">
+                        <i class="fas fa-moon" id="themeToggleIcon" style="color: #f1c40f; margin-right: 5px;"></i><span id="themeToggleText">Темная тема</span>
+                    </a>
                     <span class="nav-item nav-link text-muted" title="Lovingly handcrafted by Jazzo"><text>v</text>@Model.Version</span>
                     <a class="nav-item nav-link text-light" href="#" id="themeToggleBtn" title="Переключить тему" style="cursor: pointer; margin-left: 10px; display: inline-flex; align-items: center;">
                         <i class="fas fa-sun" id="themeToggleIcon" style="font-size: 16px;"></i>
@@ -95,5 +239,47 @@
             @RenderBody()
         </div>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const themeToggleLink = document.getElementById("themeToggleLink");
+            const themeToggleIcon = document.getElementById("themeToggleIcon");
+            const themeToggleText = document.getElementById("themeToggleText");
+
+            function updateThemeUI(theme) {
+                if (theme === "light") {
+                    if (themeToggleIcon) {
+                        themeToggleIcon.className = "fas fa-sun";
+                        themeToggleIcon.style.color = "#f39c12";
+                    }
+                    if (themeToggleText) themeToggleText.textContent = "Светлая тема";
+                } else {
+                    if (themeToggleIcon) {
+                        themeToggleIcon.className = "fas fa-moon";
+                        themeToggleIcon.style.color = "#f1c40f";
+                    }
+                    if (themeToggleText) themeToggleText.textContent = "Темная тема";
+                }
+            }
+
+            // Initialize UI on load
+            const initialTheme = localStorage.getItem("theme") || "dark";
+            updateThemeUI(initialTheme);
+
+            if (themeToggleLink) {
+                themeToggleLink.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    const isLight = document.documentElement.classList.toggle("light-theme");
+                    const newTheme = isLight ? "light" : "dark";
+                    localStorage.setItem("theme", newTheme);
+                    updateThemeUI(newTheme);
+
+                    // Dispatch global event for other components (like Chart.js)
+                    const event = new CustomEvent("themeChanged", { detail: { theme: newTheme } });
+                    document.dispatchEvent(event);
+                });
+            }
+        });
+    </script>
 </body>
 </html>
