@@ -604,6 +604,8 @@
             });
         });
 
+        let parameterDriftChartInstance = null;
+
         document.addEventListener("DOMContentLoaded", function () {
             const ctx = document.getElementById('parameterDriftChart');
             if (!ctx) return;
@@ -634,7 +636,13 @@
                         const buyTrailingData = adjustments.map(item => item.new_BuyTrailing);
                         const sellMarginData = adjustments.map(item => item.new_SellMargin);
 
-                        new Chart(ctx, {
+                        const isLight = document.documentElement.classList.contains("light-theme");
+                        const gridColor = isLight ? '#cbd5e1' : '#2b2b3f';
+                        const tickColor = isLight ? '#4a5568' : '#a9b1d6';
+                        const buyColor = isLight ? '#b83280' : '#f7768e';
+                        const sellColor = isLight ? '#38a169' : '#9ece6a';
+
+                        parameterDriftChartInstance = new Chart(ctx, {
                             type: 'line',
                             data: {
                                 labels: labels,
@@ -642,8 +650,8 @@
                                     {
                                         label: 'BuyTrailing (%)',
                                         data: buyTrailingData,
-                                        borderColor: '#f7768e',
-                                        backgroundColor: 'rgba(247, 118, 142, 0.1)',
+                                        borderColor: buyColor,
+                                        backgroundColor: isLight ? 'rgba(184, 50, 128, 0.05)' : 'rgba(247, 118, 142, 0.1)',
                                         borderWidth: 2,
                                         tension: 0.3,
                                         yAxisID: 'yBuy'
@@ -651,8 +659,8 @@
                                     {
                                         label: 'SellMargin (%)',
                                         data: sellMarginData,
-                                        borderColor: '#9ece6a',
-                                        backgroundColor: 'rgba(158, 206, 106, 0.1)',
+                                        borderColor: sellColor,
+                                        backgroundColor: isLight ? 'rgba(56, 161, 105, 0.05)' : 'rgba(158, 206, 106, 0.1)',
                                         borderWidth: 2,
                                         tension: 0.3,
                                         yAxisID: 'ySell'
@@ -665,10 +673,10 @@
                                 scales: {
                                     x: {
                                         grid: {
-                                            color: '#2b2b3f'
+                                            color: gridColor
                                         },
                                         ticks: {
-                                            color: '#a9b1d6'
+                                            color: tickColor
                                         }
                                     },
                                     yBuy: {
@@ -678,13 +686,13 @@
                                         title: {
                                             display: true,
                                             text: 'BuyTrailing %',
-                                            color: '#f7768e'
+                                            color: buyColor
                                         },
                                         grid: {
-                                            color: '#2b2b3f'
+                                            color: gridColor
                                         },
                                         ticks: {
-                                            color: '#f7768e'
+                                            color: buyColor
                                         }
                                     },
                                     ySell: {
@@ -694,20 +702,20 @@
                                         title: {
                                             display: true,
                                             text: 'SellMargin %',
-                                            color: '#9ece6a'
+                                            color: sellColor
                                         },
                                         grid: {
                                             drawOnChartArea: false
                                         },
                                         ticks: {
-                                            color: '#9ece6a'
+                                            color: sellColor
                                         }
                                     }
                                 },
                                 plugins: {
                                     legend: {
                                         labels: {
-                                            color: '#a9b1d6'
+                                            color: tickColor
                                         }
                                     }
                                 }
@@ -718,6 +726,32 @@
                 .catch(err => {
                     console.error('Error fetching parameter drift:', err);
                 });
+        });
+
+        window.addEventListener('themeChanged', function (e) {
+            if (parameterDriftChartInstance) {
+                const isLight = e.detail.theme === 'light';
+                const gridColor = isLight ? '#cbd5e1' : '#2b2b3f';
+                const tickColor = isLight ? '#4a5568' : '#a9b1d6';
+                const buyColor = isLight ? '#b83280' : '#f7768e';
+                const sellColor = isLight ? '#38a169' : '#9ece6a';
+
+                parameterDriftChartInstance.data.datasets[0].borderColor = buyColor;
+                parameterDriftChartInstance.data.datasets[0].backgroundColor = isLight ? 'rgba(184, 50, 128, 0.05)' : 'rgba(247, 118, 142, 0.1)';
+                parameterDriftChartInstance.data.datasets[1].borderColor = sellColor;
+                parameterDriftChartInstance.data.datasets[1].backgroundColor = isLight ? 'rgba(56, 161, 105, 0.05)' : 'rgba(158, 206, 106, 0.1)';
+
+                parameterDriftChartInstance.options.scales.x.grid.color = gridColor;
+                parameterDriftChartInstance.options.scales.x.ticks.color = tickColor;
+                parameterDriftChartInstance.options.scales.yBuy.grid.color = gridColor;
+                parameterDriftChartInstance.options.scales.yBuy.ticks.color = buyColor;
+                parameterDriftChartInstance.options.scales.yBuy.title.color = buyColor;
+                parameterDriftChartInstance.options.scales.ySell.ticks.color = sellColor;
+                parameterDriftChartInstance.options.scales.ySell.title.color = sellColor;
+                parameterDriftChartInstance.options.plugins.legend.labels.color = tickColor;
+
+                parameterDriftChartInstance.update();
+            }
         });
     </script>
 </div>
