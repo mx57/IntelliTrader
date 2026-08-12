@@ -175,6 +175,12 @@
 
     <script>
         var isAuthenticated = @User.Identity.IsAuthenticated.ToString().ToLowerInvariant();
+        (function () {
+            var theme = localStorage.getItem("theme") || "dark";
+            if (theme === "light") {
+                document.documentElement.classList.add("light-theme");
+            }
+        })();
     </script>
 </head>
 <body>
@@ -209,6 +215,9 @@
                         <i class="fas fa-moon" id="themeToggleIcon" style="color: #f1c40f; margin-right: 5px;"></i><span id="themeToggleText">Темная тема</span>
                     </a>
                     <span class="nav-item nav-link text-muted" title="Lovingly handcrafted by Jazzo"><text>v</text>@Model.Version</span>
+                    <a class="nav-item nav-link text-light" href="#" id="themeToggleBtn" title="Переключить тему" style="cursor: pointer; margin-left: 10px; display: inline-flex; align-items: center;">
+                        <i class="fas fa-sun" id="themeToggleIcon" style="font-size: 16px;"></i>
+                    </a>
                 </div>
             </div>
             <div class="navbar-text status-bar text-light">

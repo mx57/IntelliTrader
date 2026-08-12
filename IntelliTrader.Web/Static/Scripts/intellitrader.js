@@ -1,4 +1,37 @@
 $(function () {
+    // Инициализация и обработка переключения тем
+    var themeToggleBtn = document.getElementById("themeToggleBtn");
+    var themeToggleIcon = document.getElementById("themeToggleIcon");
+
+    function updateThemeUI(theme) {
+        if (theme === "light") {
+            document.documentElement.classList.add("light-theme");
+            if (themeToggleIcon) {
+                themeToggleIcon.className = "fas fa-moon";
+            }
+        } else {
+            document.documentElement.classList.remove("light-theme");
+            if (themeToggleIcon) {
+                themeToggleIcon.className = "fas fa-sun";
+            }
+        }
+    }
+
+    // Инициализация темы на основе сохраненного значения
+    var currentTheme = localStorage.getItem("theme") || "dark";
+    updateThemeUI(currentTheme);
+
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            var theme = document.documentElement.classList.contains("light-theme") ? "dark" : "light";
+            localStorage.setItem("theme", theme);
+            updateThemeUI(theme);
+            // Отправка события для синхронизации графиков
+            window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: theme } }));
+        });
+    }
+
     if (window.isAuthenticated) {
         setInterval(function () {
             updateStatus();

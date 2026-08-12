@@ -353,7 +353,7 @@
     },
     {
       "id": "trading-backtesting-report-exporter",
-      "status": "todo",
+      "status": "done",
       "area": "trading",
       "risk": "low",
       "title": "Export backtesting trade results to interactive HTML report",
@@ -427,6 +427,51 @@
       ],
       "acceptance": [
         "Web Dashboard supports seamless dynamic toggling between light and dark visual themes"
+      ]
+    },
+    {
+      "id": "trading-trailing-profit-protection",
+      "status": "todo",
+      "area": "trading",
+      "risk": "low",
+      "title": "Implement dynamic profit protection during high volatility",
+      "description": "Implement an option in SellProcessor to automatically lower the SellMargin or trigger Take Profit earlier if the system detects extremely high volatility, securing gains before a sudden trend reversal.",
+      "allowed_paths": [
+        "IntelliTrader.Trading/Processors/SellProcessor.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "SellProcessor includes logic to dynamically scale SellMargin based on current spread volatility."
+      ]
+    },
+    {
+      "id": "web-dashboard-custom-alerts",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add custom notification threshold settings on Dashboard",
+      "description": "Implement UI inputs in Settings or Dashboard allowing users to specify minimum trade sizes for visual and sound alerts.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "The notification settings let the user specify a minimum USDT trade size for notifications, which is persisted in localStorage."
+      ]
+    },
+    {
+      "id": "trading-order-history-cache",
+      "status": "todo",
+      "area": "trading",
+      "risk": "low",
+      "title": "Optimize trade history parsing with in-memory caching",
+      "description": "Improve performance of trade loading by implementing an in-memory sliding cache with cache expiration for older closed orders in GetTrades.",
+      "allowed_paths": [
+        "IntelliTrader.Trading/Processors/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Order caching mechanism is integrated and avoids frequent disk reads for historical trade logs."
       ]
     }
   ]

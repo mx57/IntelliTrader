@@ -1,15 +1,53 @@
+:root {
+    --bg-color: #1a1a2e;
+    --text-color: #e0e0e0;
+    --card-bg: #212130;
+    --card-border: #3a3a4a;
+    --navbar-bg: #2a2a3e;
+    --table-header-bg: #212130;
+    --table-row-even: #1d1d33;
+    --table-row-odd: #1a1a2e;
+    --table-border: #3a3a4a;
+    --input-bg: #2e3740;
+    --input-border: #4a4a6a;
+    --input-text: #e0e0e0;
+    --link-color: #38bdf8;
+    --link-hover: #7aa2f7;
+    --muted-text: #a9b1d6;
+}
+
+html.light-theme {
+    --bg-color: #f4f6f9;
+    --text-color: #2c3e50;
+    --card-bg: #ffffff;
+    --card-border: #cbd5e1;
+    --navbar-bg: #ffffff;
+    --table-header-bg: #f8fafc;
+    --table-row-even: #f1f5f9;
+    --table-row-odd: #ffffff;
+    --table-border: #cbd5e1;
+    --input-bg: #ffffff;
+    --input-border: #cbd5e1;
+    --input-text: #334155;
+    --link-color: #2563eb;
+    --link-hover: #1d4ed8;
+    --muted-text: #64748b;
+}
+
 body {
-    background-color: #1a1a2e;
-    color: #e0e0e0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
     padding-top: 100px;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 input[type=search], input[type=text], input[type=password], input[type=search]:focus, input[type=text]:focus, input[type=password]:focus {
-    background-color: #2e3740;
-    color: #e0e0e0;
-    border: 1px solid #4a4a6a;
+    background-color: var(--input-bg);
+    color: var(--input-text);
+    border: 1px solid var(--input-border);
     padding: 8px;
     border-radius: 4px;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
 .page-header {
@@ -44,16 +82,26 @@ table.dataTable {
     border-collapse: collapse !important;
 }
 
-table.dataTable td, table.dataTable th {
-    padding: 2px;
-}
-
 table.dataTable td {
-    border-top: 1px solid #3a3a4a;
+    padding: 2px;
+    border-top: 1px solid var(--table-border) !important;
+    color: var(--text-color) !important;
 }
 
 table.dataTable th {
+    padding: 2px;
     border: none;
+    background-color: var(--table-header-bg) !important;
+    color: var(--text-color) !important;
+    border-bottom: 2px solid var(--table-border) !important;
+}
+
+table.dataTable tr.odd {
+    background-color: var(--table-row-odd) !important;
+}
+
+table.dataTable tr.even {
+    background-color: var(--table-row-even) !important;
 }
 
 table.dataTable a.btn {
@@ -79,4 +127,126 @@ div.dataTables_wrapper div.dataTables_filter input {
 
 table.dataTable.dtr-column > tbody > tr > td.control:before, table.dataTable.dtr-column > tbody > tr > th.control:before {
     line-height: 16px;
+}
+
+/* Light theme overrides for navigation and layout */
+html.light-theme .navbar {
+    background-color: var(--navbar-bg) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border-bottom: 1px solid var(--card-border);
+}
+
+html.light-theme .navbar-brand {
+    color: #2c3e50 !important;
+}
+
+html.light-theme .navbar-nav .nav-link {
+    color: #4a5568 !important;
+}
+
+html.light-theme .navbar-nav .nav-link:hover {
+    color: #2b6cb0 !important;
+}
+
+html.light-theme .navbar-text.status-bar {
+    color: #4a5568 !important;
+}
+
+html.light-theme .page-header {
+    color: var(--text-color) !important;
+}
+
+/* Cards & containers overrides */
+html.light-theme .card {
+    background-color: var(--card-bg) !important;
+    border-color: var(--card-border) !important;
+    color: var(--text-color) !important;
+}
+
+html.light-theme .card-header {
+    background-color: var(--table-header-bg) !important;
+    border-bottom: 1px solid var(--card-border) !important;
+    color: var(--text-color) !important;
+}
+
+html.light-theme .card-body {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+}
+
+/* Sound volume / sound profile select overrides */
+html.light-theme select,
+html.light-theme .form-control {
+    background-color: var(--input-bg) !important;
+    color: var(--input-text) !important;
+    border-color: var(--input-border) !important;
+}
+
+/* DCA levels table */
+html.light-theme .dca-levels-table {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+    border-color: var(--card-border) !important;
+}
+
+html.light-theme .dca-levels-table thead {
+    background-color: var(--table-header-bg) !important;
+    color: var(--text-color) !important;
+}
+
+html.light-theme .dca-levels-table td,
+html.light-theme .dca-levels-table th {
+    border-color: var(--card-border) !important;
+}
+
+/* Real-time trades monitoring block override */
+.realtime-monitor-box {
+    background-color: var(--card-bg) !important;
+    border: 1px solid var(--card-border) !important;
+    color: var(--text-color) !important;
+}
+
+/* Rule Analyzer & Stats Table styling */
+html.light-theme .table {
+    color: var(--text-color) !important;
+}
+
+html.light-theme .table-striped tbody tr:nth-of-type(odd) {
+    background-color: var(--table-row-even) !important;
+}
+
+html.light-theme .table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Modals */
+html.light-theme .modal-content {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+    border-color: var(--card-border) !important;
+}
+
+html.light-theme .modal-header {
+    border-bottom: 1px solid var(--card-border) !important;
+}
+
+html.light-theme .modal-footer {
+    border-top: 1px solid var(--card-border) !important;
+}
+
+/* Settings Advanced Tabs (nav-pills) */
+html.light-theme .configs .nav-pills {
+    background-color: var(--table-header-bg) !important;
+    border: 1px solid var(--card-border) !important;
+    border-radius: 4px;
+    padding: 5px;
+}
+
+html.light-theme .configs .nav-pills .nav-link {
+    color: var(--text-color) !important;
+}
+
+html.light-theme .configs .nav-pills .nav-link.active {
+    background-color: #007bff !important;
+    color: #ffffff !important;
 }
