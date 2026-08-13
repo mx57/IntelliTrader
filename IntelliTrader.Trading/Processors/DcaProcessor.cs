@@ -24,8 +24,25 @@ namespace IntelliTrader.Trading.Processors
             if (pairConfig.NextDCAMargin != null && pairConfig.BuyEnabled &&
                 !trailingBuys.ContainsKey(tradingPair.Pair) && !trailingSells.ContainsKey(tradingPair.Pair))
             {
-                // Enforce MaxTrailingSpread safety checks to prevent buying on high-volatility spikes
+                // Calculate base spread
+                decimal baseSpread = 0.2m;
                 var safety = pairConfig.TrailingSafety;
+                if (safety != null && safety.MaxTrailingSpread > 0)
+                {
+                    baseSpread = safety.MaxTrailingSpread;
+                }
+
+                // Extra safety boundary check: extremely high spread (> 3x base spread)
+                if (tradingPair.CurrentSpread > 3 * baseSpread)
+                {
+                    if (task.LoggingEnabled)
+                    {
+                        loggingService.Info($"DCA postponed for {tradingPair.FormattedName} due to extremely high spread: {tradingPair.CurrentSpread:0.00}% (Threshold: {3 * baseSpread:0.00}%)");
+                    }
+                    return;
+                }
+
+                // Enforce MaxTrailingSpread safety checks to prevent buying on high-volatility spikes
                 if (safety != null && safety.MaxTrailingSpread > 0 && tradingPair.CurrentSpread > safety.MaxTrailingSpread)
                 {
                     if (safety.PauseOnHighSpread)
@@ -43,15 +60,18 @@ namespace IntelliTrader.Trading.Processors
                 decimal spreadFactor = 1.0m;
                 if (tradingPair.CurrentSpread > 0)
                 {
-                    decimal baseSpread = 0.2m;
-                    if (pairConfig.TrailingSafety != null && pairConfig.TrailingSafety.MaxTrailingSpread > 0)
-                    {
-                        baseSpread = pairConfig.TrailingSafety.MaxTrailingSpread;
-                    }
                     if (tradingPair.CurrentSpread > baseSpread)
                     {
                         spreadFactor = 1.0m + (tradingPair.CurrentSpread - baseSpread);
                     }
+                }
+
+                // Moderately high spread check (> 2x base spread)
+                decimal maxVolatilityCap = 5.0m;
+                if (tradingPair.CurrentSpread > 2 * baseSpread)
+                {
+                    spreadFactor *= 2.0m;
+                    maxVolatilityCap = 10.0m;
                 }
 
                 decimal signalVolatilityFactor = 1.0m;
@@ -77,9 +97,9 @@ namespace IntelliTrader.Trading.Processors
                 }
 
                 decimal volatilityFactor = Math.Max(spreadFactor, signalVolatilityFactor);
-                if (volatilityFactor > 5.0m)
+                if (volatilityFactor > maxVolatilityCap)
                 {
-                    volatilityFactor = 5.0m;
+                    volatilityFactor = maxVolatilityCap;
                 }
 
                 if (volatilityFactor > 1.0m)
