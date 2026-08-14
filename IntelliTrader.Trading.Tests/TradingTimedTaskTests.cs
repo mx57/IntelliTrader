@@ -349,5 +349,103 @@ namespace IntelliTrader.Trading.Tests
             // Assert - Should NOT trigger DCA because spacing is widened to -6.0% and CurrentMargin is -5.0%
             _orderingService.Verify(o => o.PlaceBuyOrder(It.IsAny<BuyOptions>()), Times.Never());
         }
+
+        [Fact]
+        public void DcaProcessor_PostponesDcaOnExtremelyHighSpread()
+        {
+            // Arrange
+            var pair = "BTCUSDT";
+            var pairConfig = new Mock<IPairConfig>();
+            pairConfig.Setup(c => c.NextDCAMargin).Returns(-3.0m);
+            pairConfig.Setup(c => c.BuyEnabled).Returns(true);
+            pairConfig.Setup(c => c.BuyMultiplier).Returns(1.5m);
+            pairConfig.Setup(c => c.BuyTrailing).Returns(0m);
+            pairConfig.Setup(c => c.Rules).Returns(new List<string>());
+
+            var safety = new TrailingSafetyOptions
+            {
+                MaxTrailingSpread = 0.5m, // baseSpread = 0.5m
+                PauseOnHighSpread = false
+            };
+            pairConfig.Setup(c => c.TrailingSafety).Returns(safety);
+
+            _tradingService.Setup(s => s.GetPairConfig(pair)).Returns(pairConfig.Object);
+
+            var tradingPair = new Mock<ITradingPair>();
+            tradingPair.Setup(p => p.Pair).Returns(pair);
+            // CurrentMargin is -10.0%, which would normally trigger DCA (-3.0%)
+            // CurrentSpread is 2.0%, which is > 3 * 0.5m (1.5m threshold). Extremely high spread!
+            tradingPair.Setup(p => p.CurrentMargin).Returns(-10.0m);
+            tradingPair.Setup(p => p.CurrentSpread).Returns(2.0m);
+            tradingPair.Setup(p => p.Cost).Returns(100m);
+            tradingPair.Setup(p => p.Metadata).Returns(new OrderMetadata());
+
+            _account.Setup(a => a.GetTradingPairs(It.IsAny<bool>())).Returns(new List<ITradingPair> { tradingPair.Object });
+            _tradingService.Setup(s => s.GetPrice(pair, It.IsAny<TradePriceType?>(), It.IsAny<bool>())).Returns(10000m);
+
+            var task = new TradingTimedTask(
+                _loggingService.Object,
+                _notificationService.Object,
+                _healthCheckService.Object,
+                _signalsService.Object,
+                _orderingService.Object,
+                _tradingService.Object);
+
+            // Act
+            task.ProcessTradingPairs();
+
+            // Assert - Should postpone DCA completely
+            _orderingService.Verify(o => o.PlaceBuyOrder(It.IsAny<BuyOptions>()), Times.Never());
+        }
+
+        [Fact]
+        public void DcaProcessor_WidensSpacingAndCapsAtTenOnModeratelyHighSpread()
+        {
+            // Arrange
+            var pair = "BTCUSDT";
+            var pairConfig = new Mock<IPairConfig>();
+            pairConfig.Setup(c => c.NextDCAMargin).Returns(-3.0m);
+            pairConfig.Setup(c => c.BuyEnabled).Returns(true);
+            pairConfig.Setup(c => c.BuyMultiplier).Returns(1.5m);
+            pairConfig.Setup(c => c.BuyTrailing).Returns(0m);
+            pairConfig.Setup(c => c.Rules).Returns(new List<string>());
+
+            var safety = new TrailingSafetyOptions
+            {
+                MaxTrailingSpread = 0.5m, // baseSpread = 0.5m
+                PauseOnHighSpread = false
+            };
+            pairConfig.Setup(c => c.TrailingSafety).Returns(safety);
+
+            _tradingService.Setup(s => s.GetPairConfig(pair)).Returns(pairConfig.Object);
+
+            var tradingPair = new Mock<ITradingPair>();
+            tradingPair.Setup(p => p.Pair).Returns(pair);
+            // CurrentSpread is 1.2% (> 2 * 0.5m = 1.0m, but < 3 * 0.5m = 1.5m)
+            // spreadFactor = 1.0 + 2.0 * (1.2 - 0.5) = 2.4x.
+            // With NextDCAMargin -3.0%, effective margin becomes -7.2%.
+            // CurrentMargin is -5.0%, which is > -7.2%, so DCA should NOT trigger yet!
+            tradingPair.Setup(p => p.CurrentMargin).Returns(-5.0m);
+            tradingPair.Setup(p => p.CurrentSpread).Returns(1.2m);
+            tradingPair.Setup(p => p.Cost).Returns(100m);
+            tradingPair.Setup(p => p.Metadata).Returns(new OrderMetadata());
+
+            _account.Setup(a => a.GetTradingPairs(It.IsAny<bool>())).Returns(new List<ITradingPair> { tradingPair.Object });
+            _tradingService.Setup(s => s.GetPrice(pair, It.IsAny<TradePriceType?>(), It.IsAny<bool>())).Returns(10000m);
+
+            var task = new TradingTimedTask(
+                _loggingService.Object,
+                _notificationService.Object,
+                _healthCheckService.Object,
+                _signalsService.Object,
+                _orderingService.Object,
+                _tradingService.Object);
+
+            // Act
+            task.ProcessTradingPairs();
+
+            // Assert - Should NOT trigger DCA because of doubled spread factor widening margin to -7.2%
+            _orderingService.Verify(o => o.PlaceBuyOrder(It.IsAny<BuyOptions>()), Times.Never());
+        }
     }
 }
