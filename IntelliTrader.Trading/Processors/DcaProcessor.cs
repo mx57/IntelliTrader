@@ -40,17 +40,32 @@ namespace IntelliTrader.Trading.Processors
 
                 // Dynamic adjustment of DCA price steps based on CurrentSpread or Average True Range (ATR) / Signal Volatility to prevent premature DCA buys in extremely volatile markets
                 decimal effectiveNextDCAMargin = pairConfig.NextDCAMargin.Value;
-                decimal spreadFactor = 1.0m;
-                if (tradingPair.CurrentSpread > 0)
+
+                decimal baseSpread = 0.2m;
+                if (pairConfig.TrailingSafety != null && pairConfig.TrailingSafety.MaxTrailingSpread > 0)
                 {
-                    decimal baseSpread = 0.2m;
-                    if (pairConfig.TrailingSafety != null && pairConfig.TrailingSafety.MaxTrailingSpread > 0)
+                    baseSpread = pairConfig.TrailingSafety.MaxTrailingSpread;
+                }
+
+                // Extra safety boundary check: if CurrentSpread is extremely high (>= 3x baseSpread), postpone DCA entirely
+                if (tradingPair.CurrentSpread >= 3.0m * baseSpread)
+                {
+                    if (task.LoggingEnabled)
                     {
-                        baseSpread = pairConfig.TrailingSafety.MaxTrailingSpread;
+                        loggingService.Info($"DCA postponed for {tradingPair.FormattedName} due to extremely high spread: {tradingPair.CurrentSpread:0.00}% (Threshold: {3.0m * baseSpread:0.00}%)");
                     }
-                    if (tradingPair.CurrentSpread > baseSpread)
+                    return;
+                }
+
+                decimal spreadFactor = 1.0m;
+                decimal maxVolatilityCap = 5.0m;
+                if (tradingPair.CurrentSpread > baseSpread)
+                {
+                    spreadFactor = 1.0m + (tradingPair.CurrentSpread - baseSpread);
+                    if (tradingPair.CurrentSpread >= 2.0m * baseSpread)
                     {
-                        spreadFactor = 1.0m + (tradingPair.CurrentSpread - baseSpread);
+                        spreadFactor = 1.0m + 2.0m * (tradingPair.CurrentSpread - baseSpread);
+                        maxVolatilityCap = 10.0m;
                     }
                 }
 
@@ -77,9 +92,9 @@ namespace IntelliTrader.Trading.Processors
                 }
 
                 decimal volatilityFactor = Math.Max(spreadFactor, signalVolatilityFactor);
-                if (volatilityFactor > 5.0m)
+                if (volatilityFactor > maxVolatilityCap)
                 {
-                    volatilityFactor = 5.0m;
+                    volatilityFactor = maxVolatilityCap;
                 }
 
                 if (volatilityFactor > 1.0m)

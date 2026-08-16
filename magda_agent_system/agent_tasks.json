@@ -386,7 +386,7 @@
     },
     {
       "id": "trading-trailing-dca-safety",
-      "status": "todo",
+      "status": "done",
       "area": "trading",
       "risk": "low",
       "title": "Implement extra safety boundaries for high-volatility DCA buys",
