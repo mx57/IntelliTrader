@@ -24,8 +24,25 @@ namespace IntelliTrader.Trading.Processors
             if (pairConfig.NextDCAMargin != null && pairConfig.BuyEnabled &&
                 !trailingBuys.ContainsKey(tradingPair.Pair) && !trailingSells.ContainsKey(tradingPair.Pair))
             {
-                // Enforce MaxTrailingSpread safety checks to prevent buying on high-volatility spikes
+                // Calculate base spread
+                decimal baseSpread = 0.2m;
                 var safety = pairConfig.TrailingSafety;
+                if (safety != null && safety.MaxTrailingSpread > 0)
+                {
+                    baseSpread = safety.MaxTrailingSpread;
+                }
+
+                // Extra safety boundary check: extremely high spread (> 3x base spread)
+                if (tradingPair.CurrentSpread > 3 * baseSpread)
+                {
+                    if (task.LoggingEnabled)
+                    {
+                        loggingService.Info($"DCA postponed for {tradingPair.FormattedName} due to extremely high spread: {tradingPair.CurrentSpread:0.00}% (Threshold: {3 * baseSpread:0.00}%)");
+                    }
+                    return;
+                }
+
+                // Enforce MaxTrailingSpread safety checks to prevent buying on high-volatility spikes
                 if (safety != null && safety.MaxTrailingSpread > 0 && tradingPair.CurrentSpread > safety.MaxTrailingSpread)
                 {
                     if (safety.PauseOnHighSpread)
@@ -38,36 +55,48 @@ namespace IntelliTrader.Trading.Processors
                     }
                 }
 
-                // Dynamic adjustment of DCA price steps based on CurrentSpread or Average True Range (ATR) / Signal Volatility to prevent premature DCA buys in extremely volatile markets
-                decimal effectiveNextDCAMargin = pairConfig.NextDCAMargin.Value;
-                decimal spreadFactor = 1.0m;
                 decimal baseSpread = 0.2m;
                 if (pairConfig.TrailingSafety != null && pairConfig.TrailingSafety.MaxTrailingSpread > 0)
                 {
                     baseSpread = pairConfig.TrailingSafety.MaxTrailingSpread;
                 }
 
-                // Safety boundary: Postpone DCA entirely if spread is extremely high (> 3x base spread)
-                if (tradingPair.CurrentSpread > 3.0m * baseSpread)
+                // Postpone DCA if spread is extremely high (e.g. > 3x baseSpread) to protect funds in high volatility
+                if (tradingPair.CurrentSpread > 3 * baseSpread)
                 {
                     if (task.LoggingEnabled)
                     {
-                        loggingService.Info($"DCA postponed for {tradingPair.FormattedName} due to extremely high spread boundary: {tradingPair.CurrentSpread:0.00}% (Threshold: {3.0m * baseSpread:0.00}%)");
+                        loggingService.Info($"DCA postponed for {tradingPair.FormattedName} due to extremely high spread: {tradingPair.CurrentSpread:0.00}% (limit: {3 * baseSpread:0.00}%)");
                     }
                     return;
                 }
 
+                // Dynamic adjustment of DCA price steps based on CurrentSpread or Average True Range (ATR) / Signal Volatility to prevent premature DCA buys in extremely volatile markets
+                decimal effectiveNextDCAMargin = pairConfig.NextDCAMargin.Value;
+                decimal spreadFactor = 1.0m;
+                decimal maxVolatilityCap = 5.0m;
+
                 if (tradingPair.CurrentSpread > 0)
                 {
-                    if (tradingPair.CurrentSpread > 2.0m * baseSpread)
-                    {
-                        // Moderately high spread boundary (> 2x base spread): double spread factor multiplier
-                        spreadFactor = 1.0m + 2.0m * (tradingPair.CurrentSpread - baseSpread);
-                    }
-                    else if (tradingPair.CurrentSpread > baseSpread)
+                    if (tradingPair.CurrentSpread > baseSpread)
                     {
                         spreadFactor = 1.0m + (tradingPair.CurrentSpread - baseSpread);
+
+                        // If spread is very high (e.g. > 2x baseSpread), widen DCA intervals even further
+                        if (tradingPair.CurrentSpread > 2 * baseSpread)
+                        {
+                            spreadFactor *= 2.0m;
+                            maxVolatilityCap = 10.0m;
+                        }
                     }
+                }
+
+                // Moderately high spread check (> 2x base spread)
+                decimal maxVolatilityCap = 5.0m;
+                if (tradingPair.CurrentSpread > 2 * baseSpread)
+                {
+                    spreadFactor *= 2.0m;
+                    maxVolatilityCap = 10.0m;
                 }
 
                 decimal signalVolatilityFactor = 1.0m;
