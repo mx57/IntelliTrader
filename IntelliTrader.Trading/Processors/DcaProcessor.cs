@@ -121,6 +121,7 @@ namespace IntelliTrader.Trading.Processors
                     }
                 }
 
+                decimal maxVolatilityCap = tradingPair.CurrentSpread > 2.0m * baseSpread ? 10.0m : 5.0m;
                 decimal volatilityFactor = Math.Max(spreadFactor, signalVolatilityFactor);
                 if (volatilityFactor > maxVolatilityCap)
                 {
