@@ -24,8 +24,25 @@ namespace IntelliTrader.Trading.Processors
             if (pairConfig.NextDCAMargin != null && pairConfig.BuyEnabled &&
                 !trailingBuys.ContainsKey(tradingPair.Pair) && !trailingSells.ContainsKey(tradingPair.Pair))
             {
-                // Enforce MaxTrailingSpread safety checks to prevent buying on high-volatility spikes
+                // Calculate base spread
+                decimal baseSpread = 0.2m;
                 var safety = pairConfig.TrailingSafety;
+                if (safety != null && safety.MaxTrailingSpread > 0)
+                {
+                    baseSpread = safety.MaxTrailingSpread;
+                }
+
+                // Extra safety boundary check: extremely high spread (> 3x base spread)
+                if (tradingPair.CurrentSpread > 3 * baseSpread)
+                {
+                    if (task.LoggingEnabled)
+                    {
+                        loggingService.Info($"DCA postponed for {tradingPair.FormattedName} due to extremely high spread: {tradingPair.CurrentSpread:0.00}% (Threshold: {3 * baseSpread:0.00}%)");
+                    }
+                    return;
+                }
+
+                // Enforce MaxTrailingSpread safety checks to prevent buying on high-volatility spikes
                 if (safety != null && safety.MaxTrailingSpread > 0 && tradingPair.CurrentSpread > safety.MaxTrailingSpread)
                 {
                     if (safety.PauseOnHighSpread)
@@ -72,6 +89,14 @@ namespace IntelliTrader.Trading.Processors
                             maxVolatilityCap = 10.0m;
                         }
                     }
+                }
+
+                // Moderately high spread check (> 2x base spread)
+                decimal maxVolatilityCap = 5.0m;
+                if (tradingPair.CurrentSpread > 2 * baseSpread)
+                {
+                    spreadFactor *= 2.0m;
+                    maxVolatilityCap = 10.0m;
                 }
 
                 decimal signalVolatilityFactor = 1.0m;
