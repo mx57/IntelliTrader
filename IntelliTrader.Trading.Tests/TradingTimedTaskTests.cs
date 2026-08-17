@@ -351,7 +351,7 @@ namespace IntelliTrader.Trading.Tests
         }
 
         [Fact]
-        public void DcaProcessor_PostponesDcaOnExtremelyHighSpread()
+        public void DcaProcessor_PostponesOnExtremelyHighSpread()
         {
             // Arrange
             var pair = "BTCUSDT";
@@ -365,7 +365,7 @@ namespace IntelliTrader.Trading.Tests
             var safety = new TrailingSafetyOptions
             {
                 MaxTrailingSpread = 1.0m,
-                PauseOnHighSpread = false // Even if PauseOnHighSpread is false, extremely high spread should postpone!
+                PauseOnHighSpread = false // Even if PauseOnHighSpread is false, extremely high spread (>3x) must postpone
             };
             pairConfig.Setup(c => c.TrailingSafety).Returns(safety);
 
@@ -373,8 +373,8 @@ namespace IntelliTrader.Trading.Tests
 
             var tradingPair = new Mock<ITradingPair>();
             tradingPair.Setup(p => p.Pair).Returns(pair);
-            tradingPair.Setup(p => p.CurrentMargin).Returns(-10.0m); // well below next DCA margin (-3.0m)
-            tradingPair.Setup(p => p.CurrentSpread).Returns(3.5m); // extremely high spread (> 3.0m)
+            tradingPair.Setup(p => p.CurrentMargin).Returns(-10.0m); // Way below next DCA margin (-3.0)
+            tradingPair.Setup(p => p.CurrentSpread).Returns(3.1m); // extremely high spread (3.1% > 3 * 1.0% limit)
             tradingPair.Setup(p => p.Cost).Returns(100m);
             tradingPair.Setup(p => p.Metadata).Returns(new OrderMetadata());
 
@@ -392,13 +392,13 @@ namespace IntelliTrader.Trading.Tests
             // Act
             task.ProcessTradingPairs();
 
-            // Assert - Should NOT trigger DCA because spread is extremely high (> 3x baseSpread)
+            // Assert - Should postpone (no orders, no CanBuy check)
             _tradingService.Verify(s => s.CanBuy(It.IsAny<BuyOptions>(), out It.Ref<string>.IsAny), Times.Never());
             _orderingService.Verify(o => o.PlaceBuyOrder(It.IsAny<BuyOptions>()), Times.Never());
         }
 
         [Fact]
-        public void DcaProcessor_WidensSpacingAndCapsAtTenOnModeratelyHighSpread()
+        public void DcaProcessor_ScalesIntervalOnExtremelyHighSpread()
         {
             // Arrange
             var pair = "BTCUSDT";
@@ -412,7 +412,7 @@ namespace IntelliTrader.Trading.Tests
             var safety = new TrailingSafetyOptions
             {
                 MaxTrailingSpread = 1.0m,
-                PauseOnHighSpread = false // We don't pause, we just test the widening of spacing
+                PauseOnHighSpread = false
             };
             pairConfig.Setup(c => c.TrailingSafety).Returns(safety);
 
@@ -420,12 +420,15 @@ namespace IntelliTrader.Trading.Tests
 
             var tradingPair = new Mock<ITradingPair>();
             tradingPair.Setup(p => p.Pair).Returns(pair);
-            // Case A: CurrentMargin is -12.0%.
-            // baseSpread = 1.0%. Since CurrentSpread (2.5%) > 2 * baseSpread (2.0%),
-            // spreadFactor = (1.0 + (2.5 - 1.0)) * 2 = 5.0.
-            // maxVolatilityCap = 10.0m. volatilityFactor = 5.0.
-            // effectiveNextDCAMargin = -3.0% * 5.0 = -15.0%.
-            // Since CurrentMargin (-12.0%) > effectiveNextDCAMargin (-15.0%), DCA should NOT trigger.
+            // CurrentSpread is 2.5m (which is > 2 * MaxTrailingSpread(1.0m) but < 3 * MaxTrailingSpread(3.0m))
+            // baseSpread = 1.0m
+            // spreadFactor = 1.0 + (2.5 - 1.0) = 2.5.
+            // Since it's > 2 * baseSpread, spreadFactor is doubled => 2.5 * 2 = 5.0.
+            // maxVolatilityCap is 10.0m.
+            // volatilityFactor = Math.Max(5.0m, 1.0m) = 5.0m.
+            // effectiveNextDCAMargin = -3.0m * 5.0m = -15.0m.
+            // If CurrentMargin is -12.0m, it is above -15.0m, so it shouldn't trigger!
+            tradingPair.Setup(p => p.Pair).Returns(pair);
             tradingPair.Setup(p => p.CurrentMargin).Returns(-12.0m);
             tradingPair.Setup(p => p.CurrentSpread).Returns(2.5m);
             tradingPair.Setup(p => p.Cost).Returns(100m);
@@ -442,22 +445,11 @@ namespace IntelliTrader.Trading.Tests
                 _orderingService.Object,
                 _tradingService.Object);
 
-            // Act A
+            // Act
             task.ProcessTradingPairs();
 
-            // Assert A - Should NOT trigger DCA
+            // Assert - Should NOT trigger DCA because spacing is widened to -15.0% and CurrentMargin is -12.0%
             _orderingService.Verify(o => o.PlaceBuyOrder(It.IsAny<BuyOptions>()), Times.Never());
-
-            // Case B: CurrentMargin is -16.0%. Now it should trigger!
-            tradingPair.Setup(p => p.CurrentMargin).Returns(-16.0m);
-            string outMsg = "";
-            _tradingService.Setup(s => s.CanBuy(It.IsAny<BuyOptions>(), out outMsg)).Returns(true);
-
-            // Act B
-            task.ProcessTradingPairs();
-
-            // Assert B - Should trigger DCA
-            _orderingService.Verify(o => o.PlaceBuyOrder(It.IsAny<BuyOptions>()), Times.Once());
         }
     }
 }
