@@ -55,22 +55,6 @@ namespace IntelliTrader.Trading.Processors
                     }
                 }
 
-                decimal baseSpread = 0.2m;
-                if (pairConfig.TrailingSafety != null && pairConfig.TrailingSafety.MaxTrailingSpread > 0)
-                {
-                    baseSpread = pairConfig.TrailingSafety.MaxTrailingSpread;
-                }
-
-                // Postpone DCA if spread is extremely high (e.g. > 3x baseSpread) to protect funds in high volatility
-                if (tradingPair.CurrentSpread > 3 * baseSpread)
-                {
-                    if (task.LoggingEnabled)
-                    {
-                        loggingService.Info($"DCA postponed for {tradingPair.FormattedName} due to extremely high spread: {tradingPair.CurrentSpread:0.00}% (limit: {3 * baseSpread:0.00}%)");
-                    }
-                    return;
-                }
-
                 // Dynamic adjustment of DCA price steps based on CurrentSpread or Average True Range (ATR) / Signal Volatility to prevent premature DCA buys in extremely volatile markets
                 decimal effectiveNextDCAMargin = pairConfig.NextDCAMargin.Value;
                 decimal spreadFactor = 1.0m;
@@ -91,14 +75,6 @@ namespace IntelliTrader.Trading.Processors
                     }
                 }
 
-                // Moderately high spread check (> 2x base spread)
-                decimal maxVolatilityCap = 5.0m;
-                if (tradingPair.CurrentSpread > 2 * baseSpread)
-                {
-                    spreadFactor *= 2.0m;
-                    maxVolatilityCap = 10.0m;
-                }
-
                 decimal signalVolatilityFactor = 1.0m;
                 var signals = signalsService.GetSignalsByPair(tradingPair.Pair);
                 double maxSignalVolatility = 0;
@@ -106,7 +82,7 @@ namespace IntelliTrader.Trading.Processors
                 {
                     foreach (var signal in signals)
                     {
-                        if (signal.Volatility.HasValue && signal.Volatility.Value > maxSignalVolatility)
+                        if (signal.Volatility.HasValue && signal.Volatility.Value > maxSignalVolatility && !double.IsNaN(signal.Volatility.Value) && !double.IsInfinity(signal.Volatility.Value))
                         {
                             maxSignalVolatility = signal.Volatility.Value;
                         }
@@ -121,7 +97,6 @@ namespace IntelliTrader.Trading.Processors
                     }
                 }
 
-                decimal maxVolatilityCap = tradingPair.CurrentSpread > 2.0m * baseSpread ? 10.0m : 5.0m;
                 decimal volatilityFactor = Math.Max(spreadFactor, signalVolatilityFactor);
                 if (volatilityFactor > maxVolatilityCap)
                 {

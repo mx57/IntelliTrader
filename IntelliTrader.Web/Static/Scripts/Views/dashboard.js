@@ -300,6 +300,15 @@ function format(data) {
         dcaBody.append('<tr><td colspan="5" class="text-center text-muted" style="padding: 4px 8px; border-color: #2b2b36;">No DCA levels configured</td></tr>');
     }
 
+    var tvIframe = details.find(".tv-widget-iframe");
+    if (data.TradingViewName && tvIframe.length > 0) {
+        var isLight = document.documentElement.classList.contains("light-theme");
+        var tvTheme = isLight ? "light" : "dark";
+        var encodedSymbol = encodeURIComponent(data.TradingViewName);
+        var widgetUrl = "https://s.tradingview.com/widgetembed/?symbol=" + encodedSymbol + "&interval=60&hidesidetoolbar=1&symboledit=1&saveimage=0&toolbarbg=1f2335&theme=" + tvTheme + "&style=1&timezone=Etc%2FUTC";
+        tvIframe.attr("src", widgetUrl);
+    }
+
     return details.html();
 }
 
