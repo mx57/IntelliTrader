@@ -431,7 +431,7 @@
     },
     {
       "id": "trading-trailing-profit-protection",
-      "status": "todo",
+      "status": "done",
       "area": "trading",
       "risk": "low",
       "title": "Implement dynamic profit protection during high volatility",
