@@ -401,7 +401,7 @@
     },
     {
       "id": "web-dashboard-tradingview-integration",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Integrate inline mini TradingView widget on details panel",
@@ -431,7 +431,7 @@
     },
     {
       "id": "trading-trailing-profit-protection",
-      "status": "todo",
+      "status": "done",
       "area": "trading",
       "risk": "low",
       "title": "Implement dynamic profit protection during high volatility",
