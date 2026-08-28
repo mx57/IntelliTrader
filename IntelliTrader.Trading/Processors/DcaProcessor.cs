@@ -66,7 +66,7 @@ namespace IntelliTrader.Trading.Processors
                     {
                         spreadFactor = 1.0m + (tradingPair.CurrentSpread - baseSpread);
 
-                        // If spread is very high (e.g. > 2x baseSpread), widen DCA intervals even further
+                        // If spread is moderately high (e.g. > 2x baseSpread), widen DCA intervals even further
                         if (tradingPair.CurrentSpread > 2 * baseSpread)
                         {
                             spreadFactor *= 2.0m;
