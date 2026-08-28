@@ -52,6 +52,21 @@ namespace IntelliTrader.Trading.Processors
                         }
                     }
 
+                    // Profit protection during high spread volatility: tighten trailing distance to trigger take profit earlier
+                    decimal effectiveTrailing = sellTrailingInfo.Trailing;
+                    decimal baseSpread = 0.2m;
+                    if (safety != null && safety.MaxTrailingSpread > 0)
+                    {
+                        baseSpread = safety.MaxTrailingSpread;
+                    }
+
+                    if (tradingPair.CurrentSpread > baseSpread && sellTrailingInfo.Trailing > 0)
+                    {
+                        decimal spreadExcess = tradingPair.CurrentSpread - baseSpread;
+                        decimal discountRatio = Math.Min(spreadExcess * 0.2m, 0.5m); // Cap trailing tightening at 50%
+                        effectiveTrailing = Math.Max(0.01m, sellTrailingInfo.Trailing * (1.0m - discountRatio));
+                    }
+
                     if (Math.Round(tradingPair.CurrentMargin, 1) != Math.Round(sellTrailingInfo.LastTrailingMargin, 1))
                     {
                         if (task.LoggingEnabled)
@@ -62,7 +77,7 @@ namespace IntelliTrader.Trading.Processors
                     }
 
                     if (tradingPair.CurrentMargin <= sellTrailingInfo.TrailingStopMargin || tradingPair.CurrentMargin <
-                        (sellTrailingInfo.BestTrailingMargin - sellTrailingInfo.Trailing))
+                        (sellTrailingInfo.BestTrailingMargin - effectiveTrailing))
                     {
                         task.StopTrailingSell(tradingPair.Pair);
 
@@ -104,17 +119,30 @@ namespace IntelliTrader.Trading.Processors
             }
             else
             {
-                // Strategy: Dynamic Target Decay
-                // Gradually decrease the target sell margin as the position ages to facilitate exiting stale positions.
-                // Formula: effectiveSellMargin = baseSellMargin - (ageInDays * decayPerDay)
+                // Strategy: Dynamic Target Decay & Volatility Profit Protection
+                // Gradually decrease target sell margin as position ages or when spread volatility is high to secure gains before trend reversal.
                 decimal effectiveSellMargin = pairConfig.SellMargin - (decimal)(tradingPair.CurrentAge * (double)pairConfig.SellMarginDecay);
+
+                decimal baseSpread = 0.2m;
+                var safety = pairConfig.TrailingSafety;
+                if (safety != null && safety.MaxTrailingSpread > 0)
+                {
+                    baseSpread = safety.MaxTrailingSpread;
+                }
+
+                if (tradingPair.CurrentSpread > baseSpread && effectiveSellMargin > 0)
+                {
+                    decimal spreadExcess = tradingPair.CurrentSpread - baseSpread;
+                    decimal volatilityDiscount = Math.Min(spreadExcess * 0.25m, effectiveSellMargin * 0.5m);
+                    effectiveSellMargin -= volatilityDiscount;
+                }
 
                 if (pairConfig.SellEnabled && tradingPair.CurrentMargin >= effectiveSellMargin)
                 {
                     if (task.LoggingEnabled && effectiveSellMargin != pairConfig.SellMargin)
                     {
-                        loggingService.Info($"Target decay triggered sell for {tradingPair.FormattedName}. " +
-                            $"Margin: {tradingPair.CurrentMargin:0.00}, Target: {pairConfig.SellMargin:0.00}, Effective: {effectiveSellMargin:0.00}");
+                        loggingService.Info($"Target decay / profit protection triggered sell for {tradingPair.FormattedName}. " +
+                            $"Margin: {tradingPair.CurrentMargin:0.00}, Base Target: {pairConfig.SellMargin:0.00}, Effective: {effectiveSellMargin:0.00}");
                     }
                     task.InitiateSell(new SellOptions(tradingPair.Pair));
                 }
