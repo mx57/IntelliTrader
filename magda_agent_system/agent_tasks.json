@@ -401,7 +401,7 @@
     },
     {
       "id": "web-dashboard-tradingview-integration",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Integrate inline mini TradingView widget on details panel",
