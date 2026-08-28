@@ -58,7 +58,7 @@ namespace IntelliTrader.Trading.Processors
                 // Dynamic adjustment of DCA price steps based on CurrentSpread or Average True Range (ATR) / Signal Volatility to prevent premature DCA buys in extremely volatile markets
                 decimal effectiveNextDCAMargin = pairConfig.NextDCAMargin.Value;
                 decimal spreadFactor = 1.0m;
-                decimal maxVolatilityCap = 5.0m;
+                decimal maxVolatilityCap = tradingPair.CurrentSpread > 2.0m * baseSpread ? 10.0m : 5.0m;
 
                 if (tradingPair.CurrentSpread > 0)
                 {
@@ -70,7 +70,6 @@ namespace IntelliTrader.Trading.Processors
                         if (tradingPair.CurrentSpread > 2 * baseSpread)
                         {
                             spreadFactor *= 2.0m;
-                            maxVolatilityCap = 10.0m;
                         }
                     }
                 }
@@ -82,7 +81,7 @@ namespace IntelliTrader.Trading.Processors
                 {
                     foreach (var signal in signals)
                     {
-                        if (signal.Volatility.HasValue && signal.Volatility.Value > maxSignalVolatility && !double.IsNaN(signal.Volatility.Value) && !double.IsInfinity(signal.Volatility.Value))
+                        if (signal.Volatility.HasValue && !double.IsNaN(signal.Volatility.Value) && !double.IsInfinity(signal.Volatility.Value) && signal.Volatility.Value > maxSignalVolatility)
                         {
                             maxSignalVolatility = signal.Volatility.Value;
                         }
