@@ -446,7 +446,7 @@
     },
     {
       "id": "web-dashboard-custom-alerts",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Add custom notification threshold settings on Dashboard",
@@ -472,6 +472,36 @@
       ],
       "acceptance": [
         "Order caching mechanism is integrated and avoids frequent disk reads for historical trade logs."
+      ]
+    },
+    {
+      "id": "web-dashboard-log-filter-search",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add interactive filter search bar to Live Log Terminal",
+      "description": "Implement an interactive search/filter input for the Live Log Terminal on the Web Dashboard allowing users to filter log lines dynamically by keyword.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/Home/Dashboard.cshtml",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Log terminal provides a filter input that immediately filters rendered log entries by text keyword."
+      ]
+    },
+    {
+      "id": "trading-spread-volatility-logging",
+      "status": "todo",
+      "area": "trading",
+      "risk": "low",
+      "title": "Add detailed spread volatility metric logging to DcaProcessor",
+      "description": "Enhance diagnostic logging in DcaProcessor to log exact calculated volatility multipliers and spread ratios during high volatility events.",
+      "allowed_paths": [
+        "IntelliTrader.Trading/Processors/DcaProcessor.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "DcaProcessor outputs structured log entries with spread ratios and volatility scaling factors."
       ]
     }
   ]

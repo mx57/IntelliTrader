@@ -39,19 +39,24 @@
     <button class="btn btn-info settings-btn" onclick="restartServices();" @if (Model.ReadOnlyMode) { <text>disabled</text> }>Restart Services</button>
 
     <div class="configs mt-4" style="background-color: var(--card-bg) !important; border: 1px solid var(--border-color) !important; color: var(--text-color) !important; padding: 20px; border-radius: 4px; margin-top: 20px;">
-        <h2>Оформление</h2>
-        <div style="margin-bottom: 15px; display: flex; align-items: center;">
+        <h2>Оформление и Уведомления</h2>
+        <div style="margin-bottom: 15px; display: flex; align-items: center; flex-wrap: wrap;">
             <label style="margin-right: 15px; margin-bottom: 0; font-weight: bold;">Тема оформления:</label>
-            <select id="settingsThemeSelect" class="form-control form-control-sm" style="width: auto; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 4px;">
+            <select id="settingsThemeSelect" class="form-control form-control-sm mr-4" style="width: auto; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 4px;">
                 <option value="dark">Темная (по умолчанию)</option>
                 <option value="light">Светлая</option>
             </select>
+
+            <label style="margin-right: 15px; margin-bottom: 0; font-weight: bold;" class="mt-2 mt-md-0">Мин. порог сделки (USDT):</label>
+            <input type="number" id="settingsMinTradeSizeInput" min="0" step="1" value="0" class="form-control form-control-sm mt-2 mt-md-0" style="width: 100px; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 4px;" />
         </div>
     </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const select = document.getElementById("settingsThemeSelect");
+            const minTradeInput = document.getElementById("settingsMinTradeSizeInput");
+
             if (select) {
                 const currentTheme = localStorage.getItem("theme") || "dark";
                 select.value = currentTheme;
@@ -84,6 +89,29 @@
                 document.addEventListener("themeChanged", function(e) {
                     if (select && select.value !== e.detail.theme) {
                         select.value = e.detail.theme;
+                    }
+                });
+            }
+
+            if (minTradeInput) {
+                let initialMinTradeSize = parseFloat(localStorage.getItem("realtime_min_trade_size") || "0");
+                if (isNaN(initialMinTradeSize)) initialMinTradeSize = 0;
+                minTradeInput.value = initialMinTradeSize;
+
+                minTradeInput.addEventListener("input", function() {
+                    let val = parseFloat(minTradeInput.value);
+                    if (isNaN(val) || val < 0) val = 0;
+                    localStorage.setItem("realtime_min_trade_size", val);
+
+                    const event = new CustomEvent("minTradeSizeChanged", { detail: { minTradeSize: val } });
+                    document.dispatchEvent(event);
+                });
+
+                document.addEventListener("minTradeSizeChanged", function(e) {
+                    if (e.detail && typeof e.detail.minTradeSize !== "undefined") {
+                        if (parseFloat(minTradeInput.value) !== e.detail.minTradeSize) {
+                            minTradeInput.value = e.detail.minTradeSize;
+                        }
                     }
                 });
             }
