@@ -446,7 +446,7 @@
     },
     {
       "id": "web-dashboard-custom-alerts",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Add custom notification threshold settings on Dashboard",
@@ -472,6 +472,36 @@
       ],
       "acceptance": [
         "Order caching mechanism is integrated and avoids frequent disk reads for historical trade logs."
+      ]
+    },
+    {
+      "id": "trading-trailing-buy-spread-guard",
+      "status": "todo",
+      "area": "trading",
+      "risk": "low",
+      "title": "Enhance BuyProcessor with dynamic trailing buy pause on extreme spread volatility",
+      "description": "Add dynamic spread volatility guard in BuyProcessor to postpone initial buy entries when market bid/ask spread exceeds safe thresholds.",
+      "allowed_paths": [
+        "IntelliTrader.Trading/Processors/BuyProcessor.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "BuyProcessor evaluates spread threshold before executing trailing buy orders."
+      ]
+    },
+    {
+      "id": "web-dashboard-trade-export-csv",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add CSV export button for trade history on Trades view",
+      "description": "Add an export button on Trades view to download historical executed trade logs as a CSV file.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Trades view includes a Download CSV button that returns formatted trade records."
       ]
     }
   ]
