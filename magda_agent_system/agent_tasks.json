@@ -446,7 +446,7 @@
     },
     {
       "id": "web-dashboard-custom-alerts",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Add custom notification threshold settings on Dashboard",
@@ -472,6 +472,37 @@
       ],
       "acceptance": [
         "Order caching mechanism is integrated and avoids frequent disk reads for historical trade logs."
+      ]
+    },
+    {
+      "id": "web-dashboard-export-trades-csv",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add trade history CSV export endpoint and Dashboard button",
+      "description": "Implement a controller endpoint to export trade history as downloadable CSV file and add an Export button on the Web Dashboard.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Controllers/**",
+        "IntelliTrader.Web/Views/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Web Dashboard includes a button to export trade history as CSV file."
+      ]
+    },
+    {
+      "id": "trading-signal-volatility-filter",
+      "status": "todo",
+      "area": "trading",
+      "risk": "medium",
+      "title": "Implement adaptive volatility filter for BuyProcessor signals",
+      "description": "Add an adaptive volatility filter to BuyProcessor to skip buy entries when signal volatility exceeds configurable threshold.",
+      "allowed_paths": [
+        "IntelliTrader.Trading/Processors/BuyProcessor.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "BuyProcessor evaluates signal volatility and postpones buys under excessive market turbulence."
       ]
     }
   ]
