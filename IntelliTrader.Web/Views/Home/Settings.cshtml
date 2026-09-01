@@ -39,13 +39,41 @@
     <button class="btn btn-info settings-btn" onclick="restartServices();" @if (Model.ReadOnlyMode) { <text>disabled</text> }>Restart Services</button>
 
     <div class="configs mt-4" style="background-color: var(--card-bg) !important; border: 1px solid var(--border-color) !important; color: var(--text-color) !important; padding: 20px; border-radius: 4px; margin-top: 20px;">
-        <h2>Оформление</h2>
-        <div style="margin-bottom: 15px; display: flex; align-items: center;">
-            <label style="margin-right: 15px; margin-bottom: 0; font-weight: bold;">Тема оформления:</label>
-            <select id="settingsThemeSelect" class="form-control form-control-sm" style="width: auto; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 4px;">
-                <option value="dark">Темная (по умолчанию)</option>
-                <option value="light">Светлая</option>
-            </select>
+        <h2>Оформление и Уведомления</h2>
+        <div class="row align-items-center mb-3">
+            <div class="col-md-6 d-flex align-items-center">
+                <label style="margin-right: 15px; margin-bottom: 0; font-weight: bold; white-space: nowrap;">Тема оформления:</label>
+                <select id="settingsThemeSelect" class="form-control form-control-sm" style="width: auto; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 4px;">
+                    <option value="dark">Темная (по умолчанию)</option>
+                    <option value="light">Светлая</option>
+                </select>
+            </div>
+            <div class="col-md-6 d-flex align-items-center mt-2 mt-md-0">
+                <label style="margin-right: 15px; margin-bottom: 0; font-weight: bold; white-space: nowrap;">Звук уведомлений:</label>
+                <button id="settingsSoundToggleBtn" class="btn btn-sm btn-outline-success" style="font-weight: bold; border-color: #9ece6a; color: #9ece6a; background: transparent;">
+                    <i class="fas fa-volume-up mr-1"></i> Звук: Вкл
+                </button>
+            </div>
+        </div>
+
+        <div class="row align-items-center mb-3 pt-2" style="border-top: 1px solid var(--border-color);">
+            <div class="col-md-4 d-flex align-items-center mb-2 mb-md-0">
+                <label style="margin-right: 15px; margin-bottom: 0; font-weight: bold; white-space: nowrap;">Громкость:</label>
+                <input type="range" id="settingsSoundVolumeSlider" min="0" max="1" step="0.05" value="0.5" style="flex-grow: 1; height: 4px; cursor: pointer;" />
+                <span id="settingsSoundVolumeValue" class="ml-2" style="font-weight: bold; color: #7aa2f7; min-width: 40px; text-align: right;">50%</span>
+            </div>
+            <div class="col-md-4 d-flex align-items-center mb-2 mb-md-0">
+                <label style="margin-right: 15px; margin-bottom: 0; font-weight: bold; white-space: nowrap;">Профиль звука:</label>
+                <select id="settingsSoundProfileSelect" class="form-control form-control-sm" style="width: auto; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 4px;">
+                    <option value="chime">Приятный звон (Chime)</option>
+                    <option value="beep">Высокий писк (Beep)</option>
+                    <option value="arcade">Ретро аркада (Arcade)</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-center mb-2 mb-md-0">
+                <label style="margin-right: 15px; margin-bottom: 0; font-weight: bold; white-space: nowrap;">Мин. сумма (USDT):</label>
+                <input type="number" id="settingsMinTradeSizeInput" min="0" step="10" placeholder="0" class="form-control form-control-sm" style="width: 100px; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 4px;" />
+            </div>
         </div>
     </div>
 
@@ -85,6 +113,79 @@
                     if (select && select.value !== e.detail.theme) {
                         select.value = e.detail.theme;
                     }
+                });
+            }
+
+            // Realtime Notification Controls in Settings
+            const settingsSoundToggleBtn = document.getElementById("settingsSoundToggleBtn");
+            const settingsSoundVolumeSlider = document.getElementById("settingsSoundVolumeSlider");
+            const settingsSoundVolumeValue = document.getElementById("settingsSoundVolumeValue");
+            const settingsSoundProfileSelect = document.getElementById("settingsSoundProfileSelect");
+            const settingsMinTradeSizeInput = document.getElementById("settingsMinTradeSizeInput");
+
+            let isSoundEnabled = localStorage.getItem("realtime_sound_enabled") !== "false";
+            let soundVolume = parseFloat(localStorage.getItem("realtime_sound_volume") || "0.5");
+            if (isNaN(soundVolume)) soundVolume = 0.5;
+            let soundProfile = localStorage.getItem("realtime_sound_profile") || "chime";
+            let minTradeSize = parseFloat(localStorage.getItem("realtime_min_trade_size") || "0");
+            if (isNaN(minTradeSize) || minTradeSize < 0) minTradeSize = 0;
+
+            function updateSoundBtn() {
+                if (settingsSoundToggleBtn) {
+                    if (isSoundEnabled) {
+                        settingsSoundToggleBtn.innerHTML = '<i class="fas fa-volume-up mr-1"></i> Звук: Вкл';
+                        settingsSoundToggleBtn.className = "btn btn-sm btn-outline-success";
+                        settingsSoundToggleBtn.style.color = "#9ece6a";
+                        settingsSoundToggleBtn.style.borderColor = "#9ece6a";
+                    } else {
+                        settingsSoundToggleBtn.innerHTML = '<i class="fas fa-volume-mute mr-1"></i> Звук: Выкл';
+                        settingsSoundToggleBtn.className = "btn btn-sm btn-outline-secondary";
+                        settingsSoundToggleBtn.style.color = "#a9b1d6";
+                        settingsSoundToggleBtn.style.borderColor = "#4a4a6a";
+                    }
+                }
+            }
+
+            updateSoundBtn();
+            if (settingsSoundVolumeSlider) {
+                settingsSoundVolumeSlider.value = soundVolume;
+                settingsSoundVolumeValue.textContent = Math.round(soundVolume * 100) + "%";
+            }
+            if (settingsSoundProfileSelect) {
+                settingsSoundProfileSelect.value = soundProfile;
+            }
+            if (settingsMinTradeSizeInput) {
+                settingsMinTradeSizeInput.value = minTradeSize > 0 ? minTradeSize : "";
+            }
+
+            if (settingsSoundToggleBtn) {
+                settingsSoundToggleBtn.addEventListener("click", function() {
+                    isSoundEnabled = !isSoundEnabled;
+                    localStorage.setItem("realtime_sound_enabled", isSoundEnabled);
+                    updateSoundBtn();
+                });
+            }
+
+            if (settingsSoundVolumeSlider) {
+                settingsSoundVolumeSlider.addEventListener("input", function() {
+                    soundVolume = parseFloat(settingsSoundVolumeSlider.value);
+                    settingsSoundVolumeValue.textContent = Math.round(soundVolume * 100) + "%";
+                    localStorage.setItem("realtime_sound_volume", soundVolume);
+                });
+            }
+
+            if (settingsSoundProfileSelect) {
+                settingsSoundProfileSelect.addEventListener("change", function() {
+                    soundProfile = settingsSoundProfileSelect.value;
+                    localStorage.setItem("realtime_sound_profile", soundProfile);
+                });
+            }
+
+            if (settingsMinTradeSizeInput) {
+                settingsMinTradeSizeInput.addEventListener("input", function() {
+                    let val = parseFloat(settingsMinTradeSizeInput.value);
+                    if (isNaN(val) || val < 0) val = 0;
+                    localStorage.setItem("realtime_min_trade_size", val);
                 });
             }
         });
