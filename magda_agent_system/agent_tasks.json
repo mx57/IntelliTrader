@@ -446,7 +446,7 @@
     },
     {
       "id": "web-dashboard-custom-alerts",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Add custom notification threshold settings on Dashboard",
@@ -472,6 +472,37 @@
       ],
       "acceptance": [
         "Order caching mechanism is integrated and avoids frequent disk reads for historical trade logs."
+      ]
+    },
+    {
+      "id": "web-dashboard-export-csv-trades",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add CSV export button for trade logs on Web Dashboard",
+      "description": "Add an export button on the trades view in the Web Dashboard allowing users to download historical trades in standard CSV format.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Controllers/**",
+        "IntelliTrader.Web/Views/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Web Dashboard includes a CSV export action for completed trade records."
+      ]
+    },
+    {
+      "id": "trading-signal-filter-enhancement",
+      "status": "todo",
+      "area": "trading",
+      "risk": "low",
+      "title": "Enhance signal rule evaluators with volume spike filters",
+      "description": "Add optional volume spike threshold evaluation in signal rules to prevent buy signals on low volume fakeouts.",
+      "allowed_paths": [
+        "IntelliTrader.Rules/Services/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "ConditionEvaluators supports volume condition filtering in signal rules."
       ]
     }
   ]
