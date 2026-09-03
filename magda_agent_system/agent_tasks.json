@@ -446,7 +446,7 @@
     },
     {
       "id": "web-dashboard-custom-alerts",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Add custom notification threshold settings on Dashboard",
@@ -472,6 +472,53 @@
       ],
       "acceptance": [
         "Order caching mechanism is integrated and avoids frequent disk reads for historical trade logs."
+      ]
+    },
+    {
+      "id": "trading-trailing-stop-loss-guard",
+      "status": "todo",
+      "area": "trading",
+      "risk": "medium",
+      "title": "Implement trailing stop loss boundary protection in SellProcessor",
+      "description": "Add configurable stop loss limits in SellProcessor to limit losses during sudden flash crashes when trailing sell is active.",
+      "allowed_paths": [
+        "IntelliTrader.Trading/Processors/SellProcessor.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "SellProcessor enforces stop-loss boundaries during crash scenarios",
+        "Unit tests verify stop loss execution"
+      ]
+    },
+    {
+      "id": "web-dashboard-csv-export",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add CSV export button for active trading pairs table on Dashboard",
+      "description": "Add a button on the Web Dashboard to export current active trading pairs and positions into a CSV file.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/**",
+        "IntelliTrader.Web/Static/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Users can click a button to download the active positions table as a CSV file"
+      ]
+    },
+    {
+      "id": "exchange-websocket-reconnect-backoff",
+      "status": "todo",
+      "area": "exchange",
+      "risk": "medium",
+      "title": "Implement exponential backoff reconnect policy in BinanceExchangeService",
+      "description": "Improve exchange connection resilience by adding exponential backoff and jitter to WebSocket re-connection logic.",
+      "allowed_paths": [
+        "IntelliTrader.Exchange.Binance/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "BinanceExchangeService handles WebSocket disconnects gracefully with exponential backoff"
       ]
     }
   ]

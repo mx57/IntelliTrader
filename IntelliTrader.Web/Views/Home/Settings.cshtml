@@ -49,6 +49,35 @@
         </div>
     </div>
 
+    <div class="configs mt-4" style="background-color: var(--card-bg) !important; border: 1px solid var(--border-color) !important; color: var(--text-color) !important; padding: 20px; border-radius: 4px; margin-top: 20px;">
+        <h2>Уведомления и Звук</h2>
+        <div style="margin-bottom: 15px; display: flex; align-items: center; flex-wrap: wrap;">
+            <label style="margin-right: 15px; margin-bottom: 0; font-weight: bold;">Звуковые оповещения:</label>
+            <select id="settingsSoundToggle" class="form-control form-control-sm" style="width: auto; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 4px; margin-right: 20px;">
+                <option value="true">Включены</option>
+                <option value="false">Отключены</option>
+            </select>
+        </div>
+        <div style="margin-bottom: 15px; display: flex; align-items: center; flex-wrap: wrap;">
+            <label style="margin-right: 15px; margin-bottom: 0; font-weight: bold;">Громкость звука:</label>
+            <input type="range" id="settingsSoundVolumeSlider" min="0" max="1" step="0.05" value="0.5" style="width: 150px; height: 4px; margin-right: 10px;" />
+            <span id="settingsSoundVolumeValue" style="font-weight: bold; color: #7aa2f7; min-width: 40px;">50%</span>
+        </div>
+        <div style="margin-bottom: 15px; display: flex; align-items: center; flex-wrap: wrap;">
+            <label style="margin-right: 15px; margin-bottom: 0; font-weight: bold;">Профиль звука:</label>
+            <select id="settingsSoundProfileSelect" class="form-control form-control-sm" style="width: auto; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 4px;">
+                <option value="chime">Приятный звон (Chime)</option>
+                <option value="beep">Высокий писк (Beep)</option>
+                <option value="arcade">Ретро аркада (Arcade)</option>
+            </select>
+        </div>
+        <div style="margin-bottom: 10px; display: flex; align-items: center; flex-wrap: wrap;">
+            <label style="margin-right: 15px; margin-bottom: 0; font-weight: bold;">Мин. сумма сделки (USDT):</label>
+            <input type="number" id="settingsMinTradeSizeInput" min="0" step="1" placeholder="0 (все сделки)" class="form-control form-control-sm" style="width: 140px; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 4px;" />
+            <small class="text-muted ml-2">Уведомления и звук сработают только для сделок, стоимость которых равна или превышает указанный порог.</small>
+        </div>
+    </div>
+
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const select = document.getElementById("settingsThemeSelect");
@@ -85,6 +114,54 @@
                     if (select && select.value !== e.detail.theme) {
                         select.value = e.detail.theme;
                     }
+                });
+            }
+
+            // Real-time Notification Settings
+            const soundToggle = document.getElementById("settingsSoundToggle");
+            const volumeSlider = document.getElementById("settingsSoundVolumeSlider");
+            const volumeValue = document.getElementById("settingsSoundVolumeValue");
+            const profileSelect = document.getElementById("settingsSoundProfileSelect");
+            const minTradeInput = document.getElementById("settingsMinTradeSizeInput");
+
+            if (soundToggle) {
+                const soundEnabled = localStorage.getItem("realtime_sound_enabled") !== "false";
+                soundToggle.value = soundEnabled ? "true" : "false";
+                soundToggle.addEventListener("change", function () {
+                    localStorage.setItem("realtime_sound_enabled", soundToggle.value === "true");
+                });
+            }
+
+            if (volumeSlider && volumeValue) {
+                let volume = localStorage.getItem("realtime_sound_volume");
+                volume = volume !== null ? parseFloat(volume) : 0.5;
+                volumeSlider.value = volume;
+                volumeValue.textContent = Math.round(volume * 100) + "%";
+
+                volumeSlider.addEventListener("input", function () {
+                    const val = parseFloat(volumeSlider.value);
+                    volumeValue.textContent = Math.round(val * 100) + "%";
+                    localStorage.setItem("realtime_sound_volume", val);
+                });
+            }
+
+            if (profileSelect) {
+                const profile = localStorage.getItem("realtime_sound_profile") || "chime";
+                profileSelect.value = profile;
+                profileSelect.addEventListener("change", function () {
+                    localStorage.setItem("realtime_sound_profile", profileSelect.value);
+                });
+            }
+
+            if (minTradeInput) {
+                let minSize = parseFloat(localStorage.getItem("realtime_min_trade_size") || "0");
+                if (isNaN(minSize) || minSize < 0) minSize = 0;
+                minTradeInput.value = minSize > 0 ? minSize : "";
+
+                minTradeInput.addEventListener("input", function () {
+                    const val = parseFloat(minTradeInput.value) || 0;
+                    const finalVal = val < 0 ? 0 : val;
+                    localStorage.setItem("realtime_min_trade_size", finalVal);
                 });
             }
         });
