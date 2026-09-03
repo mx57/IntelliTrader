@@ -27,25 +27,27 @@
             </div>
         </div>
 
-        <!-- Дополнительные настройки звука -->
+        <!-- Дополнительные настройки звука и фильтров -->
         <div class="row align-items-center mt-2 pt-2" style="border-top: 1px solid var(--card-border); font-size: 13px;">
-            <div class="col-md-5 d-flex align-items-center mb-2 mb-md-0">
+            <div class="col-md-4 d-flex align-items-center mb-2 mb-md-0">
                 <i class="fas fa-sliders-h mr-2" style="color: #7aa2f7;"></i>
                 <span class="mr-2" style="white-space: nowrap;">Громкость:</span>
                 <input type="range" id="soundVolumeSlider" min="0" max="1" step="0.05" value="0.5" style="flex-grow: 1; height: 4px; background: var(--bg-color); outline: none; transition: background 450ms ease-in-out; -webkit-appearance: none; cursor: pointer;" />
                 <span id="soundVolumeValue" class="ml-2" style="font-weight: bold; color: #7aa2f7; min-width: 40px; text-align: right;">50%</span>
             </div>
-            <div class="col-md-5 d-flex align-items-center mb-2 mb-md-0">
+            <div class="col-md-4 d-flex align-items-center mb-2 mb-md-0">
                 <i class="fas fa-music mr-2" style="color: #bb9af3;"></i>
-                <span class="mr-2" style="white-space: nowrap;">Профиль звука:</span>
+                <span class="mr-2" style="white-space: nowrap;">Профиль:</span>
                 <select id="soundProfileSelect" class="form-control form-control-sm" style="background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 4px; height: 28px; padding: 2px 8px; font-size: 12px; width: auto;">
                     <option value="chime">Приятный звон (Chime)</option>
                     <option value="beep">Высокий писк (Beep)</option>
                     <option value="arcade">Ретро аркада (Arcade)</option>
                 </select>
             </div>
-            <div class="col-md-2 text-md-right text-muted" style="font-size: 11px;">
-                Настройки звука
+            <div class="col-md-4 d-flex align-items-center mb-2 mb-md-0">
+                <i class="fas fa-filter mr-2" style="color: #e0af68;"></i>
+                <span class="mr-2" style="white-space: nowrap;">Мин. сумма ($):</span>
+                <input type="number" id="minTradeSizeInput" min="0" step="1" placeholder="0" class="form-control form-control-sm" style="background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 4px; height: 28px; padding: 2px 8px; font-size: 12px; width: 90px;" />
             </div>
         </div>
     </div>
@@ -59,6 +61,7 @@
         const soundVolumeSlider = document.getElementById("soundVolumeSlider");
         const soundVolumeValue = document.getElementById("soundVolumeValue");
         const soundProfileSelect = document.getElementById("soundProfileSelect");
+        const minTradeSizeInput = document.getElementById("minTradeSizeInput");
         const notificationContainer = document.getElementById("notificationContainer");
 
         let isSoundEnabled = localStorage.getItem("realtime_sound_enabled") !== "false";
@@ -74,10 +77,22 @@
         // Load sound profile with fallback to 'chime'
         let soundProfile = localStorage.getItem("realtime_sound_profile") || "chime";
 
+        // Load min trade size threshold with fallback to 0
+        let realtimeMinTradeSize = parseFloat(localStorage.getItem("realtime_min_trade_size") || "0");
+        if (isNaN(realtimeMinTradeSize) || realtimeMinTradeSize < 0) realtimeMinTradeSize = 0;
+
         // Sync UI controls with values
         soundVolumeSlider.value = soundVolume;
         soundVolumeValue.textContent = Math.round(soundVolume * 100) + "%";
         soundProfileSelect.value = soundProfile;
+        if (minTradeSizeInput) {
+            minTradeSizeInput.value = realtimeMinTradeSize > 0 ? realtimeMinTradeSize : "";
+            minTradeSizeInput.addEventListener("input", function () {
+                const val = parseFloat(minTradeSizeInput.value) || 0;
+                realtimeMinTradeSize = val < 0 ? 0 : val;
+                localStorage.setItem("realtime_min_trade_size", realtimeMinTradeSize);
+            });
+        }
 
         updateSoundButtonUI();
 
@@ -332,8 +347,11 @@
                                 knownTrades.add(tradeId);
 
                                 if (!isFirstLoad) {
-                                    hasNewTrade = true;
-                                    showToastNotification(trade);
+                                    const tradeCost = trade.Cost ? parseFloat(trade.Cost) : (parseFloat(trade.Amount || 0) * parseFloat(trade.SellPrice || trade.AveragePrice || 0));
+                                    if (tradeCost >= realtimeMinTradeSize) {
+                                        hasNewTrade = true;
+                                        showToastNotification(trade);
+                                    }
                                 }
                             }
                         });
