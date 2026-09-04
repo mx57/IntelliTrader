@@ -446,7 +446,7 @@
     },
     {
       "id": "web-dashboard-custom-alerts",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Add custom notification threshold settings on Dashboard",
@@ -472,6 +472,38 @@
       ],
       "acceptance": [
         "Order caching mechanism is integrated and avoids frequent disk reads for historical trade logs."
+      ]
+    },
+    {
+      "id": "web-dashboard-log-filter-search",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add real-time log search and level filtering on Dashboard",
+      "description": "Implement client-side search input and log level dropdown filters (All, Info, Warning, Error) for the live log monitor terminal in Dashboard.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/**",
+        "IntelliTrader.Web/Static/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "The live log monitor terminal supports searching log text and filtering by severity level."
+      ]
+    },
+    {
+      "id": "web-dashboard-pair-favorite-pinning",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add favorite pair pinning and persistence on Dashboard",
+      "description": "Allow users to pin favorite trading pairs to the top of the trading pairs table with persistence in localStorage.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/**",
+        "IntelliTrader.Web/Static/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Users can click a star icon on any trading pair to pin it to the top of the table."
       ]
     }
   ]
