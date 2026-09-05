@@ -446,7 +446,7 @@
     },
     {
       "id": "web-dashboard-custom-alerts",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Add custom notification threshold settings on Dashboard",
@@ -472,6 +472,37 @@
       ],
       "acceptance": [
         "Order caching mechanism is integrated and avoids frequent disk reads for historical trade logs."
+      ]
+    },
+    {
+      "id": "web-dashboard-pair-search-filter",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add pair search and filter input on Dashboard pairs table",
+      "description": "Implement a fast search and filter input field on the Web Dashboard pairs table allowing users to quickly filter displayed trading pairs by name or status.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/**",
+        "IntelliTrader.Web/Static/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Dashboard pairs table filters dynamically as the user types in the search input."
+      ]
+    },
+    {
+      "id": "trading-slippage-tolerance-config",
+      "status": "todo",
+      "area": "trading",
+      "risk": "low",
+      "title": "Add configurable max slippage tolerance check for buy orders",
+      "description": "Implement a configurable maximum slippage tolerance percentage check in BuyProcessor to prevent executing orders if price slippage exceeds user tolerance.",
+      "allowed_paths": [
+        "IntelliTrader.Trading/Processors/BuyProcessor.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "BuyProcessor aborts order placement if current slippage exceeds configured tolerance limit."
       ]
     }
   ]
