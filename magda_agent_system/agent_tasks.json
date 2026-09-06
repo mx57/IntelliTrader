@@ -446,7 +446,7 @@
     },
     {
       "id": "web-dashboard-custom-alerts",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Add custom notification threshold settings on Dashboard",
@@ -472,6 +472,38 @@
       ],
       "acceptance": [
         "Order caching mechanism is integrated and avoids frequent disk reads for historical trade logs."
+      ]
+    },
+    {
+      "id": "web-dashboard-log-download",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add log file download button on Web Dashboard",
+      "description": "Add a download button to the Live Log Monitor card allowing users to export active general or trade log files directly.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/**",
+        "IntelliTrader.Web/Controllers/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "A download button is available on the log monitor terminal and streams log content to the user as a .txt file."
+      ]
+    },
+    {
+      "id": "trading-analytics-summary-export",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add trade performance summary export on Stats page",
+      "description": "Implement a button on the Stats page to export trade performance summary metrics as JSON or CSV.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/**",
+        "IntelliTrader.Web/Controllers/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Users can click export on the Stats page to download summary statistics."
       ]
     }
   ]
