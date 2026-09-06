@@ -561,6 +561,29 @@ namespace IntelliTrader.Web.Controllers
             }
         }
 
+        [HttpGet]
+        public IActionResult DownloadLog(string type = "general")
+        {
+            try
+            {
+                string pattern = "general".Equals(type, StringComparison.OrdinalIgnoreCase) ? "*-general.txt" : "*-trades.txt";
+                string filePath = GetLatestLogFilePath(pattern);
+
+                if (string.IsNullOrEmpty(filePath) || !System.IO.File.Exists(filePath))
+                {
+                    return NotFound("Log file not found.");
+                }
+
+                string fileName = Path.GetFileName(filePath);
+                var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                return File(stream, "text/plain", fileName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error downloading log file: {ex.Message}");
+            }
+        }
+
         private string GetLatestLogFilePath(string pattern)
         {
             var logsPath = Path.Combine(Directory.GetCurrentDirectory(), "log");

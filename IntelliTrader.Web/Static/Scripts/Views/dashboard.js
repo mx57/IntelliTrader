@@ -205,6 +205,7 @@ function setLogType(type) {
         $("#logTypeGeneralBtn").removeClass("active");
     }
 
+    $("#downloadLogFileBtn").attr("href", "/Home/DownloadLog?type=" + type);
     $("#logTerminal").html('<div class="text-muted">Loading logs...</div>');
     pollLiveLogs();
 }
