@@ -476,7 +476,7 @@
     },
     {
       "id": "web-dashboard-log-download",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Add log file download button on Web Dashboard",
@@ -504,6 +504,23 @@
       ],
       "acceptance": [
         "Users can click export on the Stats page to download summary statistics."
+      ]
+    },
+    {
+      "id": "web-dashboard-log-filtering",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add search and log level filter controls for Live Log Monitor",
+      "description": "Implement search filter input and log level filter buttons (All, Info, Warning, Error) for the live log monitor card.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/**",
+        "IntelliTrader.Web/Controllers/**",
+        "IntelliTrader.Web/Static/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Live log monitor terminal supports real-time text filter and log level filtering."
       ]
     }
   ]
