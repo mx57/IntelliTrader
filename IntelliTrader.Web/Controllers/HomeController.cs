@@ -203,6 +203,98 @@ namespace IntelliTrader.Web.Controllers
             return View(model);
         }
 
+        [HttpGet]
+        public IActionResult ExportStats(string format = "json")
+        {
+            var coreService = Application.Resolve<ICoreService>();
+            var tradingService = Application.Resolve<ITradingService>();
+
+            decimal accountInitialBalance = tradingService.Config.AccountInitialBalance;
+            var tradesDict = GetTrades();
+
+            var allTrades = tradesDict.Values.SelectMany(t => t).Where(t => !t.IsSwap).ToList();
+
+            decimal totalProfit = allTrades.Sum(t => t.Profit);
+            int totalTrades = allTrades.Count;
+            int winningTrades = allTrades.Count(t => t.Profit > 0);
+            int losingTrades = allTrades.Count(t => t.Profit < 0);
+            decimal winRate = totalTrades > 0 ? (decimal)winningTrades / totalTrades * 100 : 0m;
+            decimal avgProfit = totalTrades > 0 ? allTrades.Average(t => t.Profit) : 0m;
+            decimal totalFees = tradesDict.Values.SelectMany(t => t).Sum(t => t.FeesTotal);
+
+            var pairStats = allTrades
+                .GroupBy(t => t.Metadata?.OriginalPair ?? t.Pair)
+                .Select(g => new
+                {
+                    Pair = g.Key,
+                    TradesCount = g.Count(),
+                    TotalProfit = g.Sum(t => t.Profit),
+                    TotalFees = g.Sum(t => t.FeesTotal),
+                    WinRate = (g.Count() > 0 ? (decimal)g.Count(t => t.Profit > 0) / g.Count() * 100 : 0m).ToString("0.00")
+                })
+                .OrderByDescending(p => p.TotalProfit)
+                .ToList();
+
+            var dailyStats = tradesDict
+                .OrderByDescending(kvp => kvp.Key)
+                .Select(kvp => new
+                {
+                    Date = kvp.Key.ToString("yyyy-MM-dd"),
+                    TradesCount = kvp.Value.Count,
+                    Profit = kvp.Value.Where(t => !t.IsSwap).Sum(t => t.Profit),
+                    Fees = kvp.Value.Sum(t => t.FeesTotal)
+                })
+                .ToList();
+
+            var summary = new
+            {
+                ExportDate = DateTimeOffset.UtcNow.ToString("o"),
+                Market = tradingService.Config.Market,
+                AccountBalance = tradingService.Account.GetTotalBalance(),
+                InitialBalance = accountInitialBalance,
+                TotalProfit = totalProfit,
+                TotalProfitPercentage = accountInitialBalance != 0 ? (totalProfit / accountInitialBalance * 100) : 0m,
+                TotalTrades = totalTrades,
+                WinningTrades = winningTrades,
+                LosingTrades = losingTrades,
+                WinRate = Math.Round(winRate, 2),
+                AverageProfit = avgProfit,
+                TotalFees = totalFees,
+                Pairs = pairStats,
+                DailyHistory = dailyStats
+            };
+
+            if (string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase))
+            {
+                var inv = System.Globalization.CultureInfo.InvariantCulture;
+                var sb = new StringBuilder();
+                sb.AppendLine("Summary Metrics");
+                sb.AppendLine("Export Date,Market,Account Balance,Initial Balance,Total Profit,Total Profit %,Total Trades,Winning Trades,Losing Trades,Win Rate %,Avg Profit,Total Fees");
+                sb.AppendLine($"\"{summary.ExportDate}\",\"{summary.Market}\",{summary.AccountBalance.ToString(inv)},{summary.InitialBalance.ToString(inv)},{summary.TotalProfit.ToString(inv)},{summary.TotalProfitPercentage.ToString("0.00", inv)},{summary.TotalTrades},{summary.WinningTrades},{summary.LosingTrades},{summary.WinRate.ToString(inv)},{summary.AverageProfit.ToString(inv)},{summary.TotalFees.ToString(inv)}");
+                sb.AppendLine();
+                sb.AppendLine("Pair Performance");
+                sb.AppendLine("Pair,Trades Count,Total Profit,Total Fees,Win Rate %");
+                foreach (var p in pairStats)
+                {
+                    sb.AppendLine($"\"{p.Pair}\",{p.TradesCount},{p.TotalProfit.ToString(inv)},{p.TotalFees.ToString(inv)},{p.WinRate}");
+                }
+                sb.AppendLine();
+                sb.AppendLine("Daily History");
+                sb.AppendLine("Date,Trades Count,Profit,Fees");
+                foreach (var d in dailyStats)
+                {
+                    sb.AppendLine($"\"{d.Date}\",{d.TradesCount},{d.Profit.ToString(inv)},{d.Fees.ToString(inv)}");
+                }
+
+                byte[] bytes = Encoding.UTF8.GetBytes(sb.ToString());
+                return File(bytes, "text/csv", "trade_stats_summary.csv");
+            }
+
+            string json = JsonConvert.SerializeObject(summary, Formatting.Indented);
+            byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
+            return File(jsonBytes, "application/json", "trade_stats_summary.json");
+        }
+
         public IActionResult Rules()
         {
             var allTades = GetTrades();

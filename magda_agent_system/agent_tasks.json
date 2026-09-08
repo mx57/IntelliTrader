@@ -492,7 +492,7 @@
     },
     {
       "id": "trading-analytics-summary-export",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Add trade performance summary export on Stats page",
@@ -504,6 +504,22 @@
       ],
       "acceptance": [
         "Users can click export on the Stats page to download summary statistics."
+      ]
+    },
+    {
+      "id": "web-dashboard-pair-filter-search",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add trading pair filter search on Web Dashboard",
+      "description": "Implement a real-time quick filter search box on the Web Dashboard active pairs table.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/**",
+        "IntelliTrader.Web/wwwroot/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Users can type pair names into the search filter input to filter active pairs dynamically on the Dashboard."
       ]
     }
   ]
