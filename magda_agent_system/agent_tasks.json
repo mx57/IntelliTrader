@@ -476,7 +476,7 @@
     },
     {
       "id": "web-dashboard-log-download",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Add log file download button on Web Dashboard",
@@ -504,6 +504,22 @@
       ],
       "acceptance": [
         "Users can click export on the Stats page to download summary statistics."
+      ]
+    },
+    {
+      "id": "web-dashboard-export-stats-formatting",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Enhance ExportStats CSV/JSON formatting for trade analytics",
+      "description": "Add formatting options or date filtering parameters to ExportStats endpoint in HomeController for improved spreadsheet readability.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Controllers/**",
+        "IntelliTrader.Web/Views/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "ExportStats allows filtering by date range and returns well-formatted CSV or JSON."
       ]
     }
   ]

@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\IntelliTrader.Core\IntelliTrader.Core.csproj" />
     <ProjectReference Include="..\IntelliTrader.Trading\IntelliTrader.Trading.csproj" />
+    <ProjectReference Include="..\IntelliTrader.Web\IntelliTrader.Web.csproj" />
   </ItemGroup>
 
 </Project>

@@ -459,7 +459,8 @@
             <h5 class="mb-0" style="color: var(--text-light); font-size: 16px; margin: 0;"><i class="fas fa-terminal mr-2"></i>Live Log Monitor</h5>
             <div class="btn-group btn-group-sm" role="group">
                 <button type="button" class="btn btn-sm btn-outline-light active" id="logTypeGeneralBtn" style="border-color: var(--card-border); margin-right: 5px;" onclick="setLogType('general')">General Log</button>
-                <button type="button" class="btn btn-sm btn-outline-light" id="logTypeTradesBtn" style="border-color: var(--card-border);" onclick="setLogType('trades')">Trades Log</button>
+                <button type="button" class="btn btn-sm btn-outline-light" id="logTypeTradesBtn" style="border-color: var(--card-border); margin-right: 5px;" onclick="setLogType('trades')">Trades Log</button>
+                <a id="downloadMainLogBtn" href="/Home/DownloadLog?type=general" class="btn btn-sm btn-outline-info" style="border-color: var(--card-border); color: var(--text-color);" download><i class="fas fa-download mr-1"></i> Download Log</a>
             </div>
         </div>
         <div class="card-body p-0">
@@ -566,6 +567,7 @@
                     <option value="trades" selected>Trade Logs</option>
                     <option value="general">General Logs</option>
                 </select>
+                <a id="downloadTerminalLogBtn" href="/Home/DownloadLog?type=trades" class="btn btn-sm btn-outline-info" style="border-color: var(--card-border); color: var(--text-color); margin-right: 5px;" download><i class="fas fa-download mr-1"></i> Download Log</a>
                 <button id="clearTerminalBtn" class="btn btn-sm btn-outline-secondary" style="border-color: var(--card-border); color: var(--text-color);">Clear</button>
             </div>
         </div>
@@ -636,6 +638,10 @@
             logTypeSelect.addEventListener("change", function() {
                 lastLogContent = "";
                 logTerminal.innerHTML = '<div class="text-muted">Loading logs...</div>';
+                const downloadBtn = document.getElementById("downloadTerminalLogBtn");
+                if (downloadBtn) {
+                    downloadBtn.href = `/Home/DownloadLog?type=${logTypeSelect.value}`;
+                }
                 fetchLogs();
             });
 
