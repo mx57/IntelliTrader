@@ -539,6 +539,90 @@ namespace IntelliTrader.Web.Controllers
         }
 
         [HttpGet]
+        public IActionResult DownloadLog(string type = "general")
+        {
+            try
+            {
+                string pattern = "general".Equals(type, StringComparison.OrdinalIgnoreCase) ? "*-general.txt" : "*-trades.txt";
+                string filePath = GetLatestLogFilePath(pattern);
+
+                if (string.IsNullOrEmpty(filePath) || !System.IO.File.Exists(filePath))
+                {
+                    return NotFound("No log file found.");
+                }
+
+                var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                string fileName = Path.GetFileName(filePath);
+                return File(stream, "text/plain", fileName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error downloading log file: {ex.Message}");
+            }
+        }
+
+        [HttpGet]
+        public IActionResult ExportStats(string format = "json")
+        {
+            try
+            {
+                var tradingService = Application.Resolve<ITradingService>();
+                var accountInitialBalance = tradingService.Config.VirtualTrading ? tradingService.Config.VirtualAccountInitialBalance : tradingService.Config.AccountInitialBalance;
+                var totalBalance = tradingService.Account.GetTotalBalance();
+                var tradesDict = GetTrades();
+
+                var allTrades = tradesDict.Values.SelectMany(t => t).ToList();
+                var nonSwapTrades = allTrades.Where(t => !t.IsSwap).ToList();
+
+                decimal totalProfit = nonSwapTrades.Sum(t => t.Profit);
+                decimal totalFees = allTrades.Sum(t => t.FeesTotal);
+                decimal profitPercentage = accountInitialBalance > 0 ? (totalProfit / accountInitialBalance) * 100 : 0;
+                int totalTradeCount = nonSwapTrades.Count;
+                int winTradeCount = nonSwapTrades.Count(t => t.Profit > 0);
+                decimal winRate = totalTradeCount > 0 ? ((decimal)winTradeCount / totalTradeCount) * 100 : 0;
+
+                var dailyStats = tradesDict.OrderByDescending(kvp => kvp.Key).Select(kvp => new
+                {
+                    Date = kvp.Key.ToString("yyyy-MM-dd"),
+                    TradeCount = kvp.Value.Count,
+                    Profit = kvp.Value.Where(t => !t.IsSwap).Sum(t => t.Profit),
+                    Fees = kvp.Value.Sum(t => t.FeesTotal)
+                }).ToList();
+
+                if ("csv".Equals(format, StringComparison.OrdinalIgnoreCase))
+                {
+                    var sb = new StringBuilder();
+                    sb.AppendLine("Date,TradeCount,Profit,Fees");
+                    foreach (var day in dailyStats)
+                    {
+                        sb.AppendLine($"{day.Date},{day.TradeCount},{day.Profit.ToString("0.00000000", System.Globalization.CultureInfo.InvariantCulture)},{day.Fees.ToString("0.00000000", System.Globalization.CultureInfo.InvariantCulture)}");
+                    }
+                    byte[] bytes = Encoding.UTF8.GetBytes(sb.ToString());
+                    return File(bytes, "text/csv", $"stats_export_{DateTime.UtcNow:yyyyMMdd}.csv");
+                }
+
+                var summary = new
+                {
+                    InitialBalance = accountInitialBalance,
+                    CurrentTotalBalance = totalBalance,
+                    TotalProfit = totalProfit,
+                    ProfitPercentage = Math.Round(profitPercentage, 2),
+                    TotalFees = totalFees,
+                    TotalTrades = totalTradeCount,
+                    WinTrades = winTradeCount,
+                    WinRatePercentage = Math.Round(winRate, 2),
+                    DailyHistory = dailyStats
+                };
+
+                return Json(summary);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpGet]
         public IActionResult PollLogs(string type = "general", int maxLines = 100)
         {
             try

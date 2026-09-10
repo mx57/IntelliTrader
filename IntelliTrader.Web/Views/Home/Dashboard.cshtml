@@ -566,6 +566,9 @@
                     <option value="trades" selected>Trade Logs</option>
                     <option value="general">General Logs</option>
                 </select>
+                <a id="downloadLogBtn" href="/Home/DownloadLog?type=trades" class="btn btn-sm btn-outline-info mr-2" style="border-color: var(--card-border); font-weight: 500;" title="Download current log file">
+                    <i class="fas fa-download mr-1"></i> Скачать лог
+                </a>
                 <button id="clearTerminalBtn" class="btn btn-sm btn-outline-secondary" style="border-color: var(--card-border); color: var(--text-color);">Clear</button>
             </div>
         </div>
@@ -635,6 +638,10 @@
 
             logTypeSelect.addEventListener("change", function() {
                 lastLogContent = "";
+                const downloadBtn = document.getElementById("downloadLogBtn");
+                if (downloadBtn) {
+                    downloadBtn.href = `/Home/DownloadLog?type=${logTypeSelect.value}`;
+                }
                 logTerminal.innerHTML = '<div class="text-muted">Loading logs...</div>';
                 fetchLogs();
             });

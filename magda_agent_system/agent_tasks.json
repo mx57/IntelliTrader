@@ -476,7 +476,7 @@
     },
     {
       "id": "web-dashboard-log-download",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Add log file download button on Web Dashboard",
@@ -492,7 +492,7 @@
     },
     {
       "id": "trading-analytics-summary-export",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Add trade performance summary export on Stats page",
@@ -504,6 +504,36 @@
       ],
       "acceptance": [
         "Users can click export on the Stats page to download summary statistics."
+      ]
+    },
+    {
+      "id": "web-dashboard-tradingview-theme-sync",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Sync TradingView widget theme dynamically with global theme toggle",
+      "description": "Update TradingView widget iframe configuration in dashboard.js to re-render using dark or light theme when global themeChanged event is triggered.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Static/Scripts/Views/dashboard.js",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "TradingView iframe dynamically updates theme configuration upon themeChanged event."
+      ]
+    },
+    {
+      "id": "trading-processor-metrics-logging",
+      "status": "todo",
+      "area": "trading",
+      "risk": "low",
+      "title": "Add execution duration timing metrics in BuyProcessor and SellProcessor",
+      "description": "Incorporate Stopwatch elapsed time measurement in BuyProcessor and SellProcessor execution loops to track latency spikes during high order volumes.",
+      "allowed_paths": [
+        "IntelliTrader.Trading/Processors/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "BuyProcessor and SellProcessor log processing latency metrics when thresholds are exceeded."
       ]
     }
   ]
