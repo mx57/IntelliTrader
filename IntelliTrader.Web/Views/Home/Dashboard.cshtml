@@ -457,9 +457,14 @@
     <div class="card mt-4" style="background-color: var(--card-bg); color: var(--text-color); border-radius: 4px; border: 1px solid var(--card-border); margin-top: 20px;">
         <div class="card-header" style="background-color: var(--card-header-bg); border-bottom: 1px solid var(--card-border); padding: 10px 15px; display: flex; align-items: center; justify-content: space-between;">
             <h5 class="mb-0" style="color: var(--text-light); font-size: 16px; margin: 0;"><i class="fas fa-terminal mr-2"></i>Live Log Monitor</h5>
-            <div class="btn-group btn-group-sm" role="group">
-                <button type="button" class="btn btn-sm btn-outline-light active" id="logTypeGeneralBtn" style="border-color: var(--card-border); margin-right: 5px;" onclick="setLogType('general')">General Log</button>
-                <button type="button" class="btn btn-sm btn-outline-light" id="logTypeTradesBtn" style="border-color: var(--card-border);" onclick="setLogType('trades')">Trades Log</button>
+            <div class="d-flex align-items-center">
+                <div class="btn-group btn-group-sm mr-2" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-light active" id="logTypeGeneralBtn" style="border-color: var(--card-border); margin-right: 5px;" onclick="setLogType('general')">General Log</button>
+                    <button type="button" class="btn btn-sm btn-outline-light" id="logTypeTradesBtn" style="border-color: var(--card-border);" onclick="setLogType('trades')">Trades Log</button>
+                </div>
+                <a id="downloadLogMonitorBtn" href="/Home/DownloadLog?type=general" class="btn btn-sm btn-outline-primary" style="margin-left: 5px;">
+                    <i class="fas fa-download mr-1"></i> Скачать лог
+                </a>
             </div>
         </div>
         <div class="card-body p-0">
@@ -566,7 +571,10 @@
                     <option value="trades" selected>Trade Logs</option>
                     <option value="general">General Logs</option>
                 </select>
-                <button id="clearTerminalBtn" class="btn btn-sm btn-outline-secondary" style="border-color: var(--card-border); color: var(--text-color);">Clear</button>
+                <button id="clearTerminalBtn" class="btn btn-sm btn-outline-secondary" style="border-color: var(--card-border); color: var(--text-color); margin-right: 10px;">Clear</button>
+                <a id="downloadTradeLogBtn" href="/Home/DownloadLog?type=trades" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-download mr-1"></i> Скачать лог
+                </a>
             </div>
         </div>
         <div class="card-body" id="tradeLogTerminal" style="height: 250px; overflow-y: auto; font-size: 13px; line-height: 1.5; padding: 10px; background-color: var(--terminal-bg); border-radius: 0 0 4px 4px;">
@@ -634,7 +642,12 @@
             const intervalId = setInterval(fetchLogs, 3000);
 
             logTypeSelect.addEventListener("change", function() {
+                const logType = logTypeSelect.value;
                 lastLogContent = "";
+                const downloadBtn = document.getElementById("downloadTradeLogBtn");
+                if (downloadBtn) {
+                    downloadBtn.href = "/Home/DownloadLog?type=" + logType;
+                }
                 logTerminal.innerHTML = '<div class="text-muted">Loading logs...</div>';
                 fetchLogs();
             });
