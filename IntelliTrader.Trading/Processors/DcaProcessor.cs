@@ -32,12 +32,14 @@ namespace IntelliTrader.Trading.Processors
                     baseSpread = safety.MaxTrailingSpread;
                 }
 
+                decimal spreadRatio = baseSpread > 0 ? tradingPair.CurrentSpread / baseSpread : 0m;
+
                 // Extra safety boundary check: extremely high spread (> 3x base spread)
                 if (tradingPair.CurrentSpread > 3 * baseSpread)
                 {
                     if (task.LoggingEnabled)
                     {
-                        loggingService.Info($"DCA postponed for {tradingPair.FormattedName} due to extremely high spread: {tradingPair.CurrentSpread:0.00}% (Threshold: {3 * baseSpread:0.00}%)");
+                        loggingService.Info($"DCA postponed for {tradingPair.FormattedName} due to extremely high spread: {tradingPair.CurrentSpread:0.00}% (Base: {baseSpread:0.00}%, Spread Ratio: {spreadRatio:0.00}x, Threshold: {3 * baseSpread:0.00}%)");
                     }
                     return;
                 }
@@ -49,7 +51,7 @@ namespace IntelliTrader.Trading.Processors
                     {
                         if (task.LoggingEnabled)
                         {
-                            loggingService.Info($"DCA paused for {tradingPair.FormattedName} due to high spread: {tradingPair.CurrentSpread:0.00}%");
+                            loggingService.Info($"DCA paused for {tradingPair.FormattedName} due to high spread: {tradingPair.CurrentSpread:0.00}% (Base: {baseSpread:0.00}%, Spread Ratio: {spreadRatio:0.00}x)");
                         }
                         return;
                     }
@@ -138,7 +140,7 @@ namespace IntelliTrader.Trading.Processors
                         {
                             loggingService.Info($"DCA triggered for {tradingPair.FormattedName}. Margin: {tradingPair.CurrentMargin:0.00}, " +
                                 $"Level (Base): {pairConfig.NextDCAMargin:0.00}, Level (Effective): {effectiveNextDCAMargin:0.00}, " +
-                                $"Volatility Factor: {volatilityFactor:0.00} (Spread: {tradingPair.CurrentSpread:0.00}%, Signal Vol: {maxSignalVolatility:0.00}), " +
+                                $"Volatility Factor: {volatilityFactor:0.00} (Spread: {tradingPair.CurrentSpread:0.00}%, Base Spread: {baseSpread:0.00}%, Spread Ratio: {spreadRatio:0.00}x, Spread Factor: {spreadFactor:0.00}, Signal Vol: {maxSignalVolatility:0.00}, Signal Vol Factor: {signalVolatilityFactor:0.00}, Max Vol Cap: {maxVolatilityCap:0.00}), " +
                                 $"Multiplier: {pairConfig.BuyMultiplier}, " +
                                 $"Global Rating: {(globalRating.HasValue ? globalRating.Value.ToString("0.00") : "N/A")}, " +
                                 $"Scaling Factor: {scalingFactor:0.00}, Base Cost: {tradingPair.Cost * pairConfig.BuyMultiplier:0.00}, Scaled Cost: {buyOptions.MaxCost:0.00}");

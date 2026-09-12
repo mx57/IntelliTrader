@@ -491,7 +491,7 @@
     },
     {
       "id": "trading-spread-volatility-logging",
-      "status": "todo",
+      "status": "done",
       "area": "trading",
       "risk": "low",
       "title": "Add detailed spread volatility metric logging to DcaProcessor",
@@ -502,6 +502,21 @@
       ],
       "acceptance": [
         "DcaProcessor outputs structured log entries with spread ratios and volatility scaling factors."
+      ]
+    },
+    {
+      "id": "trading-processor-metrics-logging",
+      "status": "todo",
+      "area": "trading",
+      "risk": "low",
+      "title": "Add structured execution timing diagnostic logging to SellProcessor",
+      "description": "Add diagnostic timing and parameter logging to SellProcessor execution routines for performance tracking.",
+      "allowed_paths": [
+        "IntelliTrader.Trading/Processors/SellProcessor.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "SellProcessor outputs structured timing diagnostic logs under debug/info mode."
       ]
     }
   ]
