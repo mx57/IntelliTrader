@@ -475,35 +475,33 @@
       ]
     },
     {
-      "id": "web-dashboard-log-download",
+      "id": "web-dashboard-log-filter-search",
       "status": "todo",
       "area": "web",
       "risk": "low",
-      "title": "Add log file download button on Web Dashboard",
-      "description": "Add a download button to the Live Log Monitor card allowing users to export active general or trade log files directly.",
+      "title": "Add interactive filter search bar to Live Log Terminal",
+      "description": "Implement an interactive search/filter input for the Live Log Terminal on the Web Dashboard allowing users to filter log lines dynamically by keyword.",
       "allowed_paths": [
-        "IntelliTrader.Web/Views/**",
-        "IntelliTrader.Web/Controllers/**",
+        "IntelliTrader.Web/Views/Home/Dashboard.cshtml",
         "magda_agent_system/agent_tasks.json"
       ],
       "acceptance": [
-        "A download button is available on the log monitor terminal and streams log content to the user as a .txt file."
+        "Log terminal provides a filter input that immediately filters rendered log entries by text keyword."
       ]
     },
     {
-      "id": "trading-analytics-summary-export",
+      "id": "trading-spread-volatility-logging",
       "status": "todo",
-      "area": "web",
+      "area": "trading",
       "risk": "low",
-      "title": "Add trade performance summary export on Stats page",
-      "description": "Implement a button on the Stats page to export trade performance summary metrics as JSON or CSV.",
+      "title": "Add detailed spread volatility metric logging to DcaProcessor",
+      "description": "Enhance diagnostic logging in DcaProcessor to log exact calculated volatility multipliers and spread ratios during high volatility events.",
       "allowed_paths": [
-        "IntelliTrader.Web/Views/**",
-        "IntelliTrader.Web/Controllers/**",
+        "IntelliTrader.Trading/Processors/DcaProcessor.cs",
         "magda_agent_system/agent_tasks.json"
       ],
       "acceptance": [
-        "Users can click export on the Stats page to download summary statistics."
+        "DcaProcessor outputs structured log entries with spread ratios and volatility scaling factors."
       ]
     }
   ]
