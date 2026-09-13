@@ -461,7 +461,7 @@
     },
     {
       "id": "trading-order-history-cache",
-      "status": "todo",
+      "status": "done",
       "area": "trading",
       "risk": "low",
       "title": "Optimize trade history parsing with in-memory caching",
@@ -502,6 +502,36 @@
       ],
       "acceptance": [
         "DcaProcessor outputs structured log entries with spread ratios and volatility scaling factors."
+      ]
+    },
+    {
+      "id": "trading-order-cache-invalidation-log",
+      "status": "todo",
+      "area": "trading",
+      "risk": "low",
+      "title": "Add diagnostic logging for order cache hits and invalidations",
+      "description": "Enhance OrderCacheProcessor with optional logging service integration to track cache hits, misses, and sliding expirations.",
+      "allowed_paths": [
+        "IntelliTrader.Trading/Processors/OrderCacheProcessor.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "OrderCacheProcessor logs cache state changes and hit/miss ratios."
+      ]
+    },
+    {
+      "id": "web-dashboard-export-stats-format",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add downloadable performance metrics export formats",
+      "description": "Extend HomeController ExportStats endpoint to support flexible JSON and CSV formatted downloads for trade statistics.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Controllers/HomeController.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "HomeController provides JSON and CSV export endpoints for trade performance data."
       ]
     }
   ]
