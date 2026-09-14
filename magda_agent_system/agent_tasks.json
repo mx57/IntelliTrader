@@ -461,7 +461,7 @@
     },
     {
       "id": "trading-order-history-cache",
-      "status": "todo",
+      "status": "done",
       "area": "trading",
       "risk": "low",
       "title": "Optimize trade history parsing with in-memory caching",
