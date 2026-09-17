@@ -192,6 +192,43 @@ $(function () {
 });
 
 var currentLogType = "general";
+var currentLogLines = [];
+var logFilterQuery = "";
+
+$(function () {
+    $("#logFilterInput").on("input", function () {
+        logFilterQuery = $(this).val();
+        renderFilteredLogs();
+    });
+});
+
+function renderFilteredLogs() {
+    var terminal = $("#logTerminal");
+    if (!terminal.length) return;
+
+    if (!currentLogLines || currentLogLines.length === 0) {
+        terminal.html('<div class="text-muted">No logs available for ' + currentLogType + '.</div>');
+        return;
+    }
+
+    var query = (logFilterQuery || "").trim().toLowerCase();
+    var filteredLines = query
+        ? currentLogLines.filter(function (line) { return line.toLowerCase().indexOf(query) !== -1; })
+        : currentLogLines;
+
+    if (filteredLines.length === 0) {
+        terminal.html('<div class="text-muted">No log lines matching "' + $('<div>').text(logFilterQuery).html() + '"</div>');
+        return;
+    }
+
+    var htmlContent = filteredLines.map(function (line) {
+        var escaped = $('<div>').text(line).html();
+        return '<div>' + escaped + '</div>';
+    }).join('');
+
+    terminal.html(htmlContent);
+    terminal.scrollTop(terminal[0].scrollHeight);
+}
 
 function setLogType(type) {
     if (currentLogType === type) return;
@@ -205,6 +242,7 @@ function setLogType(type) {
         $("#logTypeGeneralBtn").removeClass("active");
     }
 
+    currentLogLines = [];
     $("#logTerminal").html('<div class="text-muted">Loading logs...</div>');
     pollLiveLogs();
 }
@@ -220,18 +258,8 @@ function pollLiveLogs() {
             return;
         }
 
-        if (!data.lines || data.lines.length === 0) {
-            terminal.html('<div class="text-muted">No logs available for ' + currentLogType + '.</div>');
-            return;
-        }
-
-        var htmlContent = data.lines.map(function(line) {
-            var escaped = $('<div>').text(line).html();
-            return '<div>' + escaped + '</div>';
-        }).join('');
-
-        terminal.html(htmlContent);
-        terminal.scrollTop(terminal[0].scrollHeight);
+        currentLogLines = data.lines || [];
+        renderFilteredLogs();
     }).fail(function() {
         $("#logTerminal").html('<div class="text-danger">Failed to connect to log server.</div>');
     });

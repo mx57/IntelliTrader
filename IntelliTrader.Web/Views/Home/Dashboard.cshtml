@@ -470,11 +470,19 @@
 
     <!-- Real-time Log Monitor Terminal -->
     <div class="card mt-4" style="background-color: var(--card-bg); color: var(--text-color); border-radius: 4px; border: 1px solid var(--card-border); margin-top: 20px;">
-        <div class="card-header" style="background-color: var(--card-header-bg); border-bottom: 1px solid var(--card-border); padding: 10px 15px; display: flex; align-items: center; justify-content: space-between;">
+        <div class="card-header" style="background-color: var(--card-header-bg); border-bottom: 1px solid var(--card-border); padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
             <h5 class="mb-0" style="color: var(--text-light); font-size: 16px; margin: 0;"><i class="fas fa-terminal mr-2"></i>Live Log Monitor</h5>
-            <div class="btn-group btn-group-sm" role="group">
-                <button type="button" class="btn btn-sm btn-outline-light active" id="logTypeGeneralBtn" style="border-color: var(--card-border); margin-right: 5px;" onclick="setLogType('general')">General Log</button>
-                <button type="button" class="btn btn-sm btn-outline-light" id="logTypeTradesBtn" style="border-color: var(--card-border);" onclick="setLogType('trades')">Trades Log</button>
+            <div class="d-flex align-items-center flex-wrap" style="gap: 10px;">
+                <div class="input-group input-group-sm" style="width: 200px;">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" style="background-color: var(--input-bg); border-color: var(--card-border); color: var(--text-color); padding: 2px 8px;"><i class="fas fa-search" style="font-size: 12px;"></i></span>
+                    </div>
+                    <input type="text" id="logFilterInput" class="form-control form-control-sm" placeholder="Фильтр логов..." style="background-color: var(--input-bg); color: var(--text-color); border-color: var(--card-border); font-size: 12px;" />
+                </div>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-light active" id="logTypeGeneralBtn" style="border-color: var(--card-border); margin-right: 5px;" onclick="setLogType('general')">General Log</button>
+                    <button type="button" class="btn btn-sm btn-outline-light" id="logTypeTradesBtn" style="border-color: var(--card-border);" onclick="setLogType('trades')">Trades Log</button>
+                </div>
             </div>
         </div>
         <div class="card-body p-0">
@@ -574,10 +582,16 @@
     </script>
 
     <div class="card mt-4" style="background-color: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-color); font-family: 'Courier New', Courier, monospace;">
-        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: var(--card-header-bg); border-bottom: 1px solid var(--card-border);">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap" style="background-color: var(--card-header-bg); border-bottom: 1px solid var(--card-border); gap: 10px;">
             <span style="font-weight: bold; color: #7aa2f7;"><i class="fas fa-terminal"></i> Live Trade Logs Terminal</span>
-            <div class="d-flex align-items-center">
-                <select id="logTypeSelect" class="form-control form-control-sm d-inline-block" style="width: auto; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--card-border); margin-right: 10px;">
+            <div class="d-flex align-items-center flex-wrap" style="gap: 10px;">
+                <div class="input-group input-group-sm" style="width: 200px;">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" style="background-color: var(--input-bg); border-color: var(--card-border); color: var(--text-color); padding: 2px 8px;"><i class="fas fa-search" style="font-size: 12px;"></i></span>
+                    </div>
+                    <input type="text" id="tradeLogFilterInput" class="form-control form-control-sm" placeholder="Фильтр логов..." style="background-color: var(--input-bg); color: var(--text-color); border-color: var(--card-border); font-size: 12px;" />
+                </div>
+                <select id="logTypeSelect" class="form-control form-control-sm d-inline-block" style="width: auto; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--card-border);">
                     <option value="trades" selected>Trade Logs</option>
                     <option value="general">General Logs</option>
                 </select>
@@ -594,8 +608,55 @@
             const logTerminal = document.getElementById("tradeLogTerminal");
             const logTypeSelect = document.getElementById("logTypeSelect");
             const clearTerminalBtn = document.getElementById("clearTerminalBtn");
+            const tradeLogFilterInput = document.getElementById("tradeLogFilterInput");
 
-            let lastLogContent = "";
+            let currentTradeLogLines = [];
+            let tradeLogFilterQuery = "";
+
+            function renderTradeLogs() {
+                if (!logTerminal) return;
+                logTerminal.innerHTML = "";
+
+                if (!currentTradeLogLines || currentTradeLogLines.length === 0) {
+                    logTerminal.innerHTML = '<div class="text-muted">No logs found.</div>';
+                    return;
+                }
+
+                const query = tradeLogFilterQuery.trim().toLowerCase();
+                const filteredLines = query
+                    ? currentTradeLogLines.filter(line => line.toLowerCase().includes(query))
+                    : currentTradeLogLines;
+
+                if (filteredLines.length === 0) {
+                    const noMatchDiv = document.createElement("div");
+                    noMatchDiv.className = "text-muted";
+                    noMatchDiv.textContent = `No log lines matching "${tradeLogFilterQuery}"`;
+                    logTerminal.appendChild(noMatchDiv);
+                    return;
+                }
+
+                filteredLines.forEach(line => {
+                    const div = document.createElement("div");
+                    div.style.whiteSpace = "pre-wrap";
+                    div.style.wordBreak = "break-all";
+                    div.style.marginBottom = "4px";
+
+                    if (line.includes("[ERR]") || line.includes("Error") || line.includes("Exception") || line.includes("fail")) {
+                        div.style.color = "#f7768e";
+                    } else if (line.includes("[WRN]") || line.includes("Warning") || line.includes("warn")) {
+                        div.style.color = "#e0af68";
+                    } else if (line.includes("[INF]") || line.includes("Success") || line.includes("Buy") || line.includes("Sell")) {
+                        div.style.color = "#9ece6a";
+                    } else {
+                        div.style.color = "var(--text-color)";
+                    }
+
+                    div.textContent = line;
+                    logTerminal.appendChild(div);
+                });
+
+                logTerminal.scrollTop = logTerminal.scrollHeight;
+            }
 
             function fetchLogs() {
                 const logType = logTypeSelect.value;
@@ -603,37 +664,8 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success && data.lines) {
-                            const content = data.lines.join("\n");
-                            if (content !== lastLogContent) {
-                                lastLogContent = content;
-
-                                logTerminal.innerHTML = "";
-                                if (data.lines.length === 0) {
-                                    logTerminal.innerHTML = '<div class="text-muted">No logs found.</div>';
-                                } else {
-                                    data.lines.forEach(line => {
-                                        const div = document.createElement("div");
-                                        div.style.whiteSpace = "pre-wrap";
-                                        div.style.wordBreak = "break-all";
-                                        div.style.marginBottom = "4px";
-
-                                        if (line.includes("[ERR]") || line.includes("Error") || line.includes("Exception") || line.includes("fail")) {
-                                            div.style.color = "#f7768e";
-                                        } else if (line.includes("[WRN]") || line.includes("Warning") || line.includes("warn")) {
-                                            div.style.color = "#e0af68";
-                                        } else if (line.includes("[INF]") || line.includes("Success") || line.includes("Buy") || line.includes("Sell")) {
-                                            div.style.color = "#9ece6a";
-                                        } else {
-                                            div.style.color = "var(--text-color)";
-                                        }
-
-                                        div.textContent = line;
-                                        logTerminal.appendChild(div);
-                                    });
-
-                                    logTerminal.scrollTop = logTerminal.scrollHeight;
-                                }
-                            }
+                            currentTradeLogLines = data.lines;
+                            renderTradeLogs();
                         } else {
                             logTerminal.innerHTML = `<div class="text-danger">Error: ${data.message || 'Unknown error'}</div>`;
                         }
@@ -644,19 +676,26 @@
                     });
             }
 
+            if (tradeLogFilterInput) {
+                tradeLogFilterInput.addEventListener("input", function () {
+                    tradeLogFilterQuery = tradeLogFilterInput.value;
+                    renderTradeLogs();
+                });
+            }
+
             fetchLogs();
 
             const intervalId = setInterval(fetchLogs, 3000);
 
             logTypeSelect.addEventListener("change", function() {
-                lastLogContent = "";
+                currentTradeLogLines = [];
                 logTerminal.innerHTML = '<div class="text-muted">Loading logs...</div>';
                 fetchLogs();
             });
 
             clearTerminalBtn.addEventListener("click", function() {
+                currentTradeLogLines = [];
                 logTerminal.innerHTML = '<div class="text-muted">Terminal cleared.</div>';
-                lastLogContent = "CLEARED";
             });
         });
 

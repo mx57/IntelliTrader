@@ -476,7 +476,7 @@
     },
     {
       "id": "web-dashboard-log-filter-search",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Add interactive filter search bar to Live Log Terminal",
@@ -502,6 +502,21 @@
       ],
       "acceptance": [
         "DcaProcessor outputs structured log entries with spread ratios and volatility scaling factors."
+      ]
+    },
+    {
+      "id": "web-dashboard-clear-log-filter",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add clear filter button to terminal search inputs on Dashboard",
+      "description": "Add an inline clear icon/button to the log search input on the Web Dashboard for quick filter reset.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/Home/Dashboard.cshtml",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Log terminal search inputs include a quick clear button to reset current filter text."
       ]
     }
   ]
