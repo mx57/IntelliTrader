@@ -476,7 +476,7 @@
     },
     {
       "id": "web-dashboard-log-filter-search",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Add interactive filter search bar to Live Log Terminal",
@@ -502,6 +502,21 @@
       ],
       "acceptance": [
         "DcaProcessor outputs structured log entries with spread ratios and volatility scaling factors."
+      ]
+    },
+    {
+      "id": "web-dashboard-log-export",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add log export button to Live Log Terminal",
+      "description": "Implement a download log button on the Live Log Terminal header allowing users to save filtered log contents as a text file.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/Home/Dashboard.cshtml",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Live Log Terminal includes a working Export/Save log button."
       ]
     }
   ]
