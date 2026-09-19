@@ -461,7 +461,7 @@
     },
     {
       "id": "trading-order-history-cache",
-      "status": "todo",
+      "status": "done",
       "area": "trading",
       "risk": "low",
       "title": "Optimize trade history parsing with in-memory caching",
@@ -502,6 +502,21 @@
       ],
       "acceptance": [
         "DcaProcessor outputs structured log entries with spread ratios and volatility scaling factors."
+      ]
+    },
+    {
+      "id": "web-dashboard-log-download-filter",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add date range and log level parameters to DownloadLog action",
+      "description": "Enhance DownloadLog endpoint in HomeController to support date filtering and log level parameter filtering when exporting log files.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Controllers/HomeController.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "DownloadLog endpoint supports filtering logs by date range or log level parameter."
       ]
     }
   ]
