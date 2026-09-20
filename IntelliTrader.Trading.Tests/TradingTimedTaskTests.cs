@@ -451,5 +451,108 @@ namespace IntelliTrader.Trading.Tests
             // Assert - Should NOT trigger DCA because spacing is widened to -15.0% and CurrentMargin is -12.0%
             _orderingService.Verify(o => o.PlaceBuyOrder(It.IsAny<BuyOptions>()), Times.Never());
         }
+
+        [Fact]
+        public void DcaProcessor_LogsSpreadRatioOnExtremelyHighSpreadPostponement()
+        {
+            // Arrange
+            var pair = "BTCUSDT";
+            var pairConfig = new Mock<IPairConfig>();
+            pairConfig.Setup(c => c.NextDCAMargin).Returns(-3.0m);
+            pairConfig.Setup(c => c.BuyEnabled).Returns(true);
+            pairConfig.Setup(c => c.BuyMultiplier).Returns(1.5m);
+            pairConfig.Setup(c => c.BuyTrailing).Returns(0m);
+            pairConfig.Setup(c => c.Rules).Returns(new List<string>());
+
+            var safety = new TrailingSafetyOptions
+            {
+                MaxTrailingSpread = 1.0m,
+                PauseOnHighSpread = false
+            };
+            pairConfig.Setup(c => c.TrailingSafety).Returns(safety);
+
+            _tradingService.Setup(s => s.GetPairConfig(pair)).Returns(pairConfig.Object);
+
+            var tradingPair = new Mock<ITradingPair>();
+            tradingPair.Setup(p => p.Pair).Returns(pair);
+            tradingPair.Setup(p => p.FormattedName).Returns("BTC/USDT");
+            tradingPair.Setup(p => p.CurrentMargin).Returns(-10.0m);
+            tradingPair.Setup(p => p.CurrentSpread).Returns(3.5m); // 3.5x ratio relative to base 1.0m
+            tradingPair.Setup(p => p.Cost).Returns(100m);
+            tradingPair.Setup(p => p.Metadata).Returns(new OrderMetadata());
+
+            _account.Setup(a => a.GetTradingPairs(It.IsAny<bool>())).Returns(new List<ITradingPair> { tradingPair.Object });
+
+            var task = new TradingTimedTask(
+                _loggingService.Object,
+                _notificationService.Object,
+                _healthCheckService.Object,
+                _signalsService.Object,
+                _orderingService.Object,
+                _tradingService.Object);
+
+            // Act
+            task.ProcessTradingPairs();
+
+            // Assert - LoggingService should be called with message containing Ratio and Base Spread metrics
+            _loggingService.Verify(l => l.Info(It.Is<string>(msg =>
+                msg.Contains("DCA postponed for BTC/USDT due to extremely high spread") &&
+                msg.Contains("Ratio: 3.50x")), (Exception)null), Times.Once());
+        }
+
+        [Fact]
+        public void DcaProcessor_LogsSpreadRatioAndVolatilityFactorsOnTrigger()
+        {
+            // Arrange
+            var pair = "BTCUSDT";
+            var pairConfig = new Mock<IPairConfig>();
+            pairConfig.Setup(c => c.NextDCAMargin).Returns(-3.0m);
+            pairConfig.Setup(c => c.BuyEnabled).Returns(true);
+            pairConfig.Setup(c => c.BuyMultiplier).Returns(1.5m);
+            pairConfig.Setup(c => c.BuyTrailing).Returns(0m);
+            pairConfig.Setup(c => c.Rules).Returns(new List<string>());
+
+            var safety = new TrailingSafetyOptions
+            {
+                MaxTrailingSpread = 0.5m,
+                PauseOnHighSpread = false
+            };
+            pairConfig.Setup(c => c.TrailingSafety).Returns(safety);
+
+            _tradingService.Setup(s => s.GetPairConfig(pair)).Returns(pairConfig.Object);
+
+            var tradingPair = new Mock<ITradingPair>();
+            tradingPair.Setup(p => p.Pair).Returns(pair);
+            tradingPair.Setup(p => p.FormattedName).Returns("BTC/USDT");
+            // CurrentMargin -10.0m is below effective NextDCAMargin
+            tradingPair.Setup(p => p.CurrentMargin).Returns(-10.0m);
+            tradingPair.Setup(p => p.CurrentSpread).Returns(1.0m); // 2.0x ratio relative to base 0.5m
+            tradingPair.Setup(p => p.Cost).Returns(100m);
+            tradingPair.Setup(p => p.Metadata).Returns(new OrderMetadata());
+
+            _account.Setup(a => a.GetTradingPairs(It.IsAny<bool>())).Returns(new List<ITradingPair> { tradingPair.Object });
+            _tradingService.Setup(s => s.GetPrice(pair, It.IsAny<TradePriceType?>(), It.IsAny<bool>())).Returns(10000m);
+
+            string outMsg = "";
+            _tradingService.Setup(s => s.CanBuy(It.IsAny<BuyOptions>(), out outMsg)).Returns(true);
+
+            var task = new TradingTimedTask(
+                _loggingService.Object,
+                _notificationService.Object,
+                _healthCheckService.Object,
+                _signalsService.Object,
+                _orderingService.Object,
+                _tradingService.Object);
+
+            // Act
+            task.ProcessTradingPairs();
+
+            // Assert - Detailed volatility factors logged when DCA is triggered
+            _loggingService.Verify(l => l.Info(It.Is<string>(msg =>
+                msg.Contains("DCA triggered for BTC/USDT") &&
+                msg.Contains("Spread Ratio: 2.00x") &&
+                msg.Contains("Spread Factor: 1.50") &&
+                msg.Contains("Volatility Factor:")), (Exception)null), Times.Once());
+        }
     }
 }
