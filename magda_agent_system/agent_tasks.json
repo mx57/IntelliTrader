@@ -491,7 +491,7 @@
     },
     {
       "id": "trading-spread-volatility-logging",
-      "status": "todo",
+      "status": "done",
       "area": "trading",
       "risk": "low",
       "title": "Add detailed spread volatility metric logging to DcaProcessor",
@@ -517,6 +517,51 @@
       ],
       "acceptance": [
         "DownloadLog endpoint supports filtering logs by date range or log level parameter."
+      ]
+    },
+    {
+      "id": "trading-trailing-buy-volatility-spacing",
+      "status": "todo",
+      "area": "trading",
+      "risk": "low",
+      "title": "Implement spread volatility scaling for BuyProcessor trailing stops",
+      "description": "Enhance BuyProcessor to adjust trailing buy distances dynamically based on market spread volatility, avoiding premature trailing buy orders during market dips.",
+      "allowed_paths": [
+        "IntelliTrader.Trading/Processors/BuyProcessor.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "BuyProcessor scales trailing buy thresholds based on current spread relative to base spread."
+      ]
+    },
+    {
+      "id": "web-dashboard-export-csv-stats",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add CSV export option to Web Dashboard stats exporter",
+      "description": "Extend ExportStats endpoint on HomeController to support formatted CSV file exports of trade history and daily profit performance.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Controllers/HomeController.cs",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "ExportStats action returns formatted CSV file attachments when format=csv is queried."
+      ]
+    },
+    {
+      "id": "trading-processor-metrics-telemetry",
+      "status": "todo",
+      "area": "trading",
+      "risk": "low",
+      "title": "Add health check telemetry counters for trading processors",
+      "description": "Expose process execution counters and evaluation timing metrics for BuyProcessor, SellProcessor, and DcaProcessor via HealthCheckService.",
+      "allowed_paths": [
+        "IntelliTrader.Trading/Processors/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "HealthCheckService records execution counts for each trading processor during execution cycles."
       ]
     }
   ]
