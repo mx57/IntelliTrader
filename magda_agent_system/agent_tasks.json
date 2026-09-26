@@ -627,6 +627,22 @@
       "acceptance": [
         "Dashboard UI provides quick filter buttons to filter active trading pairs by status."
       ]
+    },
+    {
+      "id": "web-dashboard-pair-favorite-pinning",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Add favorite pair pinning and persistence on Dashboard",
+      "description": "Allow users to pin favorite trading pairs to the top of the trading pairs table with persistence in localStorage.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/**",
+        "IntelliTrader.Web/Static/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Users can click a star icon on any trading pair to pin it to the top of the table."
+      ]
     }
   ]
 }

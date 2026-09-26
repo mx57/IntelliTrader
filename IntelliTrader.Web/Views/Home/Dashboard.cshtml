@@ -77,9 +77,9 @@
         // Load sound profile with fallback to 'chime'
         let soundProfile = localStorage.getItem("realtime_sound_profile") || "chime";
 
-        // Load min trade size threshold with fallback to 0
+        // Load minimum trade size threshold in USDT (default 0)
         let minTradeSize = parseFloat(localStorage.getItem("realtime_min_trade_size") || "0");
-        if (isNaN(minTradeSize)) minTradeSize = 0;
+        if (isNaN(minTradeSize) || minTradeSize < 0) minTradeSize = 0;
 
         // Sync UI controls with values
         soundVolumeSlider.value = soundVolume;
@@ -87,19 +87,6 @@
         soundProfileSelect.value = soundProfile;
         if (minTradeSizeInput) {
             minTradeSizeInput.value = minTradeSize;
-        }
-
-        if (minTradeSizeInput) {
-            minTradeSizeInput.value = minTradeSize;
-            minTradeSizeInput.addEventListener("input", function () {
-                const val = parseFloat(minTradeSizeInput.value) || 0;
-                minTradeSize = Math.max(0, val);
-                try {
-                    localStorage.setItem("realtime_min_trade_size", minTradeSize);
-                } catch (e) {
-                    console.warn("Could not save realtime_min_trade_size to localStorage:", e);
-                }
-            });
         }
 
         updateSoundButtonUI();
@@ -377,8 +364,8 @@
                                 knownTrades.add(tradeId);
 
                                 if (!isFirstLoad) {
-                                    const tradeCost = (parseFloat(trade.Amount) || 0) * (parseFloat(trade.SellPrice) || 0);
-                                    if (tradeCost >= minTradeSize) {
+                                    const tradeValue = (parseFloat(trade.Amount) || 0) * (parseFloat(trade.SellPrice) || parseFloat(trade.AveragePrice) || 0);
+                                    if (minTradeSize === 0 || tradeValue >= minTradeSize) {
                                         hasNewTrade = true;
                                         showToastNotification(trade);
                                     }
