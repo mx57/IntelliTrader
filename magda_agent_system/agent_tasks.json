@@ -566,7 +566,7 @@
     },
     {
       "id": "web-dashboard-log-download",
-      "status": "todo",
+      "status": "done",
       "area": "web",
       "risk": "low",
       "title": "Add log file download button on Web Dashboard",
@@ -610,6 +610,22 @@
       ],
       "acceptance": [
         "Users can type pair names into the search filter input to filter active pairs dynamically on the Dashboard."
+      ]
+    },
+    {
+      "id": "web-dashboard-table-filtering",
+      "status": "todo",
+      "area": "web",
+      "risk": "low",
+      "title": "Enhance trading pair table search and filtering options",
+      "description": "Add quick status filters (e.g. Trailing Buys, Trailing Sells, Active DCA) to the Dashboard trading pair DataTables.",
+      "allowed_paths": [
+        "IntelliTrader.Web/Views/**",
+        "IntelliTrader.Web/Static/**",
+        "magda_agent_system/agent_tasks.json"
+      ],
+      "acceptance": [
+        "Dashboard UI provides quick filter buttons to filter active trading pairs by status."
       ]
     }
   ]
