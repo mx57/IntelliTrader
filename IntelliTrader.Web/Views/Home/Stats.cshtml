@@ -10,7 +10,17 @@
 }
 
 <div>
-    <div class="sub-header">Total Profit: @Model.Trades.Values.Sum(trades => trades.Where(t => !t.IsSwap).Sum(t => t.Profit)).ToString("0.00000000") (@Model.Trades.Values.Sum(trades => trades.Where(t => !t.IsSwap).Sum(t => t.Profit) / Model.AccountInitialBalance * 100).ToString("0.00")%) , Account Balance: @Model.AccountBalance.ToString("0.00000000") @Model.Market</div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="sub-header m-0">Total Profit: @Model.Trades.Values.Sum(trades => trades.Where(t => !t.IsSwap).Sum(t => t.Profit)).ToString("0.00000000") (@Model.Trades.Values.Sum(trades => trades.Where(t => !t.IsSwap).Sum(t => t.Profit) / Model.AccountInitialBalance * 100).ToString("0.00")%) , Account Balance: @Model.AccountBalance.ToString("0.00000000") @Model.Market</div>
+        <div>
+            <a href="@Url.Action("ExportStats", "Home", new { format = "json" })" class="btn btn-sm btn-outline-info mr-1" title="Export Stats Summary as JSON">
+                <i class="fa fa-download"></i> Export JSON
+            </a>
+            <a href="@Url.Action("ExportStats", "Home", new { format = "csv" })" class="btn btn-sm btn-outline-success" title="Export Stats Summary as CSV">
+                <i class="fa fa-file-excel-o"></i> Export CSV
+            </a>
+        </div>
+    </div>
 
     <table class="table table-hover table-striped" id="statsTable" style="width: 100%">
         <thead>
