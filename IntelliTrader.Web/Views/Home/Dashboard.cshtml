@@ -460,6 +460,7 @@
         <div class="card-header" style="background-color: var(--card-header-bg); border-bottom: 1px solid var(--card-border); padding: 10px 15px; display: flex; align-items: center; justify-content: space-between;">
             <h5 class="mb-0" style="color: var(--text-light); font-size: 16px; margin: 0;"><i class="fas fa-terminal mr-2"></i>Live Log Monitor</h5>
             <div class="d-flex align-items-center">
+                <input type="text" id="logTerminalSearchInput" class="form-control form-control-sm mr-2" style="width: 200px; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--card-border); height: 28px; font-size: 12px;" placeholder="Поиск по логам..." />
                 <div class="btn-group btn-group-sm mr-2" role="group">
                     <button type="button" class="btn btn-sm btn-outline-light active" id="logTypeGeneralBtn" style="border-color: var(--card-border); margin-right: 5px;" onclick="setLogType('general')">General Log</button>
                     <button type="button" class="btn btn-sm btn-outline-light" id="logTypeTradesBtn" style="border-color: var(--card-border);" onclick="setLogType('trades')">Trades Log</button>
@@ -475,6 +476,39 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const logSearchInput = document.getElementById("logTerminalSearchInput");
+            const logTerminal = document.getElementById("logTerminal");
+
+            function applyLogTerminalFilter() {
+                if (!logTerminal || !logSearchInput) return;
+                const keyword = logSearchInput.value.trim().toLowerCase();
+                const lines = logTerminal.querySelectorAll("div");
+
+                lines.forEach(line => {
+                    const text = line.textContent.toLowerCase();
+                    if (!keyword || text.includes(keyword)) {
+                        line.style.display = "";
+                    } else {
+                        line.style.display = "none";
+                    }
+                });
+            }
+
+            if (logSearchInput) {
+                logSearchInput.addEventListener("input", applyLogTerminalFilter);
+            }
+
+            if (logTerminal) {
+                const observer = new MutationObserver(function () {
+                    applyLogTerminalFilter();
+                });
+                observer.observe(logTerminal, { childList: true });
+            }
+        });
+    </script>
 
     <div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
@@ -569,6 +603,7 @@
         <div class="card-header d-flex justify-content-between align-items-center" style="background-color: var(--card-header-bg); border-bottom: 1px solid var(--card-border);">
             <span style="font-weight: bold; color: #7aa2f7;"><i class="fas fa-terminal"></i> Live Trade Logs Terminal</span>
             <div class="d-flex align-items-center">
+                <input type="text" id="tradeLogSearchInput" class="form-control form-control-sm mr-2" style="width: 200px; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--card-border); height: 28px; font-size: 12px;" placeholder="Поиск по логам..." />
                 <select id="logTypeSelect" class="form-control form-control-sm d-inline-block" style="width: auto; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--card-border); margin-right: 10px;">
                     <option value="trades" selected>Trade Logs</option>
                     <option value="general">General Logs</option>
@@ -589,8 +624,28 @@
             const logTerminal = document.getElementById("tradeLogTerminal");
             const logTypeSelect = document.getElementById("logTypeSelect");
             const clearTerminalBtn = document.getElementById("clearTerminalBtn");
+            const tradeLogSearchInput = document.getElementById("tradeLogSearchInput");
 
             let lastLogContent = "";
+
+            function applyTradeLogFilter() {
+                if (!logTerminal || !tradeLogSearchInput) return;
+                const keyword = tradeLogSearchInput.value.trim().toLowerCase();
+                const lines = logTerminal.querySelectorAll("div");
+
+                lines.forEach(line => {
+                    const text = line.textContent.toLowerCase();
+                    if (!keyword || text.includes(keyword)) {
+                        line.style.display = "";
+                    } else {
+                        line.style.display = "none";
+                    }
+                });
+            }
+
+            if (tradeLogSearchInput) {
+                tradeLogSearchInput.addEventListener("input", applyTradeLogFilter);
+            }
 
             function fetchLogs() {
                 const logType = logTypeSelect.value;
@@ -626,6 +681,7 @@
                                         logTerminal.appendChild(div);
                                     });
 
+                                    applyTradeLogFilter();
                                     logTerminal.scrollTop = logTerminal.scrollHeight;
                                 }
                             }
